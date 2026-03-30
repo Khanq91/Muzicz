@@ -1,0 +1,60 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'providers/music_provider.dart';
+import 'providers/player_provider.dart';
+import 'screens/splash_screen.dart';
+import 'services/audio_handler.dart';
+import 'theme/app_theme.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+    systemNavigationBarColor: Colors.transparent,
+    systemNavigationBarDividerColor: Colors.transparent,
+  ));
+
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+  final audioHandler = MuzicAudioHandler();
+  runApp(MuzicApp(audioHandler: audioHandler));
+}
+
+class MuzicApp extends StatelessWidget {
+  const MuzicApp({super.key, required this.audioHandler});
+  final MuzicAudioHandler audioHandler;
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => MusicProvider()),
+        ChangeNotifierProvider(create: (_) => PlayerProvider(audioHandler)),
+      ],
+      child: MaterialApp(
+        title: 'Muzicz Audio',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.darkTheme,
+        home: const SplashScreen(),
+        builder: (context, child) {
+          return MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(
+                MediaQuery.of(context).textScaleFactor.clamp(0.85, 1.15),
+              ),
+            ),
+            child: child!,
+          );
+        },
+      ),
+    );
+  }
+}
