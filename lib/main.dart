@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' hide ChangeNotifierProvider;
 import 'package:provider/provider.dart';
+import 'features/downloader/core/app_router.dart';
 import 'providers/music_provider.dart';
 import 'providers/player_provider.dart';
 import 'screens/splash_screen.dart';
@@ -25,8 +27,15 @@ Future<void> main() async {
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
   final audioHandler = MuzicAudioHandler();
-  runApp(MuzicApp(audioHandler: audioHandler));
+  // runApp(MuzicApp(audioHandler: audioHandler));
+  runApp(
+    // ProviderScope bọc ngoài cùng — Riverpod scope cho toàn app (ytdlp dùng)
+    ProviderScope(
+      child: MuzicApp(audioHandler: audioHandler),
+    ),
+  );
 }
+
 
 class MuzicApp extends StatelessWidget {
   const MuzicApp({super.key, required this.audioHandler});
@@ -43,6 +52,13 @@ class MuzicApp extends StatelessWidget {
         title: 'Muzicz Audio',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
+        onGenerateRoute: (settings) {
+          // ytdlp routes
+          if (settings.name?.startsWith('/dl/') == true) {
+            return AppRouter.onGenerateRoute(settings);
+          }
+          return null;
+        },
         home: const SplashScreen(),
         builder: (context, child) {
           return MediaQuery(

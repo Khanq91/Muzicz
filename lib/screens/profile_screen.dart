@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../features/downloader/screens/downloader_gateway_screen.dart';
 import '../providers/music_provider.dart';
 import '../providers/player_provider.dart';
 import '../theme/app_colors.dart';
@@ -99,16 +100,25 @@ class ProfileScreen extends StatelessWidget {
                           icon: Icons.download_rounded,
                           iconColor: AppColors.secondary,
                           title: 'Tải nhạc',
-                          subtitle: 'Tính năng sắp có',
+                          subtitle: 'Tải âm thanh dễ dàng chỉ từ URL',
+                          // onTap: () {
+                          //   ScaffoldMessenger.of(context).showSnackBar(
+                          //     const SnackBar(
+                          //       content: Text('Tính năng đang được phát triển'),
+                          //       duration: Duration(seconds: 2),
+                          //     ),
+                          //   );
+                          // },
+                          // onTap: () => Navigator.pushNamed(context, '/dl/analyze'),
+
                           onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Tính năng đang được phát triển'),
-                                duration: Duration(seconds: 2),
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const DownloaderGatewayScreen(),
                               ),
                             );
                           },
-                          disabled: true,
+                          disabled: false,
                         ),
                         _ActionTile(
                           icon: Icons.settings_rounded,
