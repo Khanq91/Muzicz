@@ -1,4 +1,4 @@
-// lib/screens/analyze/analyze_screen.dart
+// lib/features/downloader/screens/analyze/analyze_screen.dart
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -93,6 +93,40 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
     );
   }
 
+  /// Hiển thị bottom sheet chọn thư mục lưu nhanh
+  Future<void> _showFolderPickerSheet() async {
+    final base = await DownloaderStorageService.instance.getExternalBasePath();
+
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => _FolderPickerSheet(
+        basePath: base,
+        currentPath: DownloaderStorageService.instance.downloadPath,
+        onSelect: (path) async {
+          await DownloaderStorageService.instance.setAndSavePath(path);
+          if (mounted) {
+            setState(() {});
+            _showSnack('Đã chọn: $path');
+          }
+        },
+        onCustomPick: () async {
+          final path = await DownloaderStorageService.instance
+              .pickDownloadDirectory();
+          if (path != null && mounted) {
+            setState(() {});
+            _showSnack('Đã chọn: $path');
+          }
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final analyzeState = ref.watch(analyzeProvider);
@@ -101,24 +135,38 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
       child: AppShell(
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // ── Back button row ──────────────────────────
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () =>
+                          Navigator.of(context, rootNavigator: true).pop(),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceElevated,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          size: 16,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
                 // ── Header ──────────────────────────────────
-                // const _Header(),
                 _Header(
                   serviceReady: _serviceReady,
-                  onPickFolder: () async {
-                    final path = await DownloaderStorageService.instance.pickDownloadDirectory();
-                    if (path != null) {
-                      setState(() {});
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Đã chọn: $path')),
-                      );
-                    }
-                  },
+                  onPickFolder: _showFolderPickerSheet,
                 ),
                 const SizedBox(height: 28),
 
@@ -127,7 +175,7 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
                   controller: _controller,
                   focusNode: _focusNode,
                   platform: analyzeState.detectedPlatform,
-                  isUrlEmpty:  analyzeState.currentUrl.isEmpty,
+                  isUrlEmpty: analyzeState.currentUrl.isEmpty,
                   onChanged: (url) =>
                       ref.read(analyzeProvider.notifier).onUrlChanged(url),
                   onPaste: _paste,
@@ -146,7 +194,6 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
                       ? _analyze
                       : null,
                 ),
-                // Hiện lỗi init nếu có
                 if (_initError != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
@@ -172,6 +219,239 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
   }
 }
 
+// ── Folder Picker Sheet ─────────────────────────────────────────────────────
+
+class _FolderPickerSheet extends StatelessWidget {
+  final String basePath;
+  final String currentPath;
+  final Future<void> Function(String path) onSelect;
+  final VoidCallback onCustomPick;
+
+  const _FolderPickerSheet({
+    required this.basePath,
+    required this.currentPath,
+    required this.onSelect,
+    required this.onCustomPick,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final options = [
+      _FolderOption(
+        icon: Icons.music_note_rounded,
+        label: 'Music',
+        sublabel: 'Music/',
+        color: AppColors.primary,
+        path: '$basePath/Music',
+      ),
+      _FolderOption(
+        icon: Icons.download_rounded,
+        label: 'MuziczModule',
+        sublabel: 'Download/MuziczModule/',
+        color: const Color(0xFF34C759),
+        path: '$basePath/Download/MuziczModule',
+      ),
+      _FolderOption(
+        icon: Icons.video_library_rounded,
+        label: 'Videos',
+        sublabel: 'Movies/',
+        color: const Color(0xFFFF9F0A),
+        path: '$basePath/Movies',
+      ),
+    ];
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle bar
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.divider,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Title
+            const Text(
+              'Chọn thư mục lưu',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'File tải về sẽ được lưu vào thư mục này',
+              style: TextStyle(
+                color: AppColors.textTertiary,
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Quick options
+            ...options.map((opt) {
+              final isSelected = currentPath == opt.path;
+              return GestureDetector(
+                onTap: () {
+                  Navigator.pop(context);
+                  onSelect(opt.path);
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 13),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? opt.color.withOpacity(0.1)
+                        : AppColors.surfaceElevated,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected
+                          ? opt.color.withOpacity(0.4)
+                          : AppColors.border,
+                      width: isSelected ? 1.2 : 0.8,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: opt.color.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(opt.icon, color: opt.color, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              opt.label,
+                              style: TextStyle(
+                                color: isSelected
+                                    ? AppColors.textPrimary
+                                    : AppColors.textSecondary,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              opt.sublabel,
+                              style: const TextStyle(
+                                color: AppColors.textTertiary,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (isSelected)
+                        const Icon(Icons.check_circle_rounded,
+                            color: AppColors.primary, size: 18),
+                    ],
+                  ),
+                ),
+              );
+            }),
+
+            // const SizedBox(height: 4),
+
+            // Custom pick option
+            GestureDetector(
+              onTap: () {
+                Navigator.pop(context);
+                onCustomPick();
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 13),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceElevated,
+                  borderRadius: BorderRadius.circular(12),
+                  border:
+                  Border.all(color: AppColors.border, width: 0.8),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: AppColors.textTertiary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.folder_open_rounded,
+                          color: AppColors.textSecondary, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Chọn đường dẫn',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            'Duyệt và chọn thư mục tùy chỉnh',
+                            style: TextStyle(
+                              color: AppColors.textTertiary,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right_rounded,
+                        color: AppColors.textTertiary, size: 18),
+                  ],
+                ),
+              ),
+            ),
+
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FolderOption {
+  final IconData icon;
+  final String label;
+  final String sublabel;
+  final Color color;
+  final String path;
+
+  const _FolderOption({
+    required this.icon,
+    required this.label,
+    required this.sublabel,
+    required this.color,
+    required this.path,
+  });
+}
+
 // ── Header ─────────────────────────────────────────────────
 
 class _Header extends StatelessWidget {
@@ -195,12 +475,12 @@ class _Header extends StatelessWidget {
             children: [
               const Text(
                 'from ',
-                  style: TextStyle(
-                    fontSize: 29,
-                    fontWeight: FontWeight.w100,
-                    color: Colors.white,
-                    letterSpacing: -0.5,
-                  ),
+                style: TextStyle(
+                  fontSize: 29,
+                  fontWeight: FontWeight.w100,
+                  color: Colors.white,
+                  letterSpacing: -0.5,
+                ),
               ),
               const Text(
                 'Muzicz',
@@ -213,15 +493,6 @@ class _Header extends StatelessWidget {
               ),
             ],
           ),
-          // child: const Text(
-          //   'from Muzicz',
-          //   style: TextStyle(
-          //     fontSize: 32,
-          //     fontWeight: FontWeight.w700,
-          //     color: Colors.white,
-          //     letterSpacing: -0.5,
-          //   ),
-          // ),
         ),
         const SizedBox(height: 4),
 
@@ -251,7 +522,7 @@ class _Header extends StatelessWidget {
                     Expanded(
                       child: Text(
                         serviceReady
-                            ? 'Thư mục lưu: ${DownloaderStorageService.instance.downloadPath}'
+                            ? 'Lưu: ${DownloaderStorageService.instance.downloadPath}'
                             : 'Đang tải thư mục...',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -324,7 +595,6 @@ class _UrlInputCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // TextField
           Row(
             children: [
               Expanded(
@@ -345,7 +615,8 @@ class _UrlInputCard extends StatelessWidget {
                     ),
                     border: InputBorder.none,
                     isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                    contentPadding:
+                    const EdgeInsets.symmetric(vertical: 4),
                   ),
                   maxLines: 2,
                   minLines: 1,
@@ -354,7 +625,6 @@ class _UrlInputCard extends StatelessWidget {
                   autocorrect: false,
                 ),
               ),
-              // Paste / Clear button
               _ActionIconButton(
                 onTap: isUrlEmpty ? onPaste : onClear,
                 icon: isUrlEmpty
@@ -365,7 +635,6 @@ class _UrlInputCard extends StatelessWidget {
             ],
           ),
 
-          // Platform chip (hiện khi detect được)
           if (platform.isNotEmpty) ...[
             const SizedBox(height: 10),
             Row(
@@ -431,7 +700,6 @@ class _ResultCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Thumbnail
           if (info.thumbnail != null) ...[
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
@@ -463,7 +731,6 @@ class _ResultCard extends StatelessWidget {
             const SizedBox(height: 14),
           ],
 
-          // Title
           Text(
             info.title,
             style: const TextStyle(
@@ -477,7 +744,6 @@ class _ResultCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
 
-          // Meta row
           Row(
             children: [
               PlatformChip(platform: info.platform.displayName),
@@ -490,7 +756,8 @@ class _ResultCard extends StatelessWidget {
                     ? '${info.playlistCount ?? "?"} video'
                     : 'Video',
               ),
-              if (info.duration != null && info.type == VideoType.video) ...[
+              if (info.duration != null &&
+                  info.type == VideoType.video) ...[
                 const SizedBox(width: 8),
                 _MetaBadge(
                   icon: Icons.access_time_rounded,
@@ -501,11 +768,9 @@ class _ResultCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // Divider
           const Divider(height: 1, color: AppColors.divider),
           const SizedBox(height: 14),
 
-          // Navigate to format screen
           Consumer(
             builder: (context, ref, _) => PrimaryButton(
               label: 'Chọn định dạng',
@@ -518,7 +783,6 @@ class _ResultCard extends StatelessWidget {
                     arguments: info,
                   );
                 } else {
-                  // Video đơn → thẳng FormatScreen
                   Navigator.pushNamed(
                     context,
                     AppRoutes.format,

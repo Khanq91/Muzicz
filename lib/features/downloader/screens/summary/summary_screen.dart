@@ -1,4 +1,4 @@
-// lib/screens/summary/summary_screen.dart
+// lib/features/downloader/screens/summary/summary_screen.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,9 +22,30 @@ class SummaryScreen extends ConsumerWidget {
 
     return GradientBackground(
       child: AppShell(
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                size: 20, color: AppColors.textPrimary),
+            onPressed: () =>
+                Navigator.of(context, rootNavigator: true).pop(),
+            tooltip: 'Về trang chủ',
+          ),
+          title: const Text(
+            'Kết quả tải',
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          centerTitle: false,
+        ),
         child: SafeArea(
+          top: false,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -65,15 +86,18 @@ class SummaryScreen extends ConsumerWidget {
                   icon: Icons.folder_open_rounded,
                   onPressed: () async {
                     try {
-                      await DownloaderStorageService.instance.openDownloadFolder();
+                      await DownloaderStorageService.instance
+                          .openDownloadFolder();
                     } catch (e) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: const Text('Không thể mở thư mục, vui lòng mở Files thủ công'),
+                            content: const Text(
+                                'Không thể mở thư mục, vui lòng mở Files thủ công'),
                             backgroundColor: AppColors.surfaceElevated,
                             behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
                             margin: const EdgeInsets.all(16),
                           ),
                         );
@@ -88,7 +112,7 @@ class SummaryScreen extends ConsumerWidget {
                     Navigator.pushNamedAndRemoveUntil(
                       context,
                       AppRoutes.analyze,
-                      (_) => false,
+                          (_) => false,
                     );
                   },
                   icon: const Icon(Icons.add_rounded, size: 18),
@@ -100,6 +124,18 @@ class SummaryScreen extends ConsumerWidget {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
                     minimumSize: const Size(double.infinity, 52),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // ── Nút về trang chủ / profile ──────────────
+                TextButton.icon(
+                  onPressed: () =>
+                      Navigator.of(context, rootNavigator: true).pop(),
+                  icon: const Icon(Icons.home_rounded,
+                      size: 18, color: AppColors.textTertiary),
+                  label: const Text(
+                    'Về trang chủ',
+                    style: TextStyle(color: AppColors.textTertiary),
                   ),
                 ),
               ],
@@ -128,7 +164,6 @@ class _SummaryHeader extends StatelessWidget {
 
     return Column(
       children: [
-        // Icon
         Container(
           width: 72,
           height: 72,
@@ -136,8 +171,8 @@ class _SummaryHeader extends StatelessWidget {
             shape: BoxShape.circle,
             gradient: allSuccess
                 ? const LinearGradient(
-                    colors: [Color(0xFF34C759), Color(0xFF30D158)],
-                  )
+              colors: [Color(0xFF34C759), Color(0xFF30D158)],
+            )
                 : AppColors.primaryGradient,
           ),
           child: Icon(
@@ -289,8 +324,8 @@ class _FailedList extends StatelessWidget {
               GestureDetector(
                 onTap: onRetryAll,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: AppColors.primary.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(8),
@@ -341,7 +376,6 @@ class _FailedList extends StatelessWidget {
                       ),
                     ],
                   ),
-                  // ✅ Thêm: hiện errorMessage
                   if (t.errorMessage != null)
                     Padding(
                       padding: const EdgeInsets.only(left: 22, top: 2),

@@ -84,6 +84,34 @@ class DownloaderStorageService {
     debugPrint('[StorageService] downloadPath (fallback): $_downloadPath');
   }
 
+  // ── Quick path helpers ─────────────────────────────────────────────────────
+
+  /// Trả về đường dẫn gốc bộ nhớ ngoài, ví dụ: /storage/emulated/0
+  Future<String> getExternalBasePath() async {
+    try {
+      final path = await _channel.invokeMethod<String>('getDownloadDir');
+      if (path != null && path.isNotEmpty) {
+        final idx = path.lastIndexOf('/');
+        if (idx > 0) return path.substring(0, idx);
+      }
+    } catch (_) {}
+    return '/storage/emulated/0';
+  }
+
+  /// Đặt đường dẫn lưu file trực tiếp (không qua file picker system)
+  Future<void> setAndSavePath(String path) async {
+    final dir = Directory(path);
+    if (!dir.existsSync()) {
+      try {
+        await dir.create(recursive: true);
+      } catch (_) {}
+    }
+    _downloadPath = path;
+    await _savePath(path);
+    debugPrint('[StorageService] Path set to: $_downloadPath');
+  }
+
+  // ── Pickers ────────────────────────────────────────────────────────────────
   Future<String?> pickDownloadDirectory() async {
     final status = await Permission.storage.request();
     if (!status.isGranted) {
