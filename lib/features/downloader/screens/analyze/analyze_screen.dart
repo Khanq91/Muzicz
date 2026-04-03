@@ -4,7 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../core/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/video_info.dart';
@@ -72,9 +72,8 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
 
   Future<void> _analyze() async {
     _focusNode.unfocus();
-    final isOnline = await ref.read(networkStatusProvider.future).then(
-          (s) => s == NetworkStatus.online,
-        );
+    final results = await Connectivity().checkConnectivity();
+    final isOnline = results.any((r) => r != ConnectivityResult.none);
     if (!isOnline) {
       _showSnack('Không có kết nối mạng');
       return;
