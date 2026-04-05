@@ -34,12 +34,20 @@ class MusicProvider extends ChangeNotifier {
   bool get isFirstRun => _storage.isFirstRun;
   bool get hasScannedOnce => _storage.hasScannedOnce;
 
+  // ── Init ──────────────────────────────────────────────────────────────────
+
   Future<void> init() async {
     await _storage.init();
+    // ✅ Khôi phục playlists đã lưu từ lần trước
+    _playlists = _storage.playlists;
     notifyListeners();
   }
 
-  // ── Scanning ───────────────────────────────────────────
+  // ── Internal: lưu playlist bất cứ khi nào có thay đổi ───────────────────
+
+  Future<void> _persistPlaylists() => _storage.savePlaylists(_playlists);
+
+  // ── Scanning ──────────────────────────────────────────────────────────────
 
   Future<void> scanMusic() async {
     _status = LibraryStatus.scanning;
@@ -61,7 +69,7 @@ class MusicProvider extends ChangeNotifier {
         },
       );
 
-      _albumMap = await _scanner.groupByAlbum(_allSongs);
+      _albumMap  = await _scanner.groupByAlbum(_allSongs);
       _artistMap = await _scanner.groupByArtist(_allSongs);
 
       await _storage.markScannedOnce();
@@ -74,7 +82,7 @@ class MusicProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Search ─────────────────────────────────────────────
+  // ── Search ────────────────────────────────────────────────────────────────
 
   void setSearchQuery(String q) {
     _searchQuery = q.toLowerCase().trim();
@@ -90,7 +98,7 @@ class MusicProvider extends ChangeNotifier {
     }).toList();
   }
 
-  // ── Smart Lists ────────────────────────────────────────
+  // ── Smart Lists ───────────────────────────────────────────────────────────
 
   List<SongItem> get recentlyAdded {
     final sorted = [..._allSongs]
@@ -119,7 +127,10 @@ class MusicProvider extends ChangeNotifier {
 
   List<SongItem> get neverPlayed {
     final counts = _storage.playCounts;
-    return _allSongs.where((s) => (counts[s.id] ?? 0) == 0).take(30).toList();
+    return _allSongs
+        .where((s) => (counts[s.id] ?? 0) == 0)
+        .take(30)
+        .toList();
   }
 
   List<SongItem> get randomMix {
@@ -127,7 +138,7 @@ class MusicProvider extends ChangeNotifier {
     return list.take(20).toList();
   }
 
-  // ── Favorites ──────────────────────────────────────────
+  // ── Favorites ─────────────────────────────────────────────────────────────
 
   bool isFavorite(int songId) => _storage.isFavorite(songId);
 
@@ -136,7 +147,7 @@ class MusicProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Playlists ──────────────────────────────────────────
+  // ── Playlists ─────────────────────────────────────────────────────────────
 
   PlaylistItem createPlaylist(String name) {
     final pl = PlaylistItem(
@@ -145,33 +156,38 @@ class MusicProvider extends ChangeNotifier {
     );
     _playlists.add(pl);
     notifyListeners();
+    _persistPlaylists(); // ✅ lưu ngay
     return pl;
   }
 
-  void deletePlaylist(String id) {
+  Future<void> deletePlaylist(String id) async {
     _playlists.removeWhere((p) => p.id == id);
     notifyListeners();
+    await _persistPlaylists(); // ✅
   }
 
-  void addToPlaylist(String playlistId, SongItem song) {
+  Future<void> addToPlaylist(String playlistId, SongItem song) async {
     final pl = _playlists.firstWhere((p) => p.id == playlistId);
     pl.addSong(song);
     notifyListeners();
+    await _persistPlaylists(); // ✅
   }
 
-  void removeFromPlaylist(String playlistId, int songId) {
+  Future<void> removeFromPlaylist(String playlistId, int songId) async {
     final pl = _playlists.firstWhere((p) => p.id == playlistId);
     pl.removeSong(songId);
     notifyListeners();
+    await _persistPlaylists(); // ✅
   }
 
-  void renamePlaylist(String playlistId, String newName) {
+  Future<void> renamePlaylist(String playlistId, String newName) async {
     final pl = _playlists.firstWhere((p) => p.id == playlistId);
     pl.name = newName;
     notifyListeners();
+    await _persistPlaylists(); // ✅
   }
 
-  // ── Play tracking ──────────────────────────────────────
+  // ── Play tracking ─────────────────────────────────────────────────────────
 
   Future<void> onSongPlayed(int songId) async {
     await _storage.addRecentlyPlayed(songId);

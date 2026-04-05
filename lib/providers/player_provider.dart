@@ -10,7 +10,6 @@ class PlayerProvider extends ChangeNotifier {
 
   PlayerProvider(this._handler) {
     _listenToHandler();
-    // When RepeatOne song finishes once → auto reset to none
     _handler.onRepeatOneDone = _handleRepeatOneDone;
   }
 
@@ -29,7 +28,6 @@ class PlayerProvider extends ChangeNotifier {
   bool _shuffleEnabled = false;
   bool get shuffleEnabled => _shuffleEnabled;
 
-  // Track whether we already handled the one-repeat completion
   bool _repeatOneHandled = false;
 
   void _listenToHandler() {
@@ -41,31 +39,28 @@ class PlayerProvider extends ChangeNotifier {
     _handler.currentIndexStream.listen((index) {
       if (index != null && _queue.isNotEmpty && index < _queue.length) {
         _currentSong = _queue[index];
-        // New song started: reset the one-repeat guard
         _repeatOneHandled = false;
         notifyListeners();
       }
     });
   }
 
-  /// Called by audio_handler when processingState == completed
   void _handleRepeatOneDone() {
     if (_repeatMode == RepeatMode.one && !_repeatOneHandled) {
       _repeatOneHandled = true;
-      // Turn off repeat, let natural playback end
       _repeatMode = RepeatMode.none;
       _handler.setLoopMode(LoopMode.off);
       notifyListeners();
     }
   }
 
-  // ── Playback ───────────────────────────────────────────
+  // ── Playback ──────────────────────────────────────────────────────────────
 
   Future<void> playSongs(
-    List<SongItem> songs, {
-    int initialIndex = 0,
-    SongItem? specificSong,
-  }) async {
+      List<SongItem> songs, {
+        int initialIndex = 0,
+        SongItem? specificSong,
+      }) async {
     _queue = List.from(songs);
 
     int startIndex = initialIndex;
@@ -90,12 +85,30 @@ class PlayerProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> skipToNext() => _handler.seekToNext();
-  Future<void> skipToPrevious() => _handler.seekToPrevious();
-  Future<void> seekTo(Duration position) => _handler.seek(position);
-  Future<void> skipToIndex(int index) => _handler.seekToIndex(index);
+  /// Dừng phát nhạc hoàn toàn và xóa trạng thái hiện tại.
+  /// Dùng cho nút × trên mini player.
+  Future<void> stopAndClear() async {
+    await _handler.stop();
+    _currentSong = null;
+    _queue = [];
+    _isPlaying = false;
+    notifyListeners();
+  }
 
-  // ── Repeat: none → all → one → none ───────────────────
+  /// Thêm một bài vào cuối hàng chờ (không interrupt bài đang phát).
+  Future<void> addToQueue(SongItem song) async {
+    _queue.add(song);
+    await _handler.addSongToQueue(song);
+    notifyListeners();
+  }
+
+  Future<void> skipToNext()              => _handler.seekToNext();
+  Future<void> skipToPrevious()          => _handler.seekToPrevious();
+  Future<void> seekTo(Duration position) => _handler.seek(position);
+  Future<void> skipToIndex(int index)    => _handler.seekToIndex(index);
+
+  // ── Repeat ────────────────────────────────────────────────────────────────
+
   Future<void> toggleRepeat() async {
     switch (_repeatMode) {
       case RepeatMode.none:
@@ -104,8 +117,6 @@ class PlayerProvider extends ChangeNotifier {
         break;
       case RepeatMode.all:
         _repeatMode = RepeatMode.one;
-        // LoopMode.one in just_audio = repeat same track continuously
-        // We intercept completion via onRepeatOneDone to reset after 1 extra play
         await _handler.setLoopMode(LoopMode.one);
         _repeatOneHandled = false;
         break;
@@ -117,18 +128,19 @@ class PlayerProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Shuffle ────────────────────────────────────────────
+  // ── Shuffle ───────────────────────────────────────────────────────────────
+
   Future<void> toggleShuffle() async {
     _shuffleEnabled = !_shuffleEnabled;
     await _handler.setShuffleModeEnabled(_shuffleEnabled);
-    // If turning off shuffle, restore loop to none (unless user set repeat)
     if (!_shuffleEnabled && _repeatMode == RepeatMode.none) {
       await _handler.setLoopMode(LoopMode.off);
     }
     notifyListeners();
   }
 
-  // ── Queue ──────────────────────────────────────────────
+  // ── Queue management ──────────────────────────────────────────────────────
+
   void removeFromQueue(int index) {
     if (index < 0 || index >= _queue.length) return;
     _queue.removeAt(index);
@@ -143,5 +155,5 @@ class PlayerProvider extends ChangeNotifier {
   }
 
   Stream<PositionData> get positionDataStream => _handler.positionDataStream;
-  Stream<bool> get playingStream => _handler.playingStream;
+  Stream<bool>         get playingStream       => _handler.playingStream;
 }

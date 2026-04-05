@@ -10,7 +10,6 @@ class SongItem {
   final String data; // absolute file path
   final int duration; // milliseconds
   final int? size;
-  // final int? year;
   final int? track;
   final DateTime? dateAdded;
 
@@ -24,7 +23,6 @@ class SongItem {
     required this.data,
     required this.duration,
     this.size,
-    // this.year,
     this.track,
     this.dateAdded,
   });
@@ -40,7 +38,6 @@ class SongItem {
       data: s.data,
       duration: s.duration ?? 0,
       size: s.size,
-      // year: s.year,
       track: s.track,
       dateAdded: s.dateAdded != null
           ? DateTime.fromMillisecondsSinceEpoch(s.dateAdded! * 1000)
@@ -48,6 +45,38 @@ class SongItem {
     );
   }
 
+  // ── Serialization ─────────────────────────────────────────────────────────
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'artist': artist,
+    'album': album,
+    'albumId': albumId,
+    'artistId': artistId,
+    'data': data,
+    'duration': duration,
+    'size': size,
+    'track': track,
+    'dateAdded': dateAdded?.millisecondsSinceEpoch,
+  };
+
+  factory SongItem.fromJson(Map<String, dynamic> json) => SongItem(
+    id: json['id'] as int,
+    title: json['title'] as String? ?? '',
+    artist: json['artist'] as String? ?? 'Unknown Artist',
+    album: json['album'] as String? ?? 'Unknown Album',
+    albumId: json['albumId'] as int? ?? 0,
+    artistId: json['artistId'] as int? ?? 0,
+    data: json['data'] as String? ?? '',
+    duration: json['duration'] as int? ?? 0,
+    size: json['size'] as int?,
+    track: json['track'] as int?,
+    dateAdded: json['dateAdded'] != null
+        ? DateTime.fromMillisecondsSinceEpoch(json['dateAdded'] as int)
+        : null,
+  );
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
   String get durationFormatted {
     final ms = duration;
     final m = (ms ~/ 60000).toString().padLeft(2, '0');
