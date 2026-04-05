@@ -14,7 +14,8 @@ import 'playlist_screen.dart';
 enum SortType { az, recentlyAdded, duration }
 
 class LibraryScreen extends StatefulWidget {
-  const LibraryScreen({super.key});
+  const LibraryScreen({super.key, this.isEmbedded = false});
+  final bool isEmbedded;   // ← THÊM
 
   @override
   State<LibraryScreen> createState() => _LibraryScreenState();
@@ -52,11 +53,14 @@ class _LibraryScreenState extends State<LibraryScreen>
               padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
               child: Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                        size: 20, color: AppColors.textPrimary),
-                    onPressed: () => Navigator.pop(context),
-                  ),
+                  if (!widget.isEmbedded)
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                          size: 20, color: AppColors.textPrimary),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  if (widget.isEmbedded)
+                    const SizedBox(width: 16),
                   Expanded(
                     child: Text(
                       'Thư viện',
@@ -150,11 +154,12 @@ class _LibraryScreenState extends State<LibraryScreen>
               ),
             ),
             // ── Mini player ─────────────────────────────
-            Consumer<PlayerProvider>(
-              builder: (_, player, __) => player.currentSong != null
-                  ? const MiniPlayer()
-                  : const SizedBox.shrink(),
-            ),
+            if (!widget.isEmbedded)
+              Consumer<PlayerProvider>(
+                builder: (_, player, __) => player.currentSong != null
+                    ? const MiniPlayer()
+                    : const SizedBox.shrink(),
+              ),
           ],
         ),
       ),

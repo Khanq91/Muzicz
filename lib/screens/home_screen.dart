@@ -12,7 +12,12 @@ import '../widgets/mini_player.dart';
 import '../widgets/music_list_tile.dart';
 import 'library_screen.dart';
 import 'now_playing_screen.dart';
+import 'online_screen.dart';
 import 'profile_screen.dart';
+
+// ════════════════════════════════════════════════════════════════════════════
+// HomeScreen — persistent tab container dùng IndexedStack
+// ════════════════════════════════════════════════════════════════════════════
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,6 +27,55 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  int _currentIndex = 0;
+
+  // IndexedStack giữ cả 3 tabs sống — scroll/search state không bị reset
+  static const _tabs = [
+    _HomeTabBody(),
+    OnlineScreen(isEmbedded: true),
+    LibraryScreen(isEmbedded: true),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Column(
+        children: [
+          Expanded(
+            child: IndexedStack(
+              index: _currentIndex,
+              children: _tabs,
+            ),
+          ),
+          // ── Mini player shared toàn app ───────────────────
+          Consumer<PlayerProvider>(
+            builder: (_, player, __) => player.currentSong != null
+                ? const RepaintBoundary(child: MiniPlayer())
+                : const SizedBox.shrink(),
+          ),
+        ],
+      ),
+      bottomNavigationBar: _BottomNav(
+        currentIndex: _currentIndex,
+        onTap: (i) => setState(() => _currentIndex = i),
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// _HomeTabBody — nội dung tab Home (tách khỏi HomeScreen để giữ state)
+// ════════════════════════════════════════════════════════════════════════════
+
+class _HomeTabBody extends StatefulWidget {
+  const _HomeTabBody();
+
+  @override
+  State<_HomeTabBody> createState() => _HomeTabBodyState();
+}
+
+class _HomeTabBodyState extends State<_HomeTabBody> {
   final _searchCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
   bool _searchActive = false;
@@ -42,60 +96,46 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          Expanded(
-            child: CustomScrollView(
-              controller: _scrollCtrl,
-              physics: const BouncingScrollPhysics(),
-              slivers: [
-                // Header
-                SliverToBoxAdapter(
-                  child: _buildHeader(),
-                ),
-                // Sticky search bar
-                SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _SearchBarDelegate(
-                    searchCtrl: _searchCtrl,
-                    onChanged: (q) {
-                      context.read<MusicProvider>().setSearchQuery(q);
-                      setState(() => _searchActive = q.isNotEmpty);
-                    },
-                    onClear: () {
-                      _searchCtrl.clear();
-                      context.read<MusicProvider>().setSearchQuery('');
-                      setState(() => _searchActive = false);
-                    },
-                  ),
-                ),
-                // Search results or home content
-                if (_searchActive)
-                  _SearchResultsSliver(
-                    onSongTap: (songs, song) => _playSong(songs, song),
-                  )
-                else ...[
-                  // Quick Access
-                  SliverToBoxAdapter(child: _QuickAccessSection()),
-                  // Smart Lists
-                  SliverToBoxAdapter(child: _SmartListsSection(
-                    onSongTap: (songs, song) => _playSong(songs, song),
-                  )),
-                  const SliverToBoxAdapter(child: SizedBox(height: 120)),
-                ],
-              ],
+    return CustomScrollView(
+      controller: _scrollCtrl,
+      physics: const BouncingScrollPhysics(),
+      slivers: [
+        // Header
+        SliverToBoxAdapter(child: _buildHeader()),
+        // Sticky search bar
+        SliverPersistentHeader(
+          pinned: true,
+          delegate: _SearchBarDelegate(
+            searchCtrl: _searchCtrl,
+            onChanged: (q) {
+              context.read<MusicProvider>().setSearchQuery(q);
+              setState(() => _searchActive = q.isNotEmpty);
+            },
+            onClear: () {
+              _searchCtrl.clear();
+              context.read<MusicProvider>().setSearchQuery('');
+              setState(() => _searchActive = false);
+            },
+          ),
+        ),
+        if (_searchActive)
+          _SearchResultsSliver(
+            onSongTap: (songs, song) => _playSong(songs, song),
+          )
+        else ...[
+          SliverToBoxAdapter(
+            child: RepaintBoundary(child: _QuickAccessSection()),
+          ),
+          SliverToBoxAdapter(
+            child: RepaintBoundary(
+              child: _SmartListsSection(
+                onSongTap: (songs, song) => _playSong(songs, song),
+              ),
             ),
           ),
-          // Mini player
-          Consumer<PlayerProvider>(
-            builder: (_, player, __) =>
-                player.currentSong != null ? const MiniPlayer() : const SizedBox.shrink(),
-          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 120)),
         ],
-      ),
-      bottomNavigationBar: _BottomNav(),
+      ],
     );
   }
 
@@ -155,6 +195,147 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// Bottom Navigation — animated pill indicator
+// ════════════════════════════════════════════════════════════════════════════
+
+class _BottomNav extends StatelessWidget {
+  const _BottomNav({
+    required this.currentIndex,
+    required this.onTap,
+  });
+  final int currentIndex;
+  final void Function(int) onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    // Lấy bottom inset (system nav bar) để pad đúng cách
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    return Padding(
+      // 12px margin cố định + system inset (gesture bar / home indicator)
+      padding: EdgeInsets.fromLTRB(20, 0, 20, 12 + bottomPadding),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(color: AppColors.border, width: 0.5),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.30),
+              blurRadius: 24,
+              offset: const Offset(0, 6),
+            ),
+            BoxShadow(
+              color: AppColors.primary.withOpacity(0.06),
+              blurRadius: 32,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _NavItem(
+              icon: Icons.home_rounded,
+              label: 'Home',
+              active: currentIndex == 0,
+              onTap: () => onTap(0),
+            ),
+            _NavItem(
+              icon: Icons.language_rounded,
+              label: 'Trực tuyến',
+              active: currentIndex == 1,
+              onTap: () => onTap(1),
+            ),
+            _NavItem(
+              icon: Icons.library_music_rounded,
+              label: 'Thư viện',
+              active: currentIndex == 2,
+              onTap: () => onTap(2),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+        padding: EdgeInsets.symmetric(
+          // Pill mở rộng khi active để chứa label
+          horizontal: active ? 16 : 14,
+          vertical: 10,
+        ),
+        decoration: BoxDecoration(
+          color: active
+              ? AppColors.primary.withOpacity(0.14)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Icon — scale nhẹ khi active
+            AnimatedScale(
+              scale: active ? 1.08 : 1.0,
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOutBack,
+              child: Icon(
+                icon,
+                color: active ? AppColors.primary : AppColors.textTertiary,
+                size: 22,
+              ),
+            ),
+            // Label — chỉ hiện khi active, AnimatedSize xử lý width
+            AnimatedSize(
+              duration: const Duration(milliseconds: 260),
+              curve: Curves.easeOutCubic,
+              child: active
+                  ? Padding(
+                padding: const EdgeInsets.only(left: 7),
+                child: Text(
+                  label,
+                  style: GoogleFonts.outfit(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
+                ),
+              )
+                  : const SizedBox.shrink(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Các widget còn lại giữ nguyên từ file cũ
+// ════════════════════════════════════════════════════════════════════════════
+
 // ── Search bar persistent delegate ──────────────────────────────────────
 
 class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
@@ -193,10 +374,10 @@ class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
               color: AppColors.textTertiary, size: 22),
           suffixIcon: searchCtrl.text.isNotEmpty
               ? GestureDetector(
-                  onTap: onClear,
-                  child: const Icon(Icons.close_rounded,
-                      color: AppColors.textTertiary, size: 20),
-                )
+            onTap: onClear,
+            child: const Icon(Icons.close_rounded,
+                color: AppColors.textTertiary, size: 20),
+          )
               : null,
           filled: true,
           fillColor: AppColors.surfaceElevated,
@@ -264,7 +445,7 @@ class _SearchResultsSliver extends StatelessWidget {
 
     return SliverList(
       delegate: SliverChildBuilderDelegate(
-        (_, i) {
+            (_, i) {
           final song = results[i];
           return MusicListTile(
             song: song,
@@ -354,11 +535,12 @@ class _QuickSection {
   final List<SongItem> songs;
   final LinearGradient gradient;
   final IconData icon;
-  const _QuickSection(
-      {required this.title,
-      required this.songs,
-      required this.gradient,
-      required this.icon});
+  const _QuickSection({
+    required this.title,
+    required this.songs,
+    required this.gradient,
+    required this.icon,
+  });
 }
 
 class _QuickCard extends StatefulWidget {
@@ -416,7 +598,6 @@ class _QuickCardState extends State<_QuickCard>
           ),
           child: Stack(
             children: [
-              // Album art mosaic (first song)
               if (s.songs.isNotEmpty)
                 Positioned.fill(
                   child: ClipRRect(
@@ -434,7 +615,6 @@ class _QuickCardState extends State<_QuickCard>
                     ),
                   ),
                 ),
-              // Gradient overlay
               Positioned.fill(
                 child: Container(
                   decoration: BoxDecoration(
@@ -499,7 +679,6 @@ class _SmartListsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final music = context.watch<MusicProvider>();
     final player = context.watch<PlayerProvider>();
-
     final recentlyAdded = music.recentlyAdded;
     final neverPlayed = music.neverPlayed;
 
@@ -509,20 +688,20 @@ class _SmartListsSection extends StatelessWidget {
         if (recentlyAdded.isNotEmpty) ...[
           _SectionHeader(title: 'Mới thêm gần đây'),
           ...recentlyAdded.take(5).map((song) => MusicListTile(
-                key: ValueKey('ra_${song.id}'),
-                song: song,
-                isActive: player.currentSong?.id == song.id,
-                onTap: () => onSongTap(recentlyAdded, song),
-              )),
+            key: ValueKey('ra_${song.id}'),
+            song: song,
+            isActive: player.currentSong?.id == song.id,
+            onTap: () => onSongTap(recentlyAdded, song),
+          )),
         ],
         if (neverPlayed.isNotEmpty) ...[
           _SectionHeader(title: 'Chưa từng nghe'),
           ...neverPlayed.take(5).map((song) => MusicListTile(
-                key: ValueKey('np_${song.id}'),
-                song: song,
-                isActive: player.currentSong?.id == song.id,
-                onTap: () => onSongTap(neverPlayed, song),
-              )),
+            key: ValueKey('np_${song.id}'),
+            song: song,
+            isActive: player.currentSong?.id == song.id,
+            onTap: () => onSongTap(neverPlayed, song),
+          )),
         ],
         if (recentlyAdded.isEmpty && neverPlayed.isEmpty)
           Center(
@@ -583,95 +762,13 @@ class _AvatarButton extends StatelessWidget {
       child: Container(
         width: 40,
         height: 40,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           shape: BoxShape.circle,
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             colors: [AppColors.primary, AppColors.tertiary],
           ),
         ),
         child: const Icon(Icons.person_rounded, color: Colors.white, size: 22),
-      ),
-    );
-  }
-}
-
-// ── Bottom Nav ───────────────────────────────────────────────────────────
-
-class _BottomNav extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: AppColors.divider, width: 0.5)),
-        color: AppColors.background,
-      ),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          children: [
-            _NavItem(
-              icon: Icons.home_rounded,
-              label: 'Home',
-              active: true,
-              onTap: () {},
-            ),
-            _NavItem(
-              icon: Icons.library_music_rounded,
-              label: 'Thư viện',
-              active: false,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const LibraryScreen()),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    required this.active,
-    required this.onTap,
-  });
-  final IconData icon;
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                color: active ? AppColors.primary : AppColors.textTertiary,
-                size: 24,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: GoogleFonts.outfit(
-                  fontSize: 11,
-                  fontWeight: active ? FontWeight.w600 : FontWeight.w400,
-                  color: active ? AppColors.primary : AppColors.textTertiary,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
