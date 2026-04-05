@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
 import '../providers/player_provider.dart';
@@ -17,7 +18,6 @@ class MiniPlayer extends StatelessWidget {
     if (song == null) return const SizedBox.shrink();
 
     return GestureDetector(
-      // Tap → mở NowPlayingScreen
       onTap: () {
         Navigator.of(context).push(
           PageRouteBuilder(
@@ -37,7 +37,6 @@ class MiniPlayer extends StatelessWidget {
           ),
         );
       },
-      // Swipe ngang → next / prev
       onHorizontalDragEnd: (details) {
         if (details.primaryVelocity == null) return;
         if (details.primaryVelocity! < -300) {
@@ -78,16 +77,14 @@ class MiniPlayer extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(
                   left: 14,
-                  right: 4, // reducto right padding — close button already has its own
+                  right: 4,
                   top: 0,
                   bottom: 0,
                 ),
                 child: Row(
                   children: [
-                    // Album art
                     _AlbumArt(albumId: song.albumId),
                     const SizedBox(width: 12),
-                    // Song info
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -117,9 +114,8 @@ class MiniPlayer extends StatelessWidget {
                         ],
                       ),
                     ),
-                    // ── Playback controls ──────────────────────────────
+                    // UX 4: Controls with loading state
                     _MiniControls(player: player),
-                    // ── Close button ───────────────────────────────────
                     _CloseButton(player: player),
                   ],
                 ),
@@ -141,7 +137,6 @@ class _CloseButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      // Chặn tap lan sang GestureDetector cha (không mở NowPlaying)
       onTap: () {
         HapticFeedback.lightImpact();
         _confirmStop(context);
@@ -171,13 +166,11 @@ class _CloseButton extends StatelessWidget {
   }
 
   void _confirmStop(BuildContext context) {
-    // Nếu đang pause → stop ngay không cần confirm
     if (!context.read<PlayerProvider>().isPlaying) {
       context.read<PlayerProvider>().stopAndClear();
       return;
     }
 
-    // Đang phát → hỏi confirm (tránh bấm nhầm)
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -199,23 +192,18 @@ class _CloseButton extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Hủy',
-              style: TextStyle(color: AppColors.textTertiary),
-            ),
+            child: const Text('Hủy',
+                style: TextStyle(color: AppColors.textTertiary)),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               context.read<PlayerProvider>().stopAndClear();
             },
-            child: const Text(
-              'Dừng',
-              style: TextStyle(
-                color: AppColors.tertiary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            child: const Text('Dừng',
+                style: TextStyle(
+                    color: AppColors.tertiary,
+                    fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -257,7 +245,7 @@ class _AlbumArt extends StatelessWidget {
   }
 }
 
-// ── Controls ──────────────────────────────────────────────────────────────────
+// ── Controls with UX 4: Loading state ────────────────────────────────────────
 
 class _MiniControls extends StatelessWidget {
   const _MiniControls({required this.player});
@@ -277,7 +265,8 @@ class _MiniControls extends StatelessWidget {
           size: 22,
         ),
         const SizedBox(width: 2),
-        _PlayPauseButton(player: player),
+        // UX 4: Show loading spinner when buffering
+        _SmartPlayPauseButton(player: player),
         const SizedBox(width: 2),
         _ControlButton(
           icon: Icons.skip_next_rounded,
@@ -292,37 +281,61 @@ class _MiniControls extends StatelessWidget {
   }
 }
 
-class _PlayPauseButton extends StatelessWidget {
-  const _PlayPauseButton({required this.player});
+/// UX 4: Play/Pause that also shows loading state when buffering
+class _SmartPlayPauseButton extends StatelessWidget {
+  const _SmartPlayPauseButton({required this.player});
   final PlayerProvider player;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        player.playPause();
-        HapticFeedback.selectionClick();
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        width: 36,
-        height: 36,
-        decoration: const BoxDecoration(
-          color: AppColors.primary,
-          shape: BoxShape.circle,
-        ),
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 150),
-          transitionBuilder: (child, anim) =>
-              ScaleTransition(scale: anim, child: child),
-          child: Icon(
-            player.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-            key: ValueKey(player.isPlaying),
-            color: Colors.white,
-            size: 20,
+    return StreamBuilder<ProcessingState>(
+      stream: player.processingStateStream,
+      builder: (context, snap) {
+        final processingState = snap.data ?? ProcessingState.idle;
+        final isLoading = processingState == ProcessingState.loading ||
+            processingState == ProcessingState.buffering;
+
+        return GestureDetector(
+          onTap: () {
+            if (!isLoading) {
+              player.playPause();
+              HapticFeedback.selectionClick();
+            }
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: isLoading
+                  ? AppColors.primary.withOpacity(0.5)
+                  : AppColors.primary,
+              shape: BoxShape.circle,
+            ),
+            child: isLoading
+                ? const Padding(
+              padding: EdgeInsets.all(8),
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            )
+                : AnimatedSwitcher(
+              duration: const Duration(milliseconds: 150),
+              transitionBuilder: (child, anim) =>
+                  ScaleTransition(scale: anim, child: child),
+              child: Icon(
+                player.isPlaying
+                    ? Icons.pause_rounded
+                    : Icons.play_arrow_rounded,
+                key: ValueKey(player.isPlaying),
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -350,12 +363,9 @@ class _ControlButtonState extends State<_ControlButton>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 120),
-    );
-    _scale = Tween(begin: 1.0, end: 0.85).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
+        vsync: this, duration: const Duration(milliseconds: 120));
+    _scale = Tween(begin: 1.0, end: 0.85)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -378,11 +388,8 @@ class _ControlButtonState extends State<_ControlButton>
         scale: _scale,
         child: Padding(
           padding: const EdgeInsets.all(6),
-          child: Icon(
-            widget.icon,
-            color: AppColors.textSecondary,
-            size: widget.size,
-          ),
+          child: Icon(widget.icon,
+              color: AppColors.textSecondary, size: widget.size),
         ),
       ),
     );
@@ -402,8 +409,8 @@ class _MiniProgressBar extends StatelessWidget {
       builder: (_, snap) {
         if (!snap.hasData) return const SizedBox.shrink();
         final data = snap.data!;
-        final dur  = data.duration.inMilliseconds;
-        final pos  = data.position.inMilliseconds;
+        final dur = data.duration.inMilliseconds;
+        final pos = data.position.inMilliseconds;
         final progress = dur > 0 ? (pos / dur).clamp(0.0, 1.0) : 0.0;
 
         return LayoutBuilder(

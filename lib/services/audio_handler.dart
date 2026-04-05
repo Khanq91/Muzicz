@@ -36,18 +36,17 @@ class MuzicAudioHandler {
     await _player.seek(Duration.zero, index: initialIndex);
   }
 
-  /// Thêm một bài vào cuối hàng chờ đang phát — không interrupt bài hiện tại.
   Future<void> addSongToQueue(SongItem song) async {
     _currentSongs.add(song);
     await _playlist.add(AudioSource.file(song.data));
   }
 
-  Future<void> play()           => _player.play();
-  Future<void> pause()          => _player.pause();
-  Future<void> stop()           => _player.stop();
+  Future<void> play()                  => _player.play();
+  Future<void> pause()                 => _player.pause();
+  Future<void> stop()                  => _player.stop();
   Future<void> seek(Duration position) => _player.seek(position);
-  Future<void> seekToNext()     => _player.seekToNext();
-  Future<void> seekToPrevious() => _player.seekToPrevious();
+  Future<void> seekToNext()            => _player.seekToNext();
+  Future<void> seekToPrevious()        => _player.seekToPrevious();
 
   Future<void> seekToIndex(int index) async {
     await _player.seek(Duration.zero, index: index);
@@ -63,8 +62,10 @@ class MuzicAudioHandler {
     }
   }
 
-  Stream<bool>  get playingStream      => _player.playingStream;
-  Stream<int?>  get currentIndexStream => _player.currentIndexStream;
+  Stream<bool>             get playingStream          => _player.playingStream;
+  Stream<int?>             get currentIndexStream     => _player.currentIndexStream;
+  // UX 4: Expose for loading indicator
+  Stream<ProcessingState>  get processingStateStream  => _player.processingStateStream;
 
   Stream<PositionData> get positionDataStream =>
       Rx.combineLatest3<Duration, Duration, Duration?, PositionData>(
@@ -74,11 +75,11 @@ class MuzicAudioHandler {
             (pos, buf, dur) => PositionData(pos, buf, dur ?? Duration.zero),
       );
 
-  bool      get playing            => _player.playing;
-  LoopMode  get loopMode           => _player.loopMode;
-  bool      get shuffleModeEnabled => _player.shuffleModeEnabled;
-  int?      get currentIndex       => _player.currentIndex;
-  List<SongItem> get currentSongs  => _currentSongs;
+  bool           get playing            => _player.playing;
+  LoopMode       get loopMode           => _player.loopMode;
+  bool           get shuffleModeEnabled => _player.shuffleModeEnabled;
+  int?           get currentIndex       => _player.currentIndex;
+  List<SongItem> get currentSongs       => _currentSongs;
 }
 
 class PositionData {

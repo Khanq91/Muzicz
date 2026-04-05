@@ -9,7 +9,7 @@ import '../../core/theme/app_colors.dart';
 import '../../models/playlist_entry.dart';
 import '../../models/video_info.dart';
 import '../../services/ytdlp_service.dart';
-import '../../utils/vietnamese_normalize.dart';
+import '../../../../utils/vietnamese_normalize.dart';
 import '../../widgets/app_shell.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/gradient_background.dart';

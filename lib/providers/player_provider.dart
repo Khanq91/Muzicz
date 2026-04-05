@@ -85,8 +85,6 @@ class PlayerProvider extends ChangeNotifier {
     }
   }
 
-  /// Dừng phát nhạc hoàn toàn và xóa trạng thái hiện tại.
-  /// Dùng cho nút × trên mini player.
   Future<void> stopAndClear() async {
     await _handler.stop();
     _currentSong = null;
@@ -95,7 +93,6 @@ class PlayerProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Thêm một bài vào cuối hàng chờ (không interrupt bài đang phát).
   Future<void> addToQueue(SongItem song) async {
     _queue.add(song);
     await _handler.addSongToQueue(song);
@@ -156,4 +153,8 @@ class PlayerProvider extends ChangeNotifier {
 
   Stream<PositionData> get positionDataStream => _handler.positionDataStream;
   Stream<bool>         get playingStream       => _handler.playingStream;
+
+  // UX 4: Expose processing state for loading indicator
+  Stream<ProcessingState> get processingStateStream =>
+      _handler.processingStateStream;
 }

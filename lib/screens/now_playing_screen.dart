@@ -81,7 +81,6 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
     return GestureDetector(
       onVerticalDragEnd: (d) {
         if ((d.primaryVelocity ?? 0) > 400) Navigator.pop(context);
-        // Kéo lên → mở queue
         if ((d.primaryVelocity ?? 0) < -400 && !_queueVisible) {
           setState(() => _queueVisible = true);
           HapticFeedback.lightImpact();
@@ -102,21 +101,16 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
         backgroundColor: Colors.transparent,
         body: Stack(
           children: [
-            // ── Blurred background ──────────────────────────
             Positioned.fill(
               child: _BlurredBackground(albumId: song.albumId),
             ),
-            // ── Dark overlay ────────────────────────────────
             Positioned.fill(
               child: Container(color: Colors.black.withOpacity(0.55)),
             ),
-            // ── Content ─────────────────────────────────────
             SafeArea(
               child: FadeTransition(
-                opacity: CurvedAnimation(
-                  parent: _appearCtrl,
-                  curve: Curves.easeOut,
-                ),
+                opacity:
+                CurvedAnimation(parent: _appearCtrl, curve: Curves.easeOut),
                 child: Column(
                   children: [
                     _TopBar(song: song),
@@ -125,9 +119,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
                       child: Column(
                         children: [
                           _AlbumArtSection(
-                            song: song,
-                            rotateCtrl: _artRotateCtrl,
-                          ),
+                              song: song, rotateCtrl: _artRotateCtrl),
                           const SizedBox(height: 28),
                           _SongInfo(song: song),
                           const SizedBox(height: 20),
@@ -144,7 +136,6 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
                             queueVisible: _queueVisible,
                           ),
                           const SizedBox(height: 12),
-                          // ── Queue swipe hint ──────────────
                           if (!_queueVisible)
                             _SwipeHint(onTap: () {
                               setState(() => _queueVisible = true);
@@ -156,7 +147,6 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
                 ),
               ),
             ),
-            // ── Queue sheet ──────────────────────────────────
             AnimatedPositioned(
               duration: const Duration(milliseconds: 350),
               curve: Curves.easeOutCubic,
@@ -190,18 +180,10 @@ class _SwipeHint extends StatelessWidget {
       onTap: onTap,
       child: Column(
         children: [
-          const Icon(
-            Icons.keyboard_arrow_up_rounded,
-            color: Colors.white24,
-            size: 20,
-          ),
-          Text(
-            'Hàng chờ',
-            style: GoogleFonts.outfit(
-              fontSize: 11,
-              color: Colors.white24,
-            ),
-          ),
+          const Icon(Icons.keyboard_arrow_up_rounded,
+              color: Colors.white24, size: 20),
+          Text('Hàng chờ',
+              style: GoogleFonts.outfit(fontSize: 11, color: Colors.white24)),
         ],
       ),
     );
@@ -220,9 +202,8 @@ class _BlurredBackground extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         Container(
-          decoration:
-          const BoxDecoration(gradient: AppColors.backgroundGradient),
-        ),
+            decoration: const BoxDecoration(
+                gradient: AppColors.backgroundGradient)),
         QueryArtworkWidget(
           id: albumId,
           type: ArtworkType.ALBUM,
@@ -248,16 +229,15 @@ class _TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final music = context.read<MusicProvider>();
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(
-              Icons.keyboard_arrow_down_rounded,
-              size: 32,
-              color: Colors.white,
-            ),
+            icon: const Icon(Icons.keyboard_arrow_down_rounded,
+                size: 32, color: Colors.white),
             onPressed: () => Navigator.pop(context),
           ),
           Expanded(
@@ -272,35 +252,45 @@ class _TopBar extends StatelessWidget {
                     letterSpacing: 2.5,
                   ),
                 ),
-                Text(
-                  'Từ thư viện',
-                  style: GoogleFonts.outfit(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white70,
+                // UX 6: Tappable "Từ thư viện" → show album songs
+                GestureDetector(
+                  onTap: () => _navigateToAlbum(context, music, song),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        song.album.isNotEmpty ? song.album : 'Từ thư viện',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.outfit(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white70,
+                          decoration: TextDecoration.underline,
+                          decorationColor: Colors.white38,
+                        ),
+                      ),
+                      const SizedBox(width: 3),
+                      const Icon(Icons.arrow_forward_ios_rounded,
+                          size: 9, color: Colors.white38),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-          // ── 3-dot menu ─────────────────────────────────────
           PopupMenuButton<String>(
-            icon: const Icon(
-              Icons.more_vert_rounded,
-              size: 24,
-              color: Colors.white,
-            ),
+            icon: const Icon(Icons.more_vert_rounded,
+                size: 24, color: Colors.white),
             color: AppColors.card,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
+                borderRadius: BorderRadius.circular(14)),
             onSelected: (val) {
               switch (val) {
                 case 'fav':
                   context.read<MusicProvider>().toggleFavorite(song.id);
                   break;
                 case 'playlist':
-                // ✅ MỞ PLAYLIST SHEET — tích hợp đầy đủ
                   showModalBottomSheet(
                     context: context,
                     backgroundColor: Colors.transparent,
@@ -326,8 +316,8 @@ class _TopBar extends StatelessWidget {
               }
             },
             itemBuilder: (_) {
-              final music = context.read<MusicProvider>();
-              final isFav = music.isFavorite(song.id);
+              final isFav =
+              context.read<MusicProvider>().isFavorite(song.id);
               return [
                 _popItem(
                   'fav',
@@ -337,17 +327,11 @@ class _TopBar extends StatelessWidget {
                   isFav ? 'Bỏ yêu thích' : 'Yêu thích',
                   iconColor: isFav ? AppColors.tertiary : null,
                 ),
-                _popItem(
-                  'playlist',
-                  Icons.playlist_add_rounded,
-                  'Thêm vào danh sách phát',
-                ),
+                _popItem('playlist', Icons.playlist_add_rounded,
+                    'Thêm vào danh sách phát'),
                 _popItem('share', Icons.share_rounded, 'Chia sẻ'),
-                _popItem(
-                  'info',
-                  Icons.info_outline_rounded,
-                  'Thông tin bài hát',
-                ),
+                _popItem('info', Icons.info_outline_rounded,
+                    'Thông tin bài hát'),
               ];
             },
           ),
@@ -356,25 +340,154 @@ class _TopBar extends StatelessWidget {
     );
   }
 
-  PopupMenuItem<String> _popItem(
-      String val,
-      IconData icon,
-      String label, {
-        Color? iconColor,
-      }) {
+  // UX 6: Navigate to album — show bottom sheet with album songs
+  void _navigateToAlbum(
+      BuildContext context, MusicProvider music, SongItem song) {
+    final albumSongs = music.albumMap[song.album] ?? [];
+    if (albumSongs.isEmpty) return;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.card,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        maxChildSize: 0.92,
+        minChildSize: 0.4,
+        expand: false,
+        builder: (_, scrollCtrl) => Column(
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: SizedBox(
+                      width: 48,
+                      height: 48,
+                      child: QueryArtworkWidget(
+                        id: song.albumId,
+                        type: ArtworkType.ALBUM,
+                        artworkFit: BoxFit.cover,
+                        artworkBorder: BorderRadius.zero,
+                        keepOldArtwork: true,
+                        nullArtworkWidget: Container(
+                          color: AppColors.surfaceElevated,
+                          child: const Icon(Icons.album_rounded,
+                              color: AppColors.textDisabled),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          song.album,
+                          style: GoogleFonts.outfit(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        Text(
+                          '${albumSongs.length} bài hát',
+                          style: GoogleFonts.outfit(
+                            fontSize: 12,
+                            color: AppColors.textTertiary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Divider(color: AppColors.divider),
+            Expanded(
+              child: ListView.builder(
+                controller: scrollCtrl,
+                itemCount: albumSongs.length,
+                itemBuilder: (_, i) {
+                  final s = albumSongs[i];
+                  final isCurrentSong = s.id == song.id;
+                  return ListTile(
+                    contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+                    leading: isCurrentSong
+                        ? const Icon(Icons.equalizer_rounded,
+                        color: AppColors.primary, size: 24)
+                        : Text(
+                      '${i + 1}',
+                      style: GoogleFonts.outfit(
+                        fontSize: 14,
+                        color: AppColors.textTertiary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    title: Text(
+                      s.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.outfit(
+                        fontSize: 14,
+                        color: isCurrentSong
+                            ? AppColors.primary
+                            : AppColors.textPrimary,
+                        fontWeight: isCurrentSong
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                      ),
+                    ),
+                    subtitle: Text(
+                      s.durationFormatted,
+                      style: GoogleFonts.outfit(
+                          fontSize: 12, color: AppColors.textTertiary),
+                    ),
+                    onTap: () {
+                      final player = context.read<PlayerProvider>();
+                      player.playSongs(albumSongs, specificSong: s);
+                      music.onSongPlayed(s.id);
+                      Navigator.pop(ctx);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  PopupMenuItem<String> _popItem(String val, IconData icon, String label,
+      {Color? iconColor}) {
     return PopupMenuItem(
       value: val,
       child: Row(
         children: [
           Icon(icon, color: iconColor ?? AppColors.textSecondary, size: 20),
           const SizedBox(width: 12),
-          Text(
-            label,
-            style: GoogleFonts.outfit(
-              color: AppColors.textPrimary,
-              fontSize: 14,
-            ),
-          ),
+          Text(label,
+              style: GoogleFonts.outfit(
+                  color: AppColors.textPrimary, fontSize: 14)),
         ],
       ),
     );
@@ -393,14 +506,11 @@ class _TopBar extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Thông tin bài hát',
-              style: GoogleFonts.outfit(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
+            Text('Thông tin bài hát',
+                style: GoogleFonts.outfit(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary)),
             const SizedBox(height: 16),
             _infoRow('Tên bài', song.title),
             _infoRow('Nghệ sĩ', song.artist),
@@ -421,23 +531,16 @@ class _TopBar extends StatelessWidget {
         children: [
           SizedBox(
             width: 90,
-            child: Text(
-              label,
-              style: GoogleFonts.outfit(
-                color: AppColors.textTertiary,
-                fontSize: 13,
-              ),
-            ),
+            child: Text(label,
+                style: GoogleFonts.outfit(
+                    color: AppColors.textTertiary, fontSize: 13)),
           ),
           Expanded(
-            child: Text(
-              value,
-              style: GoogleFonts.outfit(
-                color: AppColors.textPrimary,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            child: Text(value,
+                style: GoogleFonts.outfit(
+                    color: AppColors.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500)),
           ),
         ],
       ),
@@ -470,15 +573,13 @@ class _AlbumArtSection extends StatelessWidget {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.3),
-                blurRadius: 60,
-                offset: const Offset(0, 20),
-              ),
+                  color: AppColors.primary.withOpacity(0.3),
+                  blurRadius: 60,
+                  offset: const Offset(0, 20)),
               BoxShadow(
-                color: Colors.black.withOpacity(0.5),
-                blurRadius: 40,
-                offset: const Offset(0, 16),
-              ),
+                  color: Colors.black.withOpacity(0.5),
+                  blurRadius: 40,
+                  offset: const Offset(0, 16)),
             ],
           ),
           child: ClipOval(
@@ -491,11 +592,8 @@ class _AlbumArtSection extends StatelessWidget {
               nullArtworkWidget: Container(
                 decoration:
                 const BoxDecoration(gradient: AppColors.primaryGradient),
-                child: const Icon(
-                  Icons.music_note_rounded,
-                  color: Colors.white54,
-                  size: 80,
-                ),
+                child: const Icon(Icons.music_note_rounded,
+                    color: Colors.white54, size: 80),
               ),
             ),
           ),
@@ -549,7 +647,6 @@ class _SongInfo extends StatelessWidget {
               ],
             ),
           ),
-          // ── Quick add to playlist ───────────────────────
           IconButton(
             onPressed: () {
               showModalBottomSheet(
@@ -562,13 +659,9 @@ class _SongInfo extends StatelessWidget {
                 ),
               );
             },
-            icon: const Icon(
-              Icons.playlist_add_rounded,
-              color: Colors.white54,
-              size: 26,
-            ),
+            icon: const Icon(Icons.playlist_add_rounded,
+                color: Colors.white54, size: 26),
           ),
-          // ── Favorite ────────────────────────────────────
           IconButton(
             onPressed: () {
               music.toggleFavorite(song.id);
@@ -642,16 +735,12 @@ class _ProgressSection extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      _fmt(data.position),
-                      style: GoogleFonts.outfit(
-                          fontSize: 12, color: Colors.white54),
-                    ),
-                    Text(
-                      _fmt(data.duration),
-                      style: GoogleFonts.outfit(
-                          fontSize: 12, color: Colors.white54),
-                    ),
+                    Text(_fmt(data.position),
+                        style: GoogleFonts.outfit(
+                            fontSize: 12, color: Colors.white54)),
+                    Text(_fmt(data.duration),
+                        style: GoogleFonts.outfit(
+                            fontSize: 12, color: Colors.white54)),
                   ],
                 ),
               ),
@@ -684,8 +773,9 @@ class _ControlsSection extends StatelessWidget {
         children: [
           _IconBtn(
             icon: Icons.shuffle_rounded,
-            color:
-            player.shuffleEnabled ? AppColors.primary : Colors.white54,
+            color: player.shuffleEnabled
+                ? AppColors.primary
+                : Colors.white54,
             size: 24,
             onTap: () {
               player.toggleShuffle();
@@ -778,10 +868,9 @@ class _PlayButtonState extends State<_PlayButton>
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: Colors.white.withOpacity(0.25),
-                blurRadius: 20,
-                offset: const Offset(0, 4),
-              ),
+                  color: Colors.white.withOpacity(0.25),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4)),
             ],
           ),
           child: AnimatedSwitcher(
@@ -878,7 +967,6 @@ class _ExtraActions extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Volume — gợi ý dùng nút vật lý
           _IconBtn(
             icon: Icons.volume_up_rounded,
             color: Colors.white38,
@@ -886,22 +974,18 @@ class _ExtraActions extends StatelessWidget {
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(
-                    'Dùng nút âm lượng vật lý để điều chỉnh',
-                    style: GoogleFonts.outfit(fontSize: 13),
-                  ),
+                  content: Text('Dùng nút âm lượng vật lý để điều chỉnh',
+                      style: GoogleFonts.outfit(fontSize: 13)),
                   duration: const Duration(seconds: 2),
                   backgroundColor: AppColors.surfaceElevated,
                   behavior: SnackBarBehavior.floating,
                   margin: const EdgeInsets.fromLTRB(16, 0, 16, 80),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                      borderRadius: BorderRadius.circular(10)),
                 ),
               );
             },
           ),
-          // Share
           _IconBtn(
             icon: Icons.share_rounded,
             color: Colors.white38,
@@ -917,7 +1001,6 @@ class _ExtraActions extends StatelessWidget {
               );
             },
           ),
-          // Queue toggle button
           GestureDetector(
             onTap: onQueueTap,
             child: AnimatedContainer(
@@ -938,20 +1021,18 @@ class _ExtraActions extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.queue_music_rounded,
-                    color:
-                    queueVisible ? AppColors.primary : Colors.white54,
-                    size: 18,
-                  ),
+                  Icon(Icons.queue_music_rounded,
+                      color:
+                      queueVisible ? AppColors.primary : Colors.white54,
+                      size: 18),
                   const SizedBox(width: 6),
                   Text(
                     'Hàng chờ (${player.queue.length})',
                     style: GoogleFonts.outfit(
-                      fontSize: 13,
-                      color:
-                      queueVisible ? AppColors.primary : Colors.white54,
-                    ),
+                        fontSize: 13,
+                        color: queueVisible
+                            ? AppColors.primary
+                            : Colors.white54),
                   ),
                 ],
               ),
@@ -986,7 +1067,6 @@ class _QueueSheet extends StatelessWidget {
           ),
           child: Column(
             children: [
-              // Handle + header
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 12, 8, 0),
                 child: Row(
@@ -995,31 +1075,22 @@ class _QueueSheet extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Hàng chờ phát',
-                            style: GoogleFonts.outfit(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          Text(
-                            '${player.queue.length} bài hát',
-                            style: GoogleFonts.outfit(
-                              fontSize: 12,
-                              color: AppColors.textTertiary,
-                            ),
-                          ),
+                          Text('Hàng chờ phát',
+                              style: GoogleFonts.outfit(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary)),
+                          Text('${player.queue.length} bài hát',
+                              style: GoogleFonts.outfit(
+                                  fontSize: 12,
+                                  color: AppColors.textTertiary)),
                         ],
                       ),
                     ),
                     IconButton(
                       onPressed: onClose,
-                      icon: const Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        color: AppColors.textTertiary,
-                        size: 26,
-                      ),
+                      icon: const Icon(Icons.keyboard_arrow_down_rounded,
+                          color: AppColors.textTertiary, size: 26),
                     ),
                   ],
                 ),
@@ -1051,11 +1122,8 @@ class _QueueSheet extends StatelessWidget {
                             keepOldArtwork: true,
                             nullArtworkWidget: Container(
                               color: AppColors.surfaceElevated,
-                              child: const Icon(
-                                Icons.music_note_rounded,
-                                color: AppColors.textDisabled,
-                                size: 18,
-                              ),
+                              child: const Icon(Icons.music_note_rounded,
+                                  color: AppColors.textDisabled, size: 18),
                             ),
                           ),
                         ),
@@ -1074,29 +1142,19 @@ class _QueueSheet extends StatelessWidget {
                               : FontWeight.w400,
                         ),
                       ),
-                      subtitle: Text(
-                        song.artist,
-                        maxLines: 1,
-                        style: const TextStyle(
-                          color: AppColors.textTertiary,
-                          fontSize: 12,
-                        ),
-                      ),
+                      subtitle: Text(song.artist,
+                          maxLines: 1,
+                          style: const TextStyle(
+                              color: AppColors.textTertiary, fontSize: 12)),
                       trailing: isActive
-                          ? const Icon(
-                        Icons.equalizer_rounded,
-                        color: AppColors.primary,
-                        size: 20,
-                      )
+                          ? const Icon(Icons.equalizer_rounded,
+                          color: AppColors.primary, size: 20)
                           : GestureDetector(
                         onTap: () => player.removeFromQueue(i),
                         child: const Padding(
                           padding: EdgeInsets.all(4),
-                          child: Icon(
-                            Icons.close_rounded,
-                            color: AppColors.textDisabled,
-                            size: 18,
-                          ),
+                          child: Icon(Icons.close_rounded,
+                              color: AppColors.textDisabled, size: 18),
                         ),
                       ),
                       onTap: () => player.skipToIndex(i),

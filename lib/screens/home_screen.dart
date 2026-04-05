@@ -29,7 +29,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  // IndexedStack giữ cả 3 tabs sống — scroll/search state không bị reset
   static const _tabs = [
     _HomeTabBody(),
     OnlineScreen(isEmbedded: true),
@@ -65,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// _HomeTabBody — nội dung tab Home (tách khỏi HomeScreen để giữ state)
+// _HomeTabBody
 // ════════════════════════════════════════════════════════════════════════════
 
 class _HomeTabBody extends StatefulWidget {
@@ -100,20 +99,20 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
       controller: _scrollCtrl,
       physics: const BouncingScrollPhysics(),
       slivers: [
-        // Header
         SliverToBoxAdapter(child: _buildHeader()),
-        // Sticky search bar
         SliverPersistentHeader(
           pinned: true,
           delegate: _SearchBarDelegate(
             searchCtrl: _searchCtrl,
             onChanged: (q) {
-              context.read<MusicProvider>().setSearchQuery(q);
+              // FIX Bug 1: Use home-specific search query
+              context.read<MusicProvider>().setHomeSearchQuery(q);
               setState(() => _searchActive = q.isNotEmpty);
             },
             onClear: () {
               _searchCtrl.clear();
-              context.read<MusicProvider>().setSearchQuery('');
+              // FIX Bug 1: Clear only home search
+              context.read<MusicProvider>().setHomeSearchQuery('');
               setState(() => _searchActive = false);
             },
           ),
@@ -196,24 +195,19 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// Bottom Navigation — animated pill indicator
+// Bottom Navigation
 // ════════════════════════════════════════════════════════════════════════════
 
 class _BottomNav extends StatelessWidget {
-  const _BottomNav({
-    required this.currentIndex,
-    required this.onTap,
-  });
+  const _BottomNav({required this.currentIndex, required this.onTap});
   final int currentIndex;
   final void Function(int) onTap;
 
   @override
   Widget build(BuildContext context) {
-    // Lấy bottom inset (system nav bar) để pad đúng cách
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Padding(
-      // 12px margin cố định + system inset (gesture bar / home indicator)
       padding: EdgeInsets.fromLTRB(20, 0, 20, 12 + bottomPadding),
       child: Container(
         decoration: BoxDecoration(
@@ -283,7 +277,6 @@ class _NavItem extends StatelessWidget {
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOutCubic,
         padding: EdgeInsets.symmetric(
-          // Pill mở rộng khi active để chứa label
           horizontal: active ? 16 : 14,
           vertical: 10,
         ),
@@ -296,7 +289,6 @@ class _NavItem extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Icon — scale nhẹ khi active
             AnimatedScale(
               scale: active ? 1.08 : 1.0,
               duration: const Duration(milliseconds: 250),
@@ -307,7 +299,6 @@ class _NavItem extends StatelessWidget {
                 size: 22,
               ),
             ),
-            // Label — chỉ hiện khi active, AnimatedSize xử lý width
             AnimatedSize(
               duration: const Duration(milliseconds: 260),
               curve: Curves.easeOutCubic,
@@ -331,10 +322,6 @@ class _NavItem extends StatelessWidget {
     );
   }
 }
-
-// ════════════════════════════════════════════════════════════════════════════
-// Các widget còn lại giữ nguyên từ file cũ
-// ════════════════════════════════════════════════════════════════════════════
 
 // ── Search bar persistent delegate ──────────────────────────────────────
 
@@ -419,6 +406,7 @@ class _SearchResultsSliver extends StatelessWidget {
   Widget build(BuildContext context) {
     final music = context.watch<MusicProvider>();
     final player = context.watch<PlayerProvider>();
+    // FIX Bug 1: Use home-specific filtered songs
     final results = music.filteredSongs;
 
     if (results.isEmpty) {
@@ -435,6 +423,15 @@ class _SearchResultsSliver extends StatelessWidget {
                 style: GoogleFonts.outfit(
                   color: AppColors.textTertiary,
                   fontSize: 15,
+                ),
+              ),
+              const SizedBox(height: 8),
+              // UX 7: Better search tip
+              Text(
+                'Thử tìm bằng tên nghệ sĩ hoặc album',
+                style: GoogleFonts.outfit(
+                  color: AppColors.textDisabled,
+                  fontSize: 13,
                 ),
               ),
             ],
@@ -636,7 +633,8 @@ class _QuickCardState extends State<_QuickCard>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(s.icon, color: Colors.white.withOpacity(0.9), size: 28),
+                    Icon(s.icon,
+                        color: Colors.white.withOpacity(0.9), size: 28),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -749,8 +747,6 @@ class _SectionHeader extends StatelessWidget {
     );
   }
 }
-
-// ── Avatar button ────────────────────────────────────────────────────────
 
 class _AvatarButton extends StatelessWidget {
   @override

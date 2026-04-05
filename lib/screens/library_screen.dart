@@ -8,6 +8,7 @@ import '../providers/player_provider.dart';
 import '../theme/app_colors.dart';
 import '../widgets/mini_player.dart';
 import '../widgets/music_list_tile.dart';
+import 'artist_detail_screen.dart';
 import 'now_playing_screen.dart';
 import 'playlist_screen.dart';
 
@@ -15,7 +16,7 @@ enum SortType { az, recentlyAdded, duration }
 
 class LibraryScreen extends StatefulWidget {
   const LibraryScreen({super.key, this.isEmbedded = false});
-  final bool isEmbedded;   // ← THÊM
+  final bool isEmbedded;
 
   @override
   State<LibraryScreen> createState() => _LibraryScreenState();
@@ -43,6 +44,9 @@ class _LibraryScreenState extends State<LibraryScreen>
 
   @override
   Widget build(BuildContext context) {
+    final music = context.watch<MusicProvider>();
+    final isScanning = music.status == LibraryStatus.scanning;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -59,8 +63,7 @@ class _LibraryScreenState extends State<LibraryScreen>
                           size: 20, color: AppColors.textPrimary),
                       onPressed: () => Navigator.pop(context),
                     ),
-                  if (widget.isEmbedded)
-                    const SizedBox(width: 16),
+                  if (widget.isEmbedded) const SizedBox(width: 16),
                   Expanded(
                     child: Text(
                       'Thư viện',
@@ -71,6 +74,19 @@ class _LibraryScreenState extends State<LibraryScreen>
                       ),
                     ),
                   ),
+                  // UX 5: Show scanning indicator in header
+                  if (isScanning)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
                   PopupMenuButton<SortType>(
                     color: AppColors.card,
                     icon: const Icon(Icons.sort_rounded,
@@ -85,13 +101,27 @@ class _LibraryScreenState extends State<LibraryScreen>
                 ],
               ),
             ),
+
+            // UX 5: Thin linear progress when scanning
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              height: isScanning ? 2 : 0,
+              child: isScanning
+                  ? LinearProgressIndicator(
+                backgroundColor: AppColors.divider,
+                color: AppColors.primary,
+              )
+                  : const SizedBox.shrink(),
+            ),
+
             // ── Search ──────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
               child: TextField(
                 controller: _searchCtrl,
                 onChanged: (q) {
-                  context.read<MusicProvider>().setSearchQuery(q);
+                  // FIX Bug 1: Use library-specific search
+                  context.read<MusicProvider>().setLibrarySearchQuery(q);
                   setState(() {});
                 },
                 style: GoogleFonts.outfit(
@@ -104,14 +134,16 @@ class _LibraryScreenState extends State<LibraryScreen>
                       color: AppColors.textTertiary, size: 20),
                   suffixIcon: _searchCtrl.text.isNotEmpty
                       ? GestureDetector(
-                          onTap: () {
-                            _searchCtrl.clear();
-                            context.read<MusicProvider>().setSearchQuery('');
-                            setState(() {});
-                          },
-                          child: const Icon(Icons.close_rounded,
-                              color: AppColors.textTertiary, size: 18),
-                        )
+                    onTap: () {
+                      _searchCtrl.clear();
+                      context
+                          .read<MusicProvider>()
+                          .setLibrarySearchQuery('');
+                      setState(() {});
+                    },
+                    child: const Icon(Icons.close_rounded,
+                        color: AppColors.textTertiary, size: 18),
+                  )
                       : null,
                   filled: true,
                   fillColor: AppColors.surfaceElevated,
@@ -123,25 +155,18 @@ class _LibraryScreenState extends State<LibraryScreen>
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide:
-                        const BorderSide(color: AppColors.primary, width: 1),
+                    const BorderSide(color: AppColors.primary, width: 1),
                   ),
                 ),
               ),
             ),
-            // ── TabBar ──────────────────────────────────
-            TabBar(
-              controller: _tabCtrl,
-              tabs: const [
-                Tab(text: 'Bài hát'),
-                Tab(text: 'Danh sách phát'),
-                Tab(text: 'Album'),
-                Tab(text: 'Nghệ sĩ'),
-                Tab(text: 'Thư mục'),
-              ],
-            ),
-            // ── Tab content — MUST be Expanded to avoid overflow ──
+
+            // ── TabBar with counts (UX 1) ────────────────
+            _LibraryTabBar(tabCtrl: _tabCtrl, music: music),
+
+            // ── Tab content ──────────────────────────────
             Expanded(
-              child: TabBarView(
+              child: _FadeTabBarView(
                 controller: _tabCtrl,
                 children: [
                   _SongsTab(sortType: _sortType),
@@ -149,11 +174,10 @@ class _LibraryScreenState extends State<LibraryScreen>
                   _AlbumsTab(),
                   _ArtistsTab(),
                   _FoldersTab(),
-                   // PlaylistsTab(),
                 ],
               ),
             ),
-            // ── Mini player ─────────────────────────────
+
             if (!widget.isEmbedded)
               Consumer<PlayerProvider>(
                 builder: (_, player, __) => player.currentSong != null
@@ -175,6 +199,90 @@ class _LibraryScreenState extends State<LibraryScreen>
           color: _sortType == t ? AppColors.primary : AppColors.textPrimary,
           fontSize: 14,
         ),
+      ),
+    );
+  }
+}
+
+class _LibraryTabBar extends StatelessWidget {
+  const _LibraryTabBar({required this.tabCtrl, required this.music});
+
+  final TabController tabCtrl;
+  final MusicProvider music;
+
+  int _getFolderCount() {
+    final folderSet = <String>{};
+    for (final s in music.allSongs) {
+      final parts = s.data.split('/');
+      parts.removeLast();
+      folderSet.add(parts.isNotEmpty ? parts.last : 'Root');
+    }
+    return folderSet.length;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TabBar(
+      controller: tabCtrl,
+      isScrollable: true,
+      tabAlignment: TabAlignment.start,
+      tabs: [
+        _CountTab(label: 'Bài hát', count: music.allSongs.length),
+        _CountTab(label: 'DS Phát', count: music.playlists.length),
+        _CountTab(label: 'Album', count: music.albumMap.length),
+        _CountTab(label: 'Nghệ sĩ', count: music.artistMap.length),
+        _CountTab(label: 'Thư mục', count: _getFolderCount()),
+      ],
+    );
+  }
+}
+
+
+class _FadeTabBarView extends StatefulWidget {
+  const _FadeTabBarView({
+    required this.controller,
+    required this.children,
+  });
+
+  final TabController controller;
+  final List<Widget> children;
+
+  @override
+  State<_FadeTabBarView> createState() => _FadeTabBarViewState();
+}
+
+class _FadeTabBarViewState extends State<_FadeTabBarView> {
+  int _idx = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _idx = widget.controller.index;
+    widget.controller.addListener(_onTabChange);
+  }
+
+  void _onTabChange() {
+    if (!widget.controller.indexIsChanging) return;
+    setState(() => _idx = widget.controller.index);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onTabChange);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 200),
+      switchInCurve: Curves.easeOut,
+      switchOutCurve: Curves.easeIn,
+      transitionBuilder: (child, anim) =>
+          FadeTransition(opacity: anim, child: child),
+      child: KeyedSubtree(
+        key: ValueKey(_idx),
+        child: widget.children[_idx],
       ),
     );
   }
@@ -204,37 +312,52 @@ class _SongsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final music = context.watch<MusicProvider>();
     final player = context.watch<PlayerProvider>();
+
+    // FIX Bug 1: Use library-specific filtered songs
     final songs = _sorted(
-      music.searchQuery.isEmpty ? music.allSongs : music.filteredSongs,
+      music.librarySearchQuery.isEmpty
+          ? music.allSongs
+          : music.libraryFilteredSongs,
     );
 
     if (songs.isEmpty) {
       return _EmptyState(
         icon: Icons.music_note_rounded,
-        message: music.searchQuery.isEmpty
+        message: music.librarySearchQuery.isEmpty
             ? 'Chưa có nhạc nào.\nHãy quét thư viện của bạn.'
             : 'Không tìm thấy kết quả.',
+        // UX 7: Better empty search feedback
+        showSearchTip: music.librarySearchQuery.isNotEmpty,
+        searchQuery: music.librarySearchQuery,
       );
     }
 
-    return ListView.builder(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.only(bottom: 12),
-      itemCount: songs.length,
-      itemBuilder: (_, i) {
-        final song = songs[i];
-        return MusicListTile(
-          song: song,
-          isActive: player.currentSong?.id == song.id,
-          onTap: () {
-            context
-                .read<PlayerProvider>()
-                .playSongs(songs, specificSong: song);
-            context.read<MusicProvider>().onSongPlayed(song.id);
-            Navigator.of(context).push(_playerRoute());
-          },
-        );
-      },
+    // UX 2: Pull-to-refresh
+    return RefreshIndicator(
+      color: AppColors.primary,
+      backgroundColor: AppColors.card,
+      onRefresh: () => context.read<MusicProvider>().scanMusic(),
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
+        padding: const EdgeInsets.only(bottom: 12),
+        itemCount: songs.length,
+        itemBuilder: (_, i) {
+          final song = songs[i];
+          return MusicListTile(
+            song: song,
+            isActive: player.currentSong?.id == song.id,
+            onTap: () {
+              context
+                  .read<PlayerProvider>()
+                  .playSongs(songs, specificSong: song);
+              context.read<MusicProvider>().onSongPlayed(song.id);
+              Navigator.of(context).push(_playerRoute());
+            },
+          );
+        },
+      ),
     );
   }
 }
@@ -262,7 +385,6 @@ class _AlbumsTab extends StatelessWidget {
         crossAxisCount: 2,
         mainAxisSpacing: 16,
         crossAxisSpacing: 16,
-        // Square art + text below
         childAspectRatio: 0.78,
       ),
       itemCount: albums.length,
@@ -279,7 +401,6 @@ class _AlbumsTab extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Square artwork
               AspectRatio(
                 aspectRatio: 1,
                 child: Container(
@@ -295,6 +416,8 @@ class _AlbumsTab extends StatelessWidget {
                       artworkFit: BoxFit.cover,
                       artworkBorder: BorderRadius.zero,
                       keepOldArtwork: true,
+                      // P3: Lower quality for grid thumbnails
+                      artworkQuality: FilterQuality.low,
                       nullArtworkWidget: Container(
                         color: AppColors.surfaceElevated,
                         child: const Icon(
@@ -354,25 +477,37 @@ class _ArtistsTab extends StatelessWidget {
       itemBuilder: (_, i) {
         final entry = artists[i];
         final songs = entry.value;
-        final albumId = songs.first.albumId;
+        // FIX Bug 3: Use artistId for artist artwork
+        final artistId = songs.first.artistId;
 
         return ListTile(
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+          const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
           leading: SizedBox(
             width: 48,
             height: 48,
             child: ClipOval(
               child: QueryArtworkWidget(
-                id: albumId,
-                type: ArtworkType.ALBUM,
+                id: artistId,
+                // FIX Bug 3: Use ARTIST type instead of ALBUM
+                type: ArtworkType.ARTIST,
                 artworkFit: BoxFit.cover,
                 artworkBorder: BorderRadius.zero,
                 keepOldArtwork: true,
                 nullArtworkWidget: Container(
                   color: AppColors.surfaceElevated,
-                  child: const Icon(Icons.person_rounded,
-                      color: AppColors.textDisabled, size: 24),
+                  child: Center(
+                    child: Text(
+                      entry.key.isNotEmpty
+                          ? entry.key[0].toUpperCase()
+                          : '?',
+                      style: GoogleFonts.outfit(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -385,9 +520,18 @@ class _ArtistsTab extends StatelessWidget {
           subtitle: Text('${songs.length} bài hát',
               style: GoogleFonts.outfit(
                   fontSize: 12, color: AppColors.textTertiary)),
+          trailing: const Icon(Icons.chevron_right_rounded,
+              color: AppColors.textDisabled, size: 20),
+          // UX 3: Navigate to ArtistDetailScreen instead of play all
           onTap: () {
-            context.read<PlayerProvider>().playSongs(songs);
-            Navigator.of(context).push(_playerRoute());
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => ArtistDetailScreen(
+                  artistName: entry.key,
+                  songs: songs,
+                ),
+              ),
+            );
           },
         );
       },
@@ -425,7 +569,7 @@ class _FoldersTab extends StatelessWidget {
         final entry = folders[i];
         return ListTile(
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+          const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
           leading: Container(
             width: 48,
             height: 48,
@@ -433,8 +577,8 @@ class _FoldersTab extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               color: AppColors.primary.withOpacity(0.15),
             ),
-            child:
-                const Icon(Icons.folder_rounded, color: AppColors.primary, size: 24),
+            child: const Icon(Icons.folder_rounded,
+                color: AppColors.primary, size: 24),
           ),
           title: Text(entry.key,
               style: GoogleFonts.outfit(
@@ -454,12 +598,58 @@ class _FoldersTab extends StatelessWidget {
   }
 }
 
-// ── Empty state ───────────────────────────────────────────
+class _CountTab extends StatelessWidget {
+  const _CountTab({required this.label, required this.count});
+
+  final String label;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tab(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label),
+          if (count > 0) ...[
+            const SizedBox(width: 5),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 6, vertical: 1),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                '$count',
+                style: GoogleFonts.outfit(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ── Empty state (UX 7: better search feedback) ─────────────
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.icon, required this.message});
+  const _EmptyState({
+    required this.icon,
+    required this.message,
+    this.showSearchTip = false,
+    this.searchQuery = '',
+  });
   final IconData icon;
   final String message;
+  final bool showSearchTip;
+  final String searchQuery;
 
   @override
   Widget build(BuildContext context) {
@@ -473,6 +663,51 @@ class _EmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: GoogleFonts.outfit(
                   color: AppColors.textTertiary, fontSize: 14, height: 1.6)),
+          // UX 7: Search tip
+          if (showSearchTip) ...[
+            const SizedBox(height: 16),
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 40),
+              padding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceElevated,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'Gợi ý tìm kiếm:',
+                    style: GoogleFonts.outfit(
+                        fontSize: 12, color: AppColors.textTertiary),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Thử tìm bằng tên nghệ sĩ hoặc album',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.outfit(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextButton.icon(
+              onPressed: () {
+                context.read<MusicProvider>().setLibrarySearchQuery('');
+              },
+              icon: const Icon(Icons.close_rounded,
+                  size: 16, color: AppColors.primary),
+              label: Text(
+                'Xóa tìm kiếm',
+                style: GoogleFonts.outfit(
+                    color: AppColors.primary, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -480,13 +715,13 @@ class _EmptyState extends StatelessWidget {
 }
 
 PageRouteBuilder _playerRoute() => PageRouteBuilder(
-      pageBuilder: (_, anim, __) => const NowPlayingScreen(),
-      transitionDuration: const Duration(milliseconds: 400),
-      transitionsBuilder: (_, anim, __, child) => SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 1),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
-        child: child,
-      ),
-    );
+  pageBuilder: (_, anim, __) => const NowPlayingScreen(),
+  transitionDuration: const Duration(milliseconds: 400),
+  transitionsBuilder: (_, anim, __, child) => SlideTransition(
+    position: Tween<Offset>(
+      begin: const Offset(0, 1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
+    child: child,
+  ),
+);

@@ -28,8 +28,42 @@ class MusicProvider extends ChangeNotifier {
   int _scanCount = 0;
   int get scanCount => _scanCount;
 
-  String _searchQuery = '';
-  String get searchQuery => _searchQuery;
+  // ── FIX Bug 1: Separate search query per scope ────────────────────────────
+  // Mỗi screen có search riêng, không dùng chung 1 global string
+  String _homeSearchQuery = '';
+  String _librarySearchQuery = '';
+
+  String get homeSearchQuery => _homeSearchQuery;
+  String get librarySearchQuery => _librarySearchQuery;
+
+  // Deprecated - kept for backward compat but redirects to home
+  String get searchQuery => _homeSearchQuery;
+
+  void setHomeSearchQuery(String q) {
+    _homeSearchQuery = q.toLowerCase().trim();
+    notifyListeners();
+  }
+
+  void setLibrarySearchQuery(String q) {
+    _librarySearchQuery = q.toLowerCase().trim();
+    notifyListeners();
+  }
+
+  // Deprecated
+  void setSearchQuery(String q) => setHomeSearchQuery(q);
+
+  List<SongItem> get filteredSongs => _filterSongs(_homeSearchQuery);
+
+  List<SongItem> get libraryFilteredSongs => _filterSongs(_librarySearchQuery);
+
+  List<SongItem> _filterSongs(String query) {
+    if (query.isEmpty) return _allSongs;
+    return _allSongs.where((s) {
+      return s.title.toLowerCase().contains(query) ||
+          s.artist.toLowerCase().contains(query) ||
+          s.album.toLowerCase().contains(query);
+    }).toList();
+  }
 
   bool get isFirstRun => _storage.isFirstRun;
   bool get hasScannedOnce => _storage.hasScannedOnce;
@@ -38,20 +72,21 @@ class MusicProvider extends ChangeNotifier {
 
   Future<void> init() async {
     await _storage.init();
-    // ✅ Khôi phục playlists đã lưu từ lần trước
     _playlists = _storage.playlists;
     notifyListeners();
   }
-
-  // ── Internal: lưu playlist bất cứ khi nào có thay đổi ───────────────────
 
   Future<void> _persistPlaylists() => _storage.savePlaylists(_playlists);
 
   // ── Scanning ──────────────────────────────────────────────────────────────
 
+  // FIX P1: debounce notifyListeners during scan
+  int _lastNotifiedCount = 0;
+
   Future<void> scanMusic() async {
     _status = LibraryStatus.scanning;
     _scanCount = 0;
+    _lastNotifiedCount = 0;
     notifyListeners();
 
     final hasPermission = await _scanner.requestPermission();
@@ -65,7 +100,11 @@ class MusicProvider extends ChangeNotifier {
       _allSongs = await _scanner.scanSongs(
         onProgress: (count) {
           _scanCount = count;
-          notifyListeners();
+          // FIX P1: Only notify every 50 songs to avoid excessive rebuilds
+          if (count - _lastNotifiedCount >= 50 || count == 0) {
+            _lastNotifiedCount = count;
+            notifyListeners();
+          }
         },
       );
 
@@ -80,22 +119,6 @@ class MusicProvider extends ChangeNotifier {
       _status = LibraryStatus.error;
     }
     notifyListeners();
-  }
-
-  // ── Search ────────────────────────────────────────────────────────────────
-
-  void setSearchQuery(String q) {
-    _searchQuery = q.toLowerCase().trim();
-    notifyListeners();
-  }
-
-  List<SongItem> get filteredSongs {
-    if (_searchQuery.isEmpty) return _allSongs;
-    return _allSongs.where((s) {
-      return s.title.toLowerCase().contains(_searchQuery) ||
-          s.artist.toLowerCase().contains(_searchQuery) ||
-          s.album.toLowerCase().contains(_searchQuery);
-    }).toList();
   }
 
   // ── Smart Lists ───────────────────────────────────────────────────────────
@@ -156,35 +179,35 @@ class MusicProvider extends ChangeNotifier {
     );
     _playlists.add(pl);
     notifyListeners();
-    _persistPlaylists(); // ✅ lưu ngay
+    _persistPlaylists();
     return pl;
   }
 
   Future<void> deletePlaylist(String id) async {
     _playlists.removeWhere((p) => p.id == id);
     notifyListeners();
-    await _persistPlaylists(); // ✅
+    await _persistPlaylists();
   }
 
   Future<void> addToPlaylist(String playlistId, SongItem song) async {
     final pl = _playlists.firstWhere((p) => p.id == playlistId);
     pl.addSong(song);
     notifyListeners();
-    await _persistPlaylists(); // ✅
+    await _persistPlaylists();
   }
 
   Future<void> removeFromPlaylist(String playlistId, int songId) async {
     final pl = _playlists.firstWhere((p) => p.id == playlistId);
     pl.removeSong(songId);
     notifyListeners();
-    await _persistPlaylists(); // ✅
+    await _persistPlaylists();
   }
 
   Future<void> renamePlaylist(String playlistId, String newName) async {
     final pl = _playlists.firstWhere((p) => p.id == playlistId);
     pl.name = newName;
     notifyListeners();
-    await _persistPlaylists(); // ✅
+    await _persistPlaylists();
   }
 
   // ── Play tracking ─────────────────────────────────────────────────────────
