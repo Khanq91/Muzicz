@@ -130,7 +130,7 @@ class OnlineScreen extends StatelessWidget {
                         ),
                         _FeatureTile(
                           icon: Icons.search_rounded,
-                          iconColor: const Color(0xFF00BCD4),
+                          iconColor: AppColors.accentCyan,
                           title: 'Tìm kiếm trực tuyến',
                           subtitle: 'Tìm và phát nhạc trực tiếp từ web',
                           badge: 'Đang phát triển',

@@ -46,7 +46,7 @@ class ArtistDetailScreen extends StatelessWidget {
             backgroundColor: AppColors.background,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                  size: 20, color: Colors.white),
+                  size: 20, color: AppColors.onPlayer),
               onPressed: () => Navigator.pop(context),
             ),
             flexibleSpace: FlexibleSpaceBar(
@@ -263,7 +263,7 @@ class _ArtistHeader extends StatelessWidget {
         ),
         BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(color: Colors.black.withOpacity(0.45)),
+          child: Container(color: AppColors.scrimLight),
         ),
         // Artist circle avatar
         Positioned(
@@ -302,7 +302,7 @@ class _ArtistHeader extends StatelessWidget {
                         style: GoogleFonts.outfit(
                           fontSize: 36,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                          color: AppColors.onPlayer,
                         ),
                       ),
                     ),
@@ -325,7 +325,7 @@ class _ArtistHeader extends StatelessWidget {
                 style: GoogleFonts.outfit(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
-                  color: Colors.white,
+                  color: AppColors.onPlayer,
                   letterSpacing: -0.5,
                 ),
               ),
@@ -335,7 +335,7 @@ class _ArtistHeader extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: GoogleFonts.outfit(
                     fontSize: 13,
-                    color: Colors.white70,
+                    color: AppColors.onPlayerHigh,
                     fontWeight: FontWeight.w300),
               ),
             ],
@@ -378,7 +378,7 @@ class _ActionButton extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon,
-                color: primary ? Colors.white : AppColors.textSecondary,
+                color: primary ? AppColors.onPlayer : AppColors.textSecondary,
                 size: 20),
             const SizedBox(width: 6),
             Text(
@@ -386,7 +386,7 @@ class _ActionButton extends StatelessWidget {
               style: GoogleFonts.outfit(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: primary ? Colors.white : AppColors.textSecondary,
+                color: primary ? AppColors.onPlayer : AppColors.textSecondary,
               ),
             ),
           ],

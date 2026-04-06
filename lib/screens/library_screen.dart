@@ -8,8 +8,10 @@ import '../providers/player_provider.dart';
 import '../theme/app_colors.dart';
 import '../widgets/mini_player.dart';
 import '../widgets/music_list_tile.dart';
+import 'album_detail_screen.dart';
 import 'artist_detail_screen.dart';
 import 'now_playing_screen.dart';
+import 'onboarding_screen.dart';
 import 'playlist_screen.dart';
 
 enum SortType { az, recentlyAdded, duration }
@@ -42,17 +44,25 @@ class _LibraryScreenState extends State<LibraryScreen>
     super.dispose();
   }
 
+  void _navigateToScan() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final music = context.watch<MusicProvider>();
     final isScanning = music.status == LibraryStatus.scanning;
+    // FIX 4: Search query để hiện scope indicator
+    final hasSearchText = _searchCtrl.text.isNotEmpty;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
-            // ── Header ─────────────────────────────────
+            // ── Header ───────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
               child: Row(
@@ -74,7 +84,6 @@ class _LibraryScreenState extends State<LibraryScreen>
                       ),
                     ),
                   ),
-                  // UX 5: Show scanning indicator in header
                   if (isScanning)
                     Padding(
                       padding: const EdgeInsets.only(right: 8),
@@ -102,7 +111,7 @@ class _LibraryScreenState extends State<LibraryScreen>
               ),
             ),
 
-            // UX 5: Thin linear progress when scanning
+            // Thin progress bar khi scanning
             AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               height: isScanning ? 2 : 0,
@@ -114,13 +123,12 @@ class _LibraryScreenState extends State<LibraryScreen>
                   : const SizedBox.shrink(),
             ),
 
-            // ── Search ──────────────────────────────────
+            // ── Search bar ───────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
               child: TextField(
                 controller: _searchCtrl,
                 onChanged: (q) {
-                  // FIX Bug 1: Use library-specific search
                   context.read<MusicProvider>().setLibrarySearchQuery(q);
                   setState(() {});
                 },
@@ -161,19 +169,48 @@ class _LibraryScreenState extends State<LibraryScreen>
               ),
             ),
 
-            // ── TabBar with counts (UX 1) ────────────────
+            // FIX 4: Search scope indicator — chỉ hiện khi đang gõ
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              height: hasSearchText ? 28 : 0,
+              curve: Curves.easeOut,
+              child: hasSearchText
+                  ? Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                child: Row(
+                  children: [
+                    const Icon(Icons.storage_rounded,
+                        size: 12, color: AppColors.textDisabled),
+                    const SizedBox(width: 5),
+                    Text(
+                      'Tìm trong thư viện cục bộ · ${context.watch<MusicProvider>().allSongs.length} bài',
+                      style: GoogleFonts.outfit(
+                        fontSize: 11,
+                        color: AppColors.textDisabled,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+                  : const SizedBox.shrink(),
+            ),
+
+            // ── TabBar ───────────────────────────────────────
             _LibraryTabBar(tabCtrl: _tabCtrl, music: music),
 
-            // ── Tab content ──────────────────────────────
+            // ── Tab content ──────────────────────────────────
             Expanded(
               child: _FadeTabBarView(
                 controller: _tabCtrl,
                 children: [
-                  _SongsTab(sortType: _sortType),
+                  _SongsTab(
+                    sortType: _sortType,
+                    onScanTap: _navigateToScan,
+                  ),
                   const PlaylistsTab(),
-                  _AlbumsTab(),
-                  _ArtistsTab(),
-                  _FoldersTab(),
+                  _AlbumsTab(onScanTap: _navigateToScan),
+                  _ArtistsTab(onScanTap: _navigateToScan),
+                  _FoldersTab(onScanTap: _navigateToScan),
                 ],
               ),
             ),
@@ -204,9 +241,10 @@ class _LibraryScreenState extends State<LibraryScreen>
   }
 }
 
+// ── Tab bar ───────────────────────────────────────────────────────────────────
+
 class _LibraryTabBar extends StatelessWidget {
   const _LibraryTabBar({required this.tabCtrl, required this.music});
-
   final TabController tabCtrl;
   final MusicProvider music;
 
@@ -237,13 +275,13 @@ class _LibraryTabBar extends StatelessWidget {
   }
 }
 
+// ── Fade tab switcher ─────────────────────────────────────────────────────────
 
 class _FadeTabBarView extends StatefulWidget {
   const _FadeTabBarView({
     required this.controller,
     required this.children,
   });
-
   final TabController controller;
   final List<Widget> children;
 
@@ -288,11 +326,12 @@ class _FadeTabBarViewState extends State<_FadeTabBarView> {
   }
 }
 
-// ── Songs Tab ─────────────────────────────────────────────
+// ── Songs Tab ─────────────────────────────────────────────────────────────────
 
 class _SongsTab extends StatelessWidget {
-  const _SongsTab({required this.sortType});
+  const _SongsTab({required this.sortType, required this.onScanTap});
   final SortType sortType;
+  final VoidCallback onScanTap;
 
   List<SongItem> _sorted(List<SongItem> songs) {
     final list = [...songs];
@@ -313,7 +352,6 @@ class _SongsTab extends StatelessWidget {
     final music = context.watch<MusicProvider>();
     final player = context.watch<PlayerProvider>();
 
-    // FIX Bug 1: Use library-specific filtered songs
     final songs = _sorted(
       music.librarySearchQuery.isEmpty
           ? music.allSongs
@@ -324,15 +362,15 @@ class _SongsTab extends StatelessWidget {
       return _EmptyState(
         icon: Icons.music_note_rounded,
         message: music.librarySearchQuery.isEmpty
-            ? 'Chưa có nhạc nào.\nHãy quét thư viện của bạn.'
+            ? 'Chưa có nhạc nào trong thư viện.'
             : 'Không tìm thấy kết quả.',
-        // UX 7: Better empty search feedback
         showSearchTip: music.librarySearchQuery.isNotEmpty,
         searchQuery: music.librarySearchQuery,
+        // FIX 3: Nút scan khi thư viện rỗng (không phải khi filter rỗng)
+        onScanTap: music.librarySearchQuery.isEmpty ? onScanTap : null,
       );
     }
 
-    // UX 2: Pull-to-refresh
     return RefreshIndicator(
       color: AppColors.primary,
       backgroundColor: AppColors.card,
@@ -362,9 +400,12 @@ class _SongsTab extends StatelessWidget {
   }
 }
 
-// ── Albums Tab ────────────────────────────────────────────
+// ── Albums Tab — FIX 5: tap → AlbumDetailScreen thay vì play ─────────────────
 
 class _AlbumsTab extends StatelessWidget {
+  const _AlbumsTab({required this.onScanTap});
+  final VoidCallback onScanTap;
+
   @override
   Widget build(BuildContext context) {
     final music = context.watch<MusicProvider>();
@@ -372,9 +413,11 @@ class _AlbumsTab extends StatelessWidget {
       ..sort((a, b) => a.key.compareTo(b.key));
 
     if (albums.isEmpty) {
-      return const _EmptyState(
+      return _EmptyState(
         icon: Icons.album_rounded,
         message: 'Không có album nào.',
+        // FIX 3: Nút scan
+        onScanTap: onScanTap,
       );
     }
 
@@ -394,9 +437,16 @@ class _AlbumsTab extends StatelessWidget {
         final albumId = songs.first.albumId;
 
         return GestureDetector(
+          // FIX 5: Navigate to AlbumDetailScreen
           onTap: () {
-            context.read<PlayerProvider>().playSongs(songs);
-            Navigator.of(context).push(_playerRoute());
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => AlbumDetailScreen(
+                  albumName: entry.key,
+                  songs: songs,
+                ),
+              ),
+            );
           },
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -416,7 +466,6 @@ class _AlbumsTab extends StatelessWidget {
                       artworkFit: BoxFit.cover,
                       artworkBorder: BorderRadius.zero,
                       keepOldArtwork: true,
-                      // P3: Lower quality for grid thumbnails
                       artworkQuality: FilterQuality.low,
                       nullArtworkWidget: Container(
                         color: AppColors.surfaceElevated,
@@ -456,9 +505,12 @@ class _AlbumsTab extends StatelessWidget {
   }
 }
 
-// ── Artists Tab ───────────────────────────────────────────
+// ── Artists Tab ───────────────────────────────────────────────────────────────
 
 class _ArtistsTab extends StatelessWidget {
+  const _ArtistsTab({required this.onScanTap});
+  final VoidCallback onScanTap;
+
   @override
   Widget build(BuildContext context) {
     final music = context.watch<MusicProvider>();
@@ -466,8 +518,11 @@ class _ArtistsTab extends StatelessWidget {
       ..sort((a, b) => a.key.compareTo(b.key));
 
     if (artists.isEmpty) {
-      return const _EmptyState(
-          icon: Icons.person_rounded, message: 'Không có nghệ sĩ nào.');
+      return _EmptyState(
+        icon: Icons.person_rounded,
+        message: 'Không có nghệ sĩ nào.',
+        onScanTap: onScanTap,
+      );
     }
 
     return ListView.builder(
@@ -477,7 +532,6 @@ class _ArtistsTab extends StatelessWidget {
       itemBuilder: (_, i) {
         final entry = artists[i];
         final songs = entry.value;
-        // FIX Bug 3: Use artistId for artist artwork
         final artistId = songs.first.artistId;
 
         return ListTile(
@@ -489,7 +543,6 @@ class _ArtistsTab extends StatelessWidget {
             child: ClipOval(
               child: QueryArtworkWidget(
                 id: artistId,
-                // FIX Bug 3: Use ARTIST type instead of ALBUM
                 type: ArtworkType.ARTIST,
                 artworkFit: BoxFit.cover,
                 artworkBorder: BorderRadius.zero,
@@ -498,9 +551,7 @@ class _ArtistsTab extends StatelessWidget {
                   color: AppColors.surfaceElevated,
                   child: Center(
                     child: Text(
-                      entry.key.isNotEmpty
-                          ? entry.key[0].toUpperCase()
-                          : '?',
+                      entry.key.isNotEmpty ? entry.key[0].toUpperCase() : '?',
                       style: GoogleFonts.outfit(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -522,7 +573,6 @@ class _ArtistsTab extends StatelessWidget {
                   fontSize: 12, color: AppColors.textTertiary)),
           trailing: const Icon(Icons.chevron_right_rounded,
               color: AppColors.textDisabled, size: 20),
-          // UX 3: Navigate to ArtistDetailScreen instead of play all
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(
@@ -539,9 +589,12 @@ class _ArtistsTab extends StatelessWidget {
   }
 }
 
-// ── Folders Tab ───────────────────────────────────────────
+// ── Folders Tab ───────────────────────────────────────────────────────────────
 
 class _FoldersTab extends StatelessWidget {
+  const _FoldersTab({required this.onScanTap});
+  final VoidCallback onScanTap;
+
   @override
   Widget build(BuildContext context) {
     final music = context.watch<MusicProvider>();
@@ -557,8 +610,11 @@ class _FoldersTab extends StatelessWidget {
       ..sort((a, b) => a.key.compareTo(b.key));
 
     if (folders.isEmpty) {
-      return const _EmptyState(
-          icon: Icons.folder_rounded, message: 'Không có thư mục nào.');
+      return _EmptyState(
+        icon: Icons.folder_rounded,
+        message: 'Không có thư mục nào.',
+        onScanTap: onScanTap,
+      );
     }
 
     return ListView.builder(
@@ -598,9 +654,10 @@ class _FoldersTab extends StatelessWidget {
   }
 }
 
+// ── Count tab ─────────────────────────────────────────────────────────────────
+
 class _CountTab extends StatelessWidget {
   const _CountTab({required this.label, required this.count});
-
   final String label;
   final int count;
 
@@ -615,8 +672,8 @@ class _CountTab extends StatelessWidget {
             const SizedBox(width: 5),
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 6, vertical: 1),
+              padding:
+              const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
               decoration: BoxDecoration(
                 color: AppColors.primary.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(10),
@@ -637,7 +694,7 @@ class _CountTab extends StatelessWidget {
   }
 }
 
-// ── Empty state (UX 7: better search feedback) ─────────────
+// ── Empty state — FIX 3: thêm onScanTap ──────────────────────────────────────
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState({
@@ -645,11 +702,14 @@ class _EmptyState extends StatelessWidget {
     required this.message,
     this.showSearchTip = false,
     this.searchQuery = '',
+    // FIX 3: optional — chỉ truyền khi thư viện thực sự rỗng
+    this.onScanTap,
   });
   final IconData icon;
   final String message;
   final bool showSearchTip;
   final String searchQuery;
+  final VoidCallback? onScanTap;
 
   @override
   Widget build(BuildContext context) {
@@ -659,11 +719,36 @@ class _EmptyState extends StatelessWidget {
         children: [
           Icon(icon, color: AppColors.textDisabled, size: 52),
           const SizedBox(height: 14),
-          Text(message,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.outfit(
-                  color: AppColors.textTertiary, fontSize: 14, height: 1.6)),
-          // UX 7: Search tip
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.outfit(
+                color: AppColors.textTertiary, fontSize: 14, height: 1.6),
+          ),
+
+          // FIX 3: Nút quét nếu có onScanTap
+          if (onScanTap != null) ...[
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: onScanTap,
+              icon: const Icon(Icons.search_rounded, size: 18),
+              label: Text(
+                'Quét ngay',
+                style: GoogleFonts.outfit(
+                    fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+
+          // Search tip
           if (showSearchTip) ...[
             const SizedBox(height: 16),
             Container(

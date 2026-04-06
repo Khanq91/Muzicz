@@ -13,10 +13,11 @@ import '../widgets/music_list_tile.dart';
 import 'library_screen.dart';
 import 'now_playing_screen.dart';
 import 'online_screen.dart';
+import 'onboarding_screen.dart';
 import 'profile_screen.dart';
 
 // ════════════════════════════════════════════════════════════════════════════
-// HomeScreen — persistent tab container dùng IndexedStack
+// HomeScreen
 // ════════════════════════════════════════════════════════════════════════════
 
 class HomeScreen extends StatefulWidget {
@@ -47,7 +48,6 @@ class _HomeScreenState extends State<HomeScreen> {
               children: _tabs,
             ),
           ),
-          // ── Mini player shared toàn app ───────────────────
           Consumer<PlayerProvider>(
             builder: (_, player, __) => player.currentSong != null
                 ? const RepaintBoundary(child: MiniPlayer())
@@ -105,13 +105,11 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
           delegate: _SearchBarDelegate(
             searchCtrl: _searchCtrl,
             onChanged: (q) {
-              // FIX Bug 1: Use home-specific search query
               context.read<MusicProvider>().setHomeSearchQuery(q);
               setState(() => _searchActive = q.isNotEmpty);
             },
             onClear: () {
               _searchCtrl.clear();
-              // FIX Bug 1: Clear only home search
               context.read<MusicProvider>().setHomeSearchQuery('');
               setState(() => _searchActive = false);
             },
@@ -139,13 +137,17 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
   }
 
   Widget _buildHeader() {
+    final music = context.watch<MusicProvider>();
+    final isScanning = music.status == LibraryStatus.scanning;
+
     return SafeArea(
       bottom: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+        padding: const EdgeInsets.fromLTRB(20, 16, 12, 8),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            // Greeting + title
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -168,7 +170,18 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
                 ),
               ],
             ),
-            _AvatarButton(),
+
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // FIX 2: Nút scan — chỉ hiện sau lần quét đầu tiên
+                if (music.hasScannedOnce)
+                  _ScanButton(isScanning: isScanning),
+
+                const SizedBox(width: 4),
+                _AvatarButton(),
+              ],
+            ),
           ],
         ),
       ),
@@ -189,6 +202,50 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
           ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
           child: child,
         ),
+      ),
+    );
+  }
+}
+
+// ── Scan button cạnh avatar ───────────────────────────────────────────────────
+
+class _ScanButton extends StatelessWidget {
+  const _ScanButton({required this.isScanning});
+  final bool isScanning;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 40,
+      height: 40,
+      child: isScanning
+      // Khi đang scan → spinner nhỏ
+          ? const Center(
+        child: SizedBox(
+          width: 18,
+          height: 18,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: AppColors.primary,
+          ),
+        ),
+      )
+      // Bình thường → icon refresh
+          : IconButton(
+        padding: EdgeInsets.zero,
+        icon: const Icon(
+          Icons.refresh_rounded,
+          color: AppColors.textTertiary,
+          size: 22,
+        ),
+        tooltip: 'Quét lại nhạc',
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const OnboardingScreen(),
+            ),
+          );
+        },
       ),
     );
   }
@@ -323,7 +380,7 @@ class _NavItem extends StatelessWidget {
   }
 }
 
-// ── Search bar persistent delegate ──────────────────────────────────────
+// ── Search bar ────────────────────────────────────────────────────────────────
 
 class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
   const _SearchBarDelegate({
@@ -396,7 +453,7 @@ class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
   bool shouldRebuild(covariant _SearchBarDelegate old) => true;
 }
 
-// ── Search results ───────────────────────────────────────────────────────
+// ── Search results ────────────────────────────────────────────────────────────
 
 class _SearchResultsSliver extends StatelessWidget {
   const _SearchResultsSliver({required this.onSongTap});
@@ -406,7 +463,6 @@ class _SearchResultsSliver extends StatelessWidget {
   Widget build(BuildContext context) {
     final music = context.watch<MusicProvider>();
     final player = context.watch<PlayerProvider>();
-    // FIX Bug 1: Use home-specific filtered songs
     final results = music.filteredSongs;
 
     if (results.isEmpty) {
@@ -426,7 +482,6 @@ class _SearchResultsSliver extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              // UX 7: Better search tip
               Text(
                 'Thử tìm bằng tên nghệ sĩ hoặc album',
                 style: GoogleFonts.outfit(
@@ -456,7 +511,7 @@ class _SearchResultsSliver extends StatelessWidget {
   }
 }
 
-// ── Quick Access Section ─────────────────────────────────────────────────
+// ── Quick Access ──────────────────────────────────────────────────────────────
 
 class _QuickAccessSection extends StatelessWidget {
   @override
@@ -467,33 +522,25 @@ class _QuickAccessSection extends StatelessWidget {
       _QuickSection(
         title: 'Nghe gần đây',
         songs: music.recentlyPlayed,
-        gradient: const LinearGradient(
-          colors: [AppColors.primary, AppColors.secondary],
-        ),
+        gradient: AppColors.recentlyPlayedGradient,
         icon: Icons.history_rounded,
       ),
       _QuickSection(
         title: 'Nghe nhiều nhất',
         songs: music.mostPlayed,
-        gradient: const LinearGradient(
-          colors: [Color(0xFFE040FB), AppColors.secondary],
-        ),
+        gradient: AppColors.mostPlayedGradient,
         icon: Icons.trending_up_rounded,
       ),
       _QuickSection(
         title: 'Yêu thích',
         songs: music.favorites,
-        gradient: const LinearGradient(
-          colors: [AppColors.tertiary, Color(0xFFE91E63)],
-        ),
+        gradient: AppColors.favoritesGradient,
         icon: Icons.favorite_rounded,
       ),
       _QuickSection(
         title: 'Random Mix',
         songs: music.randomMix,
-        gradient: const LinearGradient(
-          colors: [Color(0xFF00BCD4), AppColors.primary],
-        ),
+        gradient: AppColors.randomMixGradient,
         icon: Icons.shuffle_rounded,
       ),
     ];
@@ -621,7 +668,7 @@ class _QuickCardState extends State<_QuickCard>
                       end: Alignment.bottomCenter,
                       colors: [
                         Colors.transparent,
-                        Colors.black.withOpacity(0.5),
+                        AppColors.scrimMedium,
                       ],
                     ),
                   ),
@@ -667,7 +714,7 @@ class _QuickCardState extends State<_QuickCard>
   }
 }
 
-// ── Smart Lists Section ──────────────────────────────────────────────────
+// ── Smart Lists Section ───────────────────────────────────────────────────────
 
 class _SmartListsSection extends StatelessWidget {
   const _SmartListsSection({required this.onSongTap});
@@ -701,10 +748,11 @@ class _SmartListsSection extends StatelessWidget {
             onTap: () => onSongTap(neverPlayed, song),
           )),
         ],
+        // FIX 2: Empty state với nút quét — hướng user rõ ràng hơn
         if (recentlyAdded.isEmpty && neverPlayed.isEmpty)
           Center(
             child: Padding(
-              padding: const EdgeInsets.all(40),
+              padding: const EdgeInsets.fromLTRB(40, 40, 40, 20),
               child: Column(
                 children: [
                   const Icon(Icons.music_off_rounded,
@@ -717,6 +765,32 @@ class _SmartListsSection extends StatelessWidget {
                       color: AppColors.textTertiary,
                       fontSize: 14,
                       height: 1.6,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  FilledButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const OnboardingScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.search_rounded, size: 18),
+                    label: Text(
+                      'Quét thư viện ngay',
+                      style: GoogleFonts.outfit(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                 ],

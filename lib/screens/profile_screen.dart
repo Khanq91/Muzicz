@@ -4,8 +4,11 @@ import 'package:provider/provider.dart';
 import '../features/downloader/screens/downloader_gateway_screen.dart';
 import '../providers/music_provider.dart';
 import '../providers/player_provider.dart';
+import '../theme/app_colors_data.dart';
 import '../theme/app_colors.dart';
+import '../providers/theme_provider.dart';
 import '../widgets/mini_player.dart';
+import '../widgets/theme_selector_sheet.dart';
 import 'onboarding_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -13,56 +16,43 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     final music = context.watch<MusicProvider>();
     final player = context.watch<PlayerProvider>();
+    final themeMode = context.watch<ThemeProvider>().mode;
 
     final totalSongs = music.allSongs.length;
     final totalArtists = music.artistMap.length;
     final totalAlbums = music.albumMap.length;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: c.background,
       body: Column(
         children: [
           Expanded(
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(),
               slivers: [
-                // Header with gradient
-                SliverToBoxAdapter(
-                  child: _ProfileHeader(),
-                ),
+                SliverToBoxAdapter(child: _ProfileHeader(colors: c)),
                 // Stats row
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
                     child: Row(
                       children: [
-                        _StatCard(
-                          value: '$totalSongs',
-                          label: 'Bài hát',
-                          icon: Icons.music_note_rounded,
-                          color: AppColors.primary,
-                        ),
+                        _StatCard(value: '$totalSongs', label: 'Bài hát',
+                            icon: Icons.music_note_rounded, color: c.primary),
                         const SizedBox(width: 12),
-                        _StatCard(
-                          value: '$totalArtists',
-                          label: 'Nghệ sĩ',
-                          icon: Icons.person_rounded,
-                          color: AppColors.secondary,
-                        ),
+                        _StatCard(value: '$totalArtists', label: 'Nghệ sĩ',
+                            icon: Icons.person_rounded, color: c.secondary),
                         const SizedBox(width: 12),
-                        _StatCard(
-                          value: '$totalAlbums',
-                          label: 'Album',
-                          icon: Icons.album_rounded,
-                          color: AppColors.tertiary,
-                        ),
+                        _StatCard(value: '$totalAlbums', label: 'Album',
+                            icon: Icons.album_rounded, color: c.tertiary),
                       ],
                     ),
                   ),
                 ),
-                // Action section title
+                // Section label
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
@@ -71,13 +61,13 @@ class ProfileScreen extends StatelessWidget {
                       style: GoogleFonts.outfit(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.textTertiary,
+                        color: c.textTertiary,
                         letterSpacing: 0.5,
                       ),
                     ),
                   ),
                 ),
-                // Action buttons
+                // Action tiles
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -85,56 +75,55 @@ class ProfileScreen extends StatelessWidget {
                       children: [
                         _ActionTile(
                           icon: Icons.refresh_rounded,
-                          iconColor: AppColors.primary,
+                          iconColor: c.primary,
                           title: 'Quét lại nhạc',
                           subtitle: 'Cập nhật thư viện từ bộ nhớ máy',
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const OnboardingScreen(),
-                              ),
-                            );
-                          },
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (_) => const OnboardingScreen()),
+                          ),
+                          colors: c,
                         ),
                         _ActionTile(
                           icon: Icons.download_rounded,
-                          iconColor: AppColors.secondary,
+                          iconColor: c.secondary,
                           title: 'Tải nhạc',
                           subtitle: 'Tải âm thanh dễ dàng chỉ từ URL',
-                          // onTap: () {
-                          //   ScaffoldMessenger.of(context).showSnackBar(
-                          //     const SnackBar(
-                          //       content: Text('Tính năng đang được phát triển'),
-                          //       duration: Duration(seconds: 2),
-                          //     ),
-                          //   );
-                          // },
-                          // onTap: () => Navigator.pushNamed(context, '/dl/analyze'),
-
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const DownloaderGatewayScreen(),
-                              ),
-                            );
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (_) =>
+                                const DownloaderGatewayScreen()),
+                          ),
+                          colors: c,
+                        ),
+                        // ── Giao diện ──────────────────────────────────────
+                        _ActionTile(
+                          icon: themeMode.icon,
+                          iconColor: c.primary,
+                          title: 'Giao diện',
+                          subtitle: switch (themeMode) {
+                            AppThemeMode.dark   => 'Dark — nền tối',
+                            AppThemeMode.amoled => 'AMOLED — pure black',
+                            AppThemeMode.light  => 'Light — nền sáng',
                           },
-                          disabled: false,
+                          onTap: () => ThemeSelectorSheet.show(context),
+                          colors: c,
                         ),
                         _ActionTile(
                           icon: Icons.settings_rounded,
-                          iconColor: AppColors.textSecondary,
+                          iconColor: c.textSecondary,
                           title: 'Cài đặt',
                           subtitle: 'Tùy chỉnh ứng dụng',
-                          onTap: () {
-                            _showSettings(context, music);
-                          },
+                          onTap: () => _showSettings(context, music, c),
+                          colors: c,
                         ),
                         _ActionTile(
                           icon: Icons.info_outline_rounded,
-                          iconColor: AppColors.textTertiary,
+                          iconColor: c.textTertiary,
                           title: 'Về ứng dụng',
                           subtitle: 'Nocturne Audio v1.0.0',
                           onTap: () => _showAbout(context),
+                          colors: c,
                         ),
                       ],
                     ),
@@ -150,10 +139,10 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  void _showSettings(BuildContext context, MusicProvider music) {
+  void _showSettings(BuildContext context, MusicProvider music, AppColorsData c) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.card,
+      backgroundColor: c.card,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -166,54 +155,32 @@ class ProfileScreen extends StatelessWidget {
           children: [
             Center(
               child: Container(
-                width: 36,
-                height: 4,
+                width: 36, height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.divider,
+                  color: c.divider,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
             const SizedBox(height: 16),
-            Text(
-              'Cài đặt',
-              style: GoogleFonts.outfit(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
+            Text('Cài đặt',
+                style: GoogleFonts.outfit(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: c.textPrimary)),
             const SizedBox(height: 20),
-            Text(
-              'Thư viện nhạc',
-              style: GoogleFonts.outfit(
-                fontSize: 12,
-                color: AppColors.textTertiary,
-                letterSpacing: 0.5,
-              ),
-            ),
+            Text('Thư viện nhạc',
+                style: GoogleFonts.outfit(
+                    fontSize: 12,
+                    color: c.textTertiary,
+                    letterSpacing: 0.5)),
             const SizedBox(height: 8),
             _SettingsRow(
               label: 'Lọc file dưới 30 giây',
               subtitle: 'Bỏ qua nhạc chuông, thông báo',
               value: true,
               onChanged: (_) {},
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Giao diện',
-              style: GoogleFonts.outfit(
-                fontSize: 12,
-                color: AppColors.textTertiary,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: 8),
-            _SettingsRow(
-              label: 'Album art xoay khi phát',
-              subtitle: 'Hiệu ứng đĩa vinyl',
-              value: true,
-              onChanged: (_) {},
+              colors: c,
             ),
           ],
         ),
@@ -231,29 +198,27 @@ class ProfileScreen extends StatelessWidget {
   }
 }
 
-// ── Profile header ────────────────────────────────────────
+// ── Profile header ─────────────────────────────────────────────────────────
 
 class _ProfileHeader extends StatelessWidget {
+  const _ProfileHeader({required this.colors});
+  final AppColorsData colors;
+
   @override
   Widget build(BuildContext context) {
+    final c = colors;
     return SafeArea(
       bottom: false,
       child: Stack(
         children: [
-          // Background glow
           Positioned(
-            top: -30,
-            right: -40,
+            top: -30, right: -40,
             child: Container(
-              width: 200,
-              height: 200,
+              width: 200, height: 200,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [
-                    AppColors.primary.withOpacity(0.12),
-                    Colors.transparent,
-                  ],
+                  colors: [c.primary.withOpacity(0.12), Colors.transparent],
                 ),
               ),
             ),
@@ -263,28 +228,25 @@ class _ProfileHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Back button row
                 Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                          size: 20, color: AppColors.textPrimary),
+                      icon: Icon(Icons.arrow_back_ios_new_rounded,
+                          size: 20, color: c.textPrimary),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
-                // Avatar + name
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Row(
                     children: [
                       Container(
-                        width: 72,
-                        height: 72,
-                        decoration: const BoxDecoration(
+                        width: 72, height: 72,
+                        decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          gradient: AppColors.primaryGradient,
+                          gradient: c.primaryGradient,
                         ),
                         child: const Icon(Icons.person_rounded,
                             color: Colors.white, size: 36),
@@ -293,23 +255,17 @@ class _ProfileHeader extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Thính giả',
-                            style: GoogleFonts.outfit(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-                          Text(
-                            'Nocturne Audio',
-                            style: GoogleFonts.outfit(
-                              fontSize: 13,
-                              color: AppColors.textTertiary,
-                              fontWeight: FontWeight.w300,
-                            ),
-                          ),
+                          Text('Thính giả',
+                              style: GoogleFonts.outfit(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                  color: c.textPrimary,
+                                  letterSpacing: -0.3)),
+                          Text('Nocturne Audio',
+                              style: GoogleFonts.outfit(
+                                  fontSize: 13,
+                                  color: c.textTertiary,
+                                  fontWeight: FontWeight.w300)),
                         ],
                       ),
                     ],
@@ -325,7 +281,7 @@ class _ProfileHeader extends StatelessWidget {
   }
 }
 
-// ── Stat card ─────────────────────────────────────────────
+// ── Stat card ──────────────────────────────────────────────────────────────
 
 class _StatCard extends StatelessWidget {
   const _StatCard({
@@ -341,6 +297,7 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
@@ -353,22 +310,16 @@ class _StatCard extends StatelessWidget {
           children: [
             Icon(icon, color: color, size: 22),
             const SizedBox(height: 8),
-            Text(
-              value,
-              style: GoogleFonts.outfit(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            Text(
-              label,
-              style: GoogleFonts.outfit(
-                fontSize: 12,
-                color: AppColors.textTertiary,
-                fontWeight: FontWeight.w300,
-              ),
-            ),
+            Text(value,
+                style: GoogleFonts.outfit(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: c.textPrimary)),
+            Text(label,
+                style: GoogleFonts.outfit(
+                    fontSize: 12,
+                    color: c.textTertiary,
+                    fontWeight: FontWeight.w300)),
           ],
         ),
       ),
@@ -376,7 +327,7 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-// ── Action tile ───────────────────────────────────────────
+// ── Action tile ────────────────────────────────────────────────────────────
 
 class _ActionTile extends StatelessWidget {
   const _ActionTile({
@@ -385,6 +336,7 @@ class _ActionTile extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
+    required this.colors,
     this.disabled = false,
   });
   final IconData icon;
@@ -392,48 +344,42 @@ class _ActionTile extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback onTap;
+  final AppColorsData colors;
   final bool disabled;
 
   @override
   Widget build(BuildContext context) {
+    final c = colors;
     return Opacity(
       opacity: disabled ? 0.45 : 1.0,
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
-          color: AppColors.surfaceElevated,
+          color: c.surfaceElevated,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border, width: 0.5),
+          border: Border.all(color: c.border, width: 0.5),
         ),
         child: ListTile(
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           leading: Container(
-            width: 42,
-            height: 42,
+            width: 42, height: 42,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
               color: iconColor.withOpacity(0.15),
             ),
             child: Icon(icon, color: iconColor, size: 22),
           ),
-          title: Text(
-            title,
-            style: GoogleFonts.outfit(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          subtitle: Text(
-            subtitle,
-            style: GoogleFonts.outfit(
-              fontSize: 12,
-              color: AppColors.textTertiary,
-            ),
-          ),
-          trailing: const Icon(Icons.chevron_right_rounded,
-              color: AppColors.textDisabled, size: 20),
+          title: Text(title,
+              style: GoogleFonts.outfit(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: c.textPrimary)),
+          subtitle: Text(subtitle,
+              style: GoogleFonts.outfit(
+                  fontSize: 12, color: c.textTertiary)),
+          trailing: Icon(Icons.chevron_right_rounded,
+              color: c.textDisabled, size: 20),
           onTap: disabled ? null : onTap,
         ),
       ),
@@ -441,7 +387,7 @@ class _ActionTile extends StatelessWidget {
   }
 }
 
-// ── Settings toggle row ───────────────────────────────────
+// ── Settings toggle row ────────────────────────────────────────────────────
 
 class _SettingsRow extends StatefulWidget {
   const _SettingsRow({
@@ -449,11 +395,13 @@ class _SettingsRow extends StatefulWidget {
     required this.subtitle,
     required this.value,
     required this.onChanged,
+    required this.colors,
   });
   final String label;
   final String subtitle;
   final bool value;
   final ValueChanged<bool> onChanged;
+  final AppColorsData colors;
 
   @override
   State<_SettingsRow> createState() => _SettingsRowState();
@@ -470,9 +418,10 @@ class _SettingsRowState extends State<_SettingsRow> {
 
   @override
   Widget build(BuildContext context) {
+    final c = widget.colors;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
+        color: c.surfaceElevated,
         borderRadius: BorderRadius.circular(12),
       ),
       child: ListTile(
@@ -480,17 +429,17 @@ class _SettingsRowState extends State<_SettingsRow> {
             style: GoogleFonts.outfit(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary)),
+                color: c.textPrimary)),
         subtitle: Text(widget.subtitle,
             style: GoogleFonts.outfit(
-                fontSize: 12, color: AppColors.textTertiary)),
+                fontSize: 12, color: c.textTertiary)),
         trailing: Switch(
           value: _val,
           onChanged: (v) {
             setState(() => _val = v);
             widget.onChanged(v);
           },
-          activeColor: AppColors.primary,
+          activeColor: c.primary,
         ),
       ),
     );

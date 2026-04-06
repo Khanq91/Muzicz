@@ -168,7 +168,7 @@ class _PlaylistCover extends StatelessWidget {
           ),
         ),
         child: Icon(Icons.playlist_play_rounded,
-            color: Colors.white, size: size * 0.5),
+            color: AppColors.onPlayer, size: size * 0.5),
       );
     }
     if (songs.length == 1) {
@@ -242,7 +242,7 @@ class _CreatePlaylistFab extends StatelessWidget {
             ),
           ],
         ),
-        child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+        child: const Icon(Icons.add_rounded, color: AppColors.onPlayer, size: 28),
       ),
     );
   }
@@ -329,13 +329,13 @@ class PlaylistDetailScreen extends StatelessWidget {
             backgroundColor: AppColors.background,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                  size: 20, color: Colors.white),
+                  size: 20, color: AppColors.onPlayer),
               onPressed: () => Navigator.pop(context),
             ),
             actions: [
               IconButton(
                 icon: const Icon(Icons.edit_rounded,
-                    color: Colors.white, size: 22),
+                    color: AppColors.onPlayer, size: 22),
                 onPressed: () => _showEditDialog(context, music, playlist),
               ),
             ],
@@ -714,7 +714,7 @@ class _PlaylistHeader extends StatelessWidget {
                 style: GoogleFonts.outfit(
                   fontSize: 26,
                   fontWeight: FontWeight.w700,
-                  color: Colors.white,
+                  color: AppColors.onPlayer,
                   letterSpacing: -0.5,
                 ),
               ),
@@ -722,7 +722,7 @@ class _PlaylistHeader extends StatelessWidget {
                 '${playlist.songCount} bài hát',
                 style: GoogleFonts.outfit(
                   fontSize: 14,
-                  color: Colors.white70,
+                  color: AppColors.onPlayerHigh,
                   fontWeight: FontWeight.w300,
                 ),
               ),
@@ -770,7 +770,7 @@ class _PlayButton extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon,
-                color: primary ? Colors.white : AppColors.textSecondary,
+                color: primary ? AppColors.onPlayer : AppColors.textSecondary,
                 size: 20),
             const SizedBox(width: 6),
             Text(
@@ -778,7 +778,7 @@ class _PlayButton extends StatelessWidget {
               style: GoogleFonts.outfit(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: primary ? Colors.white : AppColors.textSecondary,
+                color: primary ? AppColors.onPlayer : AppColors.textSecondary,
               ),
             ),
           ],
