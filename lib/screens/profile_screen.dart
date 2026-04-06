@@ -19,7 +19,6 @@ class ProfileScreen extends StatelessWidget {
     final c = context.appColors;
     final music = context.watch<MusicProvider>();
     final player = context.watch<PlayerProvider>();
-    final themeMode = context.watch<ThemeProvider>().mode;
 
     final totalSongs = music.allSongs.length;
     final totalArtists = music.artistMap.length;
@@ -96,24 +95,11 @@ class ProfileScreen extends StatelessWidget {
                           ),
                           colors: c,
                         ),
-                        // ── Giao diện ──────────────────────────────────────
-                        _ActionTile(
-                          icon: themeMode.icon,
-                          iconColor: c.primary,
-                          title: 'Giao diện',
-                          subtitle: switch (themeMode) {
-                            AppThemeMode.dark   => 'Dark — nền tối',
-                            AppThemeMode.amoled => 'AMOLED — pure black',
-                            AppThemeMode.light  => 'Light — nền sáng',
-                          },
-                          onTap: () => ThemeSelectorSheet.show(context),
-                          colors: c,
-                        ),
                         _ActionTile(
                           icon: Icons.settings_rounded,
                           iconColor: c.textSecondary,
                           title: 'Cài đặt',
-                          subtitle: 'Tùy chỉnh ứng dụng',
+                          subtitle: 'Tùy chỉnh giao diện và ứng dụng',
                           onTap: () => _showSettings(context, music, c),
                           colors: c,
                         ),
@@ -147,44 +133,13 @@ class ProfileScreen extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 36, height: 4,
-                decoration: BoxDecoration(
-                  color: c.divider,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text('Cài đặt',
-                style: GoogleFonts.outfit(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: c.textPrimary)),
-            const SizedBox(height: 20),
-            Text('Thư viện nhạc',
-                style: GoogleFonts.outfit(
-                    fontSize: 12,
-                    color: c.textTertiary,
-                    letterSpacing: 0.5)),
-            const SizedBox(height: 8),
-            _SettingsRow(
-              label: 'Lọc file dưới 30 giây',
-              subtitle: 'Bỏ qua nhạc chuông, thông báo',
-              value: true,
-              onChanged: (_) {},
-              colors: c,
-            ),
-          ],
-        ),
-      ),
+      builder: (sheetCtx) {
+        // Cần watch ThemeProvider bên trong sheet để subtitle cập nhật realtime
+        return ChangeNotifierProvider.value(
+          value: context.read<ThemeProvider>(),
+          child: _SettingsSheet(music: music, parentContext: context,),
+        );
+      },
     );
   }
 
@@ -194,6 +149,211 @@ class ProfileScreen extends StatelessWidget {
       applicationName: 'Nocturne Audio',
       applicationVersion: '1.0.0',
       applicationLegalese: '© 2024 Nocturne Audio',
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Settings sheet — tách thành StatefulWidget để rebuild khi theme đổi
+// ════════════════════════════════════════════════════════════════════════════
+
+class _SettingsSheet extends StatefulWidget {
+  const _SettingsSheet({
+    required this.music,
+    required this.parentContext,
+  });
+  final MusicProvider music;
+  final BuildContext parentContext;
+
+  @override
+  State<_SettingsSheet> createState() => _SettingsSheetState();
+}
+
+class _SettingsSheetState extends State<_SettingsSheet> {
+  @override
+  Widget build(BuildContext context) {
+    final c = context.appColors;
+    final themeProvider = context.watch<ThemeProvider>();
+    final themeMode = themeProvider.mode;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        20, 16, 20,
+        20 + MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Handle ────────────────────────────────────────────────────
+          Center(
+            child: Container(
+              width: 36, height: 4,
+              decoration: BoxDecoration(
+                color: c.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          Text(
+            'Cài đặt',
+            style: GoogleFonts.outfit(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: c.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // ── Giao diện ─────────────────────────────────────────────────
+          Text(
+            'Giao diện',
+            style: GoogleFonts.outfit(
+              fontSize: 12,
+              color: c.textTertiary,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Tile tùy chỉnh giao diện
+          _SettingsTappableRow(
+            icon: themeMode.icon,
+            iconColor: c.primary,
+            label: 'Bộ màu sắc',
+            subtitle: switch (themeMode) {
+              AppThemeMode.dark   => 'Dark — nền tối',
+              AppThemeMode.amoled => 'AMOLED — pure black',
+              AppThemeMode.light  => 'Light — nền sáng',
+            },
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Preview dot của theme hiện tại
+                Container(
+                  width: 12, height: 12,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: c.primaryGradient,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(Icons.chevron_right_rounded,
+                    color: c.textDisabled, size: 20),
+              ],
+            ),
+            // onTap: () {
+            //   Navigator.pop(context);
+            //   ThemeSelectorSheet.show(context);
+            // },
+            onTap: () {
+              Navigator.pop(context);
+
+              Future.microtask(() {
+                ThemeSelectorSheet.show(widget.parentContext);
+              });
+            },
+            colors: c,
+          ),
+
+          const SizedBox(height: 20),
+
+          // ── Thư viện nhạc ─────────────────────────────────────────────
+          Text(
+            'Thư viện nhạc',
+            style: GoogleFonts.outfit(
+              fontSize: 12,
+              color: c.textTertiary,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          _SettingsRow(
+            label: 'Lọc file dưới 30 giây',
+            subtitle: 'Bỏ qua nhạc chuông, thông báo',
+            value: true,
+            onChanged: (_) {},
+            colors: c,
+          ),
+
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Tappable settings row (dùng cho Giao diện) ───────────────────────────────
+
+class _SettingsTappableRow extends StatelessWidget {
+  const _SettingsTappableRow({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    required this.subtitle,
+    required this.trailing,
+    required this.onTap,
+    required this.colors,
+  });
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final String subtitle;
+  final Widget trailing;
+  final VoidCallback onTap;
+  final AppColorsData colors;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = colors;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: c.surfaceElevated,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36, height: 36,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  color: iconColor.withOpacity(0.15),
+                ),
+                child: Icon(icon, color: iconColor, size: 20),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label,
+                        style: GoogleFonts.outfit(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: c.textPrimary,
+                        )),
+                    Text(subtitle,
+                        style: GoogleFonts.outfit(
+                          fontSize: 12,
+                          color: c.textTertiary,
+                        )),
+                  ],
+                ),
+              ),
+              trailing,
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
