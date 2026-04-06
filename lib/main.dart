@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' hide ChangeNotifierProvider;
+import 'package:muziczz/providers/theme_provider.dart';
 import 'package:provider/provider.dart';
 import 'features/downloader/core/app_router.dart';
 import 'providers/music_provider.dart';
@@ -29,9 +30,11 @@ Future<void> main() async {
   final audioHandler = MuzicAudioHandler();
   // runApp(MuzicApp(audioHandler: audioHandler));
   runApp(
-    // ProviderScope bọc ngoài cùng — Riverpod scope cho toàn app (ytdlp dùng)
     ProviderScope(
-      child: MuzicApp(audioHandler: audioHandler),
+      child: ChangeNotifierProvider(
+        create: (_) => ThemeProvider(),
+        child: MuzicApp(audioHandler: audioHandler),
+      ),
     ),
   );
 }
@@ -43,6 +46,8 @@ class MuzicApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
+
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => MusicProvider()),
@@ -51,7 +56,7 @@ class MuzicApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Muzicz Audio',
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.darkTheme,
+        theme: themeProvider.themeData,
         onGenerateRoute: (settings) {
           // ytdlp routes
           if (settings.name?.startsWith('/dl/') == true) {
