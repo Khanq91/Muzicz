@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/screens/playlist_screen.dart';
+import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
 import '../models/song_item.dart';
@@ -38,8 +39,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+  final c = context.appColors;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: c.background,
       body: Column(
         children: [
           Expanded(
@@ -95,6 +97,7 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return CustomScrollView(
       controller: _scrollCtrl,
       physics: const BouncingScrollPhysics(),
@@ -139,6 +142,7 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
   Widget _buildHeader() {
     final music = context.watch<MusicProvider>();
     final isScanning = music.status == LibraryStatus.scanning;
+    final c = context.appColors;
 
     return SafeArea(
       bottom: false,
@@ -156,7 +160,7 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
                   style: GoogleFonts.outfit(
                     fontSize: 14,
                     fontWeight: FontWeight.w300,
-                    color: AppColors.textTertiary,
+                    color: c.textTertiary,
                   ),
                 ),
                 Text(
@@ -164,7 +168,7 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
                   style: GoogleFonts.outfit(
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: c.textPrimary,
                     letterSpacing: -0.5,
                   ),
                 ),
@@ -395,6 +399,7 @@ class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
   @override
   Widget build(BuildContext _, double shrinkOffset, bool overlapsContent) {
     final elevated = shrinkOffset > 0;
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       color: elevated

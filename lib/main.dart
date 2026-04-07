@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' hide ChangeNotifierProvider;
 import 'package:muziczz/providers/theme_provider.dart';
+import 'package:muziczz/widgets/theme_switch_wrapper.dart';
 import 'package:provider/provider.dart';
 import 'features/downloader/core/app_router.dart';
 import 'providers/music_provider.dart';
@@ -57,6 +58,8 @@ class MuzicApp extends StatelessWidget {
         title: 'Muzicz Audio',
         debugShowCheckedModeBanner: false,
         theme: themeProvider.themeData,
+        themeAnimationDuration: const Duration(milliseconds: 300),
+        themeAnimationCurve: Curves.easeInOut,
         onGenerateRoute: (settings) {
           // ytdlp routes
           if (settings.name?.startsWith('/dl/') == true) {
@@ -72,7 +75,8 @@ class MuzicApp extends StatelessWidget {
                 MediaQuery.of(context).textScaleFactor.clamp(0.85, 1.15),
               ),
             ),
-            child: child!,
+            // child: child!,
+            child: ThemeSwitchWrapper(child: child!),
           );
         },
       ),

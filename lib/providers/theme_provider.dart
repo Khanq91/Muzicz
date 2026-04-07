@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors_data.dart';
 import '../theme/app_theme.dart';
@@ -26,6 +27,8 @@ enum AppThemeMode {
     AppThemeMode.amoled => Icons.dark_mode_rounded,
     AppThemeMode.light  => Icons.wb_sunny_rounded,
   };
+
+  bool get isDark => this != AppThemeMode.light;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -41,23 +44,52 @@ class ThemeProvider extends ChangeNotifier {
   AppThemeMode _mode = AppThemeMode.dark;
   AppThemeMode get mode => _mode;
 
+  bool _isSwitching = false;
+  bool get isSwitching => _isSwitching;
+
   AppColorsData get colors => _mode.colors;
 
   ThemeData get themeData => AppTheme.buildTheme(_mode.colors);
 
-  /// Đổi theme và lưu lại preference
+  /// Đổi theme: set cờ isSwitching để UI có thể dùng skeleton/fade,
+  /// sau đó apply theme và sync SystemUI overlay style.
   Future<void> setTheme(AppThemeMode mode) async {
     if (_mode == mode) return;
-    _mode = mode;
+
+    _isSwitching = true;
     notifyListeners();
+
+    // Nhường frame để overlay kịp render trước khi theme bật
+    await Future.delayed(const Duration(milliseconds: 16));
+
+    _mode = mode;
+    _syncSystemUI(mode);
+    notifyListeners();
+
+    // Chờ animation xong rồi bỏ cờ
+    await Future.delayed(const Duration(milliseconds: 320));
+    _isSwitching = false;
+    notifyListeners();
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefKey, mode.key);
   }
 
-  /// Toggle nhanh qua 3 mode (dùng cho FAB nếu muốn)
+  /// Toggle nhanh qua 3 mode
   Future<void> cycleTheme() async {
     final next = AppThemeMode.values[(_mode.index + 1) % AppThemeMode.values.length];
     await setTheme(next);
+  }
+
+  /// Đồng bộ thanh status bar / navigation bar với theme mới
+  void _syncSystemUI(AppThemeMode mode) {
+    final isDark = mode.isDark;
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+    ));
   }
 
   Future<void> _loadSaved() async {
@@ -67,6 +99,7 @@ class ThemeProvider extends ChangeNotifier {
       final found = AppThemeMode.values.where((m) => m.key == saved).firstOrNull;
       if (found != null && found != _mode) {
         _mode = found;
+        _syncSystemUI(_mode);
         notifyListeners();
       }
     }

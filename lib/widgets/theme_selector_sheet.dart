@@ -11,7 +11,7 @@ import '../providers/theme_provider.dart';
 /// Cách dùng:
 ///   ThemeSelectorSheet.show(context);
 /// ════════════════════════════════════════════════════════════════════════════
-class ThemeSelectorSheet extends StatelessWidget {
+class ThemeSelectorSheet extends StatefulWidget {
   const ThemeSelectorSheet({super.key});
 
   static void show(BuildContext context) {
@@ -27,9 +27,39 @@ class ThemeSelectorSheet extends StatelessWidget {
   }
 
   @override
+  State<ThemeSelectorSheet> createState() => _ThemeSelectorSheetState();
+}
+
+class _ThemeSelectorSheetState extends State<ThemeSelectorSheet> {
+  late AppThemeMode _previewMode;
+  bool _isApplying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _previewMode = context.read<ThemeProvider>().mode;
+  }
+
+  Future<void> _apply() async {
+    final provider = context.read<ThemeProvider>();
+    if (provider.mode == _previewMode) {
+      Navigator.pop(context);
+      return;
+    }
+
+    setState(() => _isApplying = true);
+    HapticFeedback.mediumImpact();
+
+    // Đóng sheet trước, rồi apply theme — tránh sheet animate ra trong lúc theme bật
+    Navigator.pop(context);
+    await Future.delayed(const Duration(milliseconds: 180));
+    await provider.setTheme(_previewMode);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final c = context.appColors;
-    final provider = context.watch<ThemeProvider>();
+    final currentMode = context.watch<ThemeProvider>().mode;
 
     return Container(
       decoration: BoxDecoration(
@@ -52,36 +82,92 @@ class ThemeSelectorSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          Text(
-            'Giao diện',
-            style: GoogleFonts.outfit(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: c.textPrimary,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Giao diện',
+                      style: GoogleFonts.outfit(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: c.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      'Chọn bộ màu sắc cho ứng dụng',
+                      style: GoogleFonts.outfit(
+                        fontSize: 13,
+                        color: c.textTertiary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Nút Áp dụng — chỉ active khi chọn khác mode hiện tại
+              AnimatedOpacity(
+                opacity: _previewMode != currentMode ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 200),
+                child: TextButton(
+                  onPressed: _previewMode != currentMode ? _apply : null,
+                  style: TextButton.styleFrom(
+                    backgroundColor: c.primary.withOpacity(0.12),
+                    foregroundColor: c.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 8),
+                  ),
+                  child: _isApplying
+                      ? SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: c.primary,
+                    ),
+                  )
+                      : Text(
+                    'Áp dụng',
+                    style: GoogleFonts.outfit(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            'Chọn bộ màu sắc cho ứng dụng',
-            style: GoogleFonts.outfit(
-              fontSize: 13,
-              color: c.textTertiary,
-            ),
-          ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
-          // Theme options
+          // Theme options — tap để preview, không apply ngay
           ...AppThemeMode.values.map(
                 (mode) => _ThemeOption(
               mode: mode,
-              isSelected: provider.mode == mode,
-              onTap: () async {
+              isSelected: _previewMode == mode,
+              isCurrentlyActive: currentMode == mode,
+              onTap: () {
                 HapticFeedback.selectionClick();
-                await provider.setTheme(mode);
-                if (context.mounted) Navigator.pop(context);
+                setState(() => _previewMode = mode);
               },
             ),
           ),
+
+          // Hint text
+          if (_previewMode != currentMode) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Nhấn "Áp dụng" để chuyển sang giao diện ${_previewMode.label}',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.outfit(
+                fontSize: 12,
+                color: c.textTertiary,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -94,11 +180,13 @@ class _ThemeOption extends StatelessWidget {
   const _ThemeOption({
     required this.mode,
     required this.isSelected,
+    required this.isCurrentlyActive,
     required this.onTap,
   });
 
   final AppThemeMode mode;
-  final bool isSelected;
+  final bool isSelected;      // đang preview/chọn
+  final bool isCurrentlyActive; // đang dùng thực tế
   final VoidCallback onTap;
 
   @override
@@ -132,13 +220,36 @@ class _ThemeOption extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    mode.label,
-                    style: GoogleFonts.outfit(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: isSelected ? c.primary : c.textPrimary,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        mode.label,
+                        style: GoogleFonts.outfit(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected ? c.primary : c.textPrimary,
+                        ),
+                      ),
+                      if (isCurrentlyActive) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: c.primary.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'Hiện tại',
+                            style: GoogleFonts.outfit(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: c.primary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   Text(
                     _subtitle(mode),
@@ -151,11 +262,15 @@ class _ThemeOption extends StatelessWidget {
               ),
             ),
             // Check icon
-            AnimatedOpacity(
-              opacity: isSelected ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 200),
-              child: Icon(Icons.check_circle_rounded,
-                  color: c.primary, size: 22),
+            AnimatedScale(
+              scale: isSelected ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutBack,
+              child: Icon(
+                Icons.check_circle_rounded,
+                color: c.primary,
+                size: 22,
+              ),
             ),
           ],
         ),
@@ -184,14 +299,10 @@ class _ColorSwatch extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         color: colors.background,
-        border: Border.all(
-          color: colors.border,
-          width: 1,
-        ),
+        border: Border.all(color: colors.border, width: 1),
       ),
       child: Stack(
         children: [
-          // Background chip
           Positioned(
             bottom: 4,
             left: 4,
@@ -204,7 +315,6 @@ class _ColorSwatch extends StatelessWidget {
               ),
             ),
           ),
-          // Primary dot
           Positioned(
             top: 8,
             left: 8,
@@ -217,7 +327,6 @@ class _ColorSwatch extends StatelessWidget {
               ),
             ),
           ),
-          // Tertiary dot
           Positioned(
             top: 8,
             left: 28,
