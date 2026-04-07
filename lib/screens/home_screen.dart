@@ -219,27 +219,26 @@ class _ScanButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return SizedBox(
       width: 40,
       height: 40,
       child: isScanning
-      // Khi đang scan → spinner nhỏ
-          ? const Center(
+          ? Center(
         child: SizedBox(
           width: 18,
           height: 18,
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            color: AppColors.primary,
+            color: c.primary,
           ),
         ),
       )
-      // Bình thường → icon refresh
           : IconButton(
         padding: EdgeInsets.zero,
-        icon: const Icon(
+        icon: Icon(
           Icons.refresh_rounded,
-          color: AppColors.textTertiary,
+          color: c.textTertiary,
           size: 22,
         ),
         tooltip: 'Quét lại nhạc',
@@ -267,14 +266,14 @@ class _BottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
-
+    final c = context.appColors;
     return Padding(
       padding: EdgeInsets.fromLTRB(20, 0, 20, 12 + bottomPadding),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.card,
+          color: c.card,
           borderRadius: BorderRadius.circular(26),
-          border: Border.all(color: AppColors.border, width: 0.5),
+          border: Border.all(color: c.border, width: 0.5),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.30),
@@ -282,7 +281,7 @@ class _BottomNav extends StatelessWidget {
               offset: const Offset(0, 6),
             ),
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.06),
+              color: c.primary.withOpacity(0.06),
               blurRadius: 32,
               offset: const Offset(0, 2),
             ),
@@ -331,6 +330,7 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -343,7 +343,7 @@ class _NavItem extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: active
-              ? AppColors.primary.withOpacity(0.14)
+              ? c.primary.withOpacity(0.14)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(18),
         ),
@@ -356,7 +356,7 @@ class _NavItem extends StatelessWidget {
               curve: Curves.easeOutBack,
               child: Icon(
                 icon,
-                color: active ? AppColors.primary : AppColors.textTertiary,
+                color: active ? c.primary : c.textTertiary,
                 size: 22,
               ),
             ),
@@ -371,7 +371,7 @@ class _NavItem extends StatelessWidget {
                   style: GoogleFonts.outfit(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
+                    color: c.primary,
                   ),
                 ),
               )
@@ -397,39 +397,39 @@ class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
   final VoidCallback onClear;
 
   @override
-  Widget build(BuildContext _, double shrinkOffset, bool overlapsContent) {
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     final elevated = shrinkOffset > 0;
-
+    final c = context.appColors;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       color: elevated
-          ? AppColors.background.withOpacity(0.95)
+          ? c.background.withOpacity(0.95)
           : Colors.transparent,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: TextField(
         controller: searchCtrl,
         onChanged: onChanged,
         style: GoogleFonts.outfit(
-          color: AppColors.textPrimary,
+          color: c.textPrimary,
           fontSize: 15,
         ),
         decoration: InputDecoration(
           hintText: 'Tìm bài hát, nghệ sĩ, album…',
           hintStyle: GoogleFonts.outfit(
-            color: AppColors.textDisabled,
+            color: c.textDisabled,
             fontSize: 15,
           ),
-          prefixIcon: const Icon(Icons.search_rounded,
-              color: AppColors.textTertiary, size: 22),
+          prefixIcon: Icon(Icons.search_rounded,
+              color: c.textTertiary, size: 22),
           suffixIcon: searchCtrl.text.isNotEmpty
               ? GestureDetector(
             onTap: onClear,
-            child: const Icon(Icons.close_rounded,
-                color: AppColors.textTertiary, size: 20),
+            child: Icon(Icons.close_rounded,
+                color: c.textTertiary, size: 20),
           )
               : null,
           filled: true,
-          fillColor: AppColors.surfaceElevated,
+          fillColor: c.surfaceElevated,
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
@@ -441,7 +441,7 @@ class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: AppColors.primary, width: 1),
+            borderSide: BorderSide(color: c.primary, width: 1),
           ),
         ),
       ),
@@ -469,20 +469,20 @@ class _SearchResultsSliver extends StatelessWidget {
     final music = context.watch<MusicProvider>();
     final player = context.watch<PlayerProvider>();
     final results = music.filteredSongs;
-
+    final c = context.appColors;
     if (results.isEmpty) {
       return SliverFillRemaining(
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.search_off_rounded,
-                  color: AppColors.textDisabled, size: 48),
+              Icon(Icons.search_off_rounded,
+                  color: c.textDisabled, size: 48),
               const SizedBox(height: 12),
               Text(
                 'Không tìm thấy kết quả',
                 style: GoogleFonts.outfit(
-                  color: AppColors.textTertiary,
+                  color: c.textTertiary,
                   fontSize: 15,
                 ),
               ),
@@ -490,7 +490,7 @@ class _SearchResultsSliver extends StatelessWidget {
               Text(
                 'Thử tìm bằng tên nghệ sĩ hoặc album',
                 style: GoogleFonts.outfit(
-                  color: AppColors.textDisabled,
+                  color: c.textDisabled,
                   fontSize: 13,
                 ),
               ),
@@ -522,30 +522,30 @@ class _QuickAccessSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final music = context.watch<MusicProvider>();
-
+    final c = context.appColors;
     final sections = [
       _QuickSection(
         title: 'Nghe gần đây',
         songs: music.recentlyPlayed,
-        gradient: AppColors.recentlyPlayedGradient,
+        gradient: c.recentlyPlayedGradient,
         icon: Icons.history_rounded,
       ),
       _QuickSection(
         title: 'Nghe nhiều nhất',
         songs: music.mostPlayed,
-        gradient: AppColors.mostPlayedGradient,
+        gradient: c.mostPlayedGradient,
         icon: Icons.trending_up_rounded,
       ),
       _QuickSection(
         title: 'Yêu thích',
         songs: music.favorites,
-        gradient: AppColors.favoritesGradient,
+        gradient: c.favoritesGradient,
         icon: Icons.favorite_rounded,
       ),
       _QuickSection(
         title: 'Random Mix',
         songs: music.randomMix,
-        gradient: AppColors.randomMixGradient,
+        gradient: c.randomMixGradient,
         icon: Icons.shuffle_rounded,
       ),
     ];
@@ -560,7 +560,7 @@ class _QuickAccessSection extends StatelessWidget {
             style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              color: c.textPrimary,
             ),
           ),
         ),
@@ -624,6 +624,7 @@ class _QuickCardState extends State<_QuickCard>
   Widget build(BuildContext context) {
     final s = widget.section;
     final songCount = s.songs.length;
+    final c = context.appColors;
 
     return GestureDetector(
       onTapDown: (_) => _ctrl.forward(),
@@ -673,7 +674,7 @@ class _QuickCardState extends State<_QuickCard>
                       end: Alignment.bottomCenter,
                       colors: [
                         Colors.transparent,
-                        AppColors.scrimMedium,
+                        c.scrimMedium,
                       ],
                     ),
                   ),
@@ -731,7 +732,7 @@ class _SmartListsSection extends StatelessWidget {
     final player = context.watch<PlayerProvider>();
     final recentlyAdded = music.recentlyAdded;
     final neverPlayed = music.neverPlayed;
-
+    final c = context.appColors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -760,14 +761,14 @@ class _SmartListsSection extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(40, 40, 40, 20),
               child: Column(
                 children: [
-                  const Icon(Icons.music_off_rounded,
-                      color: AppColors.textDisabled, size: 48),
+                  Icon(Icons.music_off_rounded,
+                      color: c.textDisabled, size: 48),
                   const SizedBox(height: 16),
                   Text(
                     'Chưa có nhạc nào.\nHãy quét thư viện nhạc của bạn.',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.outfit(
-                      color: AppColors.textTertiary,
+                      color: c.textTertiary,
                       fontSize: 14,
                       height: 1.6,
                     ),
@@ -790,7 +791,7 @@ class _SmartListsSection extends StatelessWidget {
                       ),
                     ),
                     style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: c.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
                           horizontal: 20, vertical: 12),
@@ -813,6 +814,7 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
       child: Text(
@@ -820,7 +822,7 @@ class _SectionHeader extends StatelessWidget {
         style: GoogleFonts.outfit(
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
+          color: c.textPrimary,
         ),
       ),
     );
@@ -830,6 +832,7 @@ class _SectionHeader extends StatelessWidget {
 class _AvatarButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return GestureDetector(
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => const ProfileScreen()),
@@ -837,10 +840,10 @@ class _AvatarButton extends StatelessWidget {
       child: Container(
         width: 40,
         height: 40,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: LinearGradient(
-            colors: [AppColors.primary, AppColors.tertiary],
+            colors: [c.primary, c.tertiary],
           ),
         ),
         child: const Icon(Icons.person_rounded, color: Colors.white, size: 22),

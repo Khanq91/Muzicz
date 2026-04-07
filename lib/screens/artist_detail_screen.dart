@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
 import '../models/song_item.dart';
@@ -25,7 +26,7 @@ class ArtistDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final player = context.watch<PlayerProvider>();
     final music = context.watch<MusicProvider>();
-
+    final c = context.appColors;
     // Group songs by album
     final albumMap = <String, List<SongItem>>{};
     for (final s in songs) {
@@ -35,7 +36,7 @@ class ArtistDetailScreen extends StatelessWidget {
     final artistId = songs.first.artistId;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: c.background,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -43,10 +44,10 @@ class ArtistDetailScreen extends StatelessWidget {
           SliverAppBar(
             expandedHeight: 280,
             pinned: true,
-            backgroundColor: AppColors.background,
+            backgroundColor: c.background,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                  size: 20, color: AppColors.onPlayer),
+              icon: Icon(Icons.arrow_back_ios_new_rounded,
+                  size: 20, color: c.onPlayer),
               onPressed: () => Navigator.pop(context),
             ),
             flexibleSpace: FlexibleSpaceBar(
@@ -107,7 +108,7 @@ class ArtistDetailScreen extends StatelessWidget {
                   style: GoogleFonts.outfit(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: c.textPrimary,
                   ),
                 ),
               ),
@@ -146,9 +147,9 @@ class ArtistDetailScreen extends StatelessWidget {
                                   keepOldArtwork: true,
                                   artworkQuality: FilterQuality.low,
                                   nullArtworkWidget: Container(
-                                    color: AppColors.surfaceElevated,
-                                    child: const Icon(Icons.album_rounded,
-                                        color: AppColors.textDisabled,
+                                    color: c.surfaceElevated,
+                                    child: Icon(Icons.album_rounded,
+                                        color: c.textDisabled,
                                         size: 32),
                                   ),
                                 ),
@@ -162,14 +163,14 @@ class ArtistDetailScreen extends StatelessWidget {
                               style: GoogleFonts.outfit(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
+                                color: c.textPrimary,
                               ),
                             ),
                             Text(
                               '${entry.value.length} bài',
                               style: GoogleFonts.outfit(
                                 fontSize: 11,
-                                color: AppColors.textTertiary,
+                                color: c.textTertiary,
                               ),
                             ),
                           ],
@@ -191,7 +192,7 @@ class ArtistDetailScreen extends StatelessWidget {
                 style: GoogleFonts.outfit(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+                  color: c.textPrimary,
                 ),
               ),
             ),
@@ -234,13 +235,14 @@ class _ArtistHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Stack(
       fit: StackFit.expand,
       children: [
         // Background
         Container(
             decoration:
-            const BoxDecoration(gradient: AppColors.backgroundGradient)),
+            BoxDecoration(gradient: c.backgroundGradient)),
         // Artist artwork (blurred bg)
         QueryArtworkWidget(
           id: artistId,
@@ -254,8 +256,8 @@ class _ArtistHeader extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  AppColors.primary.withOpacity(0.4),
-                  AppColors.secondary.withOpacity(0.4),
+                  c.primary.withOpacity(0.4),
+                  c.secondary.withOpacity(0.4),
                 ],
               ),
             ),
@@ -263,7 +265,7 @@ class _ArtistHeader extends StatelessWidget {
         ),
         BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(color: AppColors.scrimLight),
+          child: Container(color: c.scrimLight),
         ),
         // Artist circle avatar
         Positioned(
@@ -276,10 +278,10 @@ class _ArtistHeader extends StatelessWidget {
               height: 100,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: AppColors.primary, width: 2),
+                border: Border.all(color: c.primary, width: 2),
                 boxShadow: [
                   BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
+                      color: c.primary.withOpacity(0.3),
                       blurRadius: 20),
                 ],
               ),
@@ -291,8 +293,8 @@ class _ArtistHeader extends StatelessWidget {
                   artworkBorder: BorderRadius.zero,
                   keepOldArtwork: true,
                   nullArtworkWidget: Container(
-                    decoration: const BoxDecoration(
-                      gradient: AppColors.primaryGradient,
+                    decoration: BoxDecoration(
+                      gradient: c.primaryGradient,
                     ),
                     child: Center(
                       child: Text(
@@ -302,7 +304,7 @@ class _ArtistHeader extends StatelessWidget {
                         style: GoogleFonts.outfit(
                           fontSize: 36,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.onPlayer,
+                          color: c.onPlayer,
                         ),
                       ),
                     ),
@@ -325,7 +327,7 @@ class _ArtistHeader extends StatelessWidget {
                 style: GoogleFonts.outfit(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.onPlayer,
+                  color: c.onPlayer,
                   letterSpacing: -0.5,
                 ),
               ),
@@ -335,7 +337,7 @@ class _ArtistHeader extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: GoogleFonts.outfit(
                     fontSize: 13,
-                    color: AppColors.onPlayerHigh,
+                    color: c.onPlayerHigh,
                     fontWeight: FontWeight.w300),
               ),
             ],
@@ -360,25 +362,26 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         height: 46,
         decoration: BoxDecoration(
           gradient: primary
-              ? const LinearGradient(
-              colors: [AppColors.primary, AppColors.secondary])
+              ? LinearGradient(
+              colors: [c.primary, c.secondary])
               : null,
-          color: primary ? null : AppColors.surfaceElevated,
+          color: primary ? null : c.surfaceElevated,
           borderRadius: BorderRadius.circular(12),
           border:
-          primary ? null : Border.all(color: AppColors.border, width: 0.5),
+          primary ? null : Border.all(color: c.border, width: 0.5),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon,
-                color: primary ? AppColors.onPlayer : AppColors.textSecondary,
+                color: primary ? c.onPlayer : c.textSecondary,
                 size: 20),
             const SizedBox(width: 6),
             Text(
@@ -386,7 +389,7 @@ class _ActionButton extends StatelessWidget {
               style: GoogleFonts.outfit(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: primary ? AppColors.onPlayer : AppColors.textSecondary,
+                color: primary ? c.onPlayer : c.textSecondary,
               ),
             ),
           ],

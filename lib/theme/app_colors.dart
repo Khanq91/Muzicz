@@ -133,6 +133,10 @@ class AppColors {
     colors: [accentCyan, primary],
   );
 
+  static const LinearGradient avatarButton = LinearGradient(
+      colors: [primary, tertiary]
+  );
+
   // ─────────────────────────────────────────────────────────────────────────
   // 10. DYNAMIC HELPERS
   // ─────────────────────────────────────────────────────────────────────────

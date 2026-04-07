@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
 import '../models/song_item.dart';
@@ -81,10 +82,10 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
   Widget build(BuildContext context) {
     final player = context.watch<PlayerProvider>();
     final song = player.currentSong;
-
+    final c = context.appColors;
     if (song == null) {
       return Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: c.background,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           leading: IconButton(
@@ -257,7 +258,7 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final music = context.read<MusicProvider>();
-
+    final c = context.appColors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
@@ -370,10 +371,10 @@ class _TopBar extends StatelessWidget {
       BuildContext context, MusicProvider music, SongItem song) {
     final albumSongs = music.albumMap[song.album] ?? [];
     if (albumSongs.isEmpty) return;
-
+    final c = context.appColors;
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.card,
+      backgroundColor: c.card,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -390,7 +391,7 @@ class _TopBar extends StatelessWidget {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.divider,
+                color: c.divider,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -411,9 +412,9 @@ class _TopBar extends StatelessWidget {
                         artworkBorder: BorderRadius.zero,
                         keepOldArtwork: true,
                         nullArtworkWidget: Container(
-                          color: AppColors.surfaceElevated,
-                          child: const Icon(Icons.album_rounded,
-                              color: AppColors.textDisabled),
+                          color: c.surfaceElevated,
+                          child: Icon(Icons.album_rounded,
+                              color: c.textDisabled),
                         ),
                       ),
                     ),
@@ -428,14 +429,14 @@ class _TopBar extends StatelessWidget {
                           style: GoogleFonts.outfit(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                            color: c.textPrimary,
                           ),
                         ),
                         Text(
                           '${albumSongs.length} bài hát',
                           style: GoogleFonts.outfit(
                             fontSize: 12,
-                            color: AppColors.textTertiary,
+                            color: c.textTertiary,
                           ),
                         ),
                       ],
@@ -445,7 +446,7 @@ class _TopBar extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            const Divider(color: AppColors.divider),
+            Divider(color: c.divider),
             Expanded(
               child: ListView.builder(
                 controller: scrollCtrl,
@@ -457,13 +458,13 @@ class _TopBar extends StatelessWidget {
                     contentPadding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
                     leading: isCurrentSong
-                        ? const Icon(Icons.equalizer_rounded,
-                        color: AppColors.primary, size: 24)
+                        ? Icon(Icons.equalizer_rounded,
+                        color: c.primary, size: 24)
                         : Text(
                       '${i + 1}',
                       style: GoogleFonts.outfit(
                         fontSize: 14,
-                        color: AppColors.textTertiary,
+                        color: c.textTertiary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -474,8 +475,8 @@ class _TopBar extends StatelessWidget {
                       style: GoogleFonts.outfit(
                         fontSize: 14,
                         color: isCurrentSong
-                            ? AppColors.primary
-                            : AppColors.textPrimary,
+                            ? c.primary
+                            : c.textPrimary,
                         fontWeight: isCurrentSong
                             ? FontWeight.w600
                             : FontWeight.w400,
@@ -484,7 +485,7 @@ class _TopBar extends StatelessWidget {
                     subtitle: Text(
                       s.durationFormatted,
                       style: GoogleFonts.outfit(
-                          fontSize: 12, color: AppColors.textTertiary),
+                          fontSize: 12, color: c.textTertiary),
                     ),
                     onTap: () {
                       final player = context.read<PlayerProvider>();
@@ -519,9 +520,10 @@ class _TopBar extends StatelessWidget {
   }
 
   void _showSongInfo(BuildContext context, SongItem song) {
+    final c = context.appColors;
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.card,
+      backgroundColor: c.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -535,7 +537,7 @@ class _TopBar extends StatelessWidget {
                 style: GoogleFonts.outfit(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary)),
+                    color: c.textPrimary)),
             const SizedBox(height: 16),
             _infoRow('Tên bài', song.title),
             _infoRow('Nghệ sĩ', song.artist),
@@ -1075,7 +1077,7 @@ class _QueueSheet extends StatelessWidget {
   const _QueueSheet({
     required this.player,
     required this.onClose,
-    required this.useBlur, // FIX 1: controlled từ parent
+    required this.useBlur,
   });
   final PlayerProvider player;
   final VoidCallback onClose;
@@ -1083,15 +1085,14 @@ class _QueueSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // FIX 1: Khi đang animate (useBlur = false) → dùng solid color
-    // Khi đã đứng yên (useBlur = true) → bật BackdropFilter với sigma thấp hơn
+    final c = context.appColors;
     final sheetContent = Container(
       decoration: BoxDecoration(
         // Solid base color luôn có — tránh flickering
-        color: AppColors.surface.withOpacity(useBlur ? 0.75 : 0.95),
+        color: c.surface.withOpacity(useBlur ? 0.75 : 0.95),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: const Border(
-            top: BorderSide(color: AppColors.border, width: 0.5)),
+        border: Border(
+            top: BorderSide(color: c.border, width: 0.5)),
       ),
       child: Column(
         children: [
@@ -1107,23 +1108,23 @@ class _QueueSheet extends StatelessWidget {
                           style: GoogleFonts.outfit(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary)),
+                              color: c.textPrimary)),
                       Text('${player.queue.length} bài hát',
                           style: GoogleFonts.outfit(
                               fontSize: 12,
-                              color: AppColors.textTertiary)),
+                              color: c.textTertiary)),
                     ],
                   ),
                 ),
                 IconButton(
                   onPressed: onClose,
-                  icon: const Icon(Icons.keyboard_arrow_down_rounded,
-                      color: AppColors.textTertiary, size: 26),
+                  icon: Icon(Icons.keyboard_arrow_down_rounded,
+                      color: c.textTertiary, size: 26),
                 ),
               ],
             ),
           ),
-          const Divider(color: AppColors.divider, height: 1),
+          Divider(color: c.divider, height: 1),
           Expanded(
             child: ReorderableListView.builder(
               padding: const EdgeInsets.only(bottom: 20),
@@ -1135,7 +1136,7 @@ class _QueueSheet extends StatelessWidget {
                 return ListTile(
                   key: ValueKey(song.id),
                   tileColor: isActive
-                      ? AppColors.primary.withOpacity(0.08)
+                      ? c.primary.withOpacity(0.08)
                       : null,
                   leading: SizedBox(
                     width: 40,
@@ -1149,9 +1150,9 @@ class _QueueSheet extends StatelessWidget {
                         artworkBorder: BorderRadius.zero,
                         keepOldArtwork: true,
                         nullArtworkWidget: Container(
-                          color: AppColors.surfaceElevated,
-                          child: const Icon(Icons.music_note_rounded,
-                              color: AppColors.textDisabled, size: 18),
+                          color: c.surfaceElevated,
+                          child: Icon(Icons.music_note_rounded,
+                              color: c.textDisabled, size: 18),
                         ),
                       ),
                     ),
@@ -1162,8 +1163,8 @@ class _QueueSheet extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: isActive
-                          ? AppColors.primary
-                          : AppColors.textPrimary,
+                          ? c.primary
+                          : c.textPrimary,
                       fontSize: 14,
                       fontWeight: isActive
                           ? FontWeight.w600
@@ -1172,17 +1173,17 @@ class _QueueSheet extends StatelessWidget {
                   ),
                   subtitle: Text(song.artist,
                       maxLines: 1,
-                      style: const TextStyle(
-                          color: AppColors.textTertiary, fontSize: 12)),
+                      style: TextStyle(
+                          color: c.textTertiary, fontSize: 12)),
                   trailing: isActive
-                      ? const Icon(Icons.equalizer_rounded,
-                      color: AppColors.primary, size: 20)
+                      ? Icon(Icons.equalizer_rounded,
+                      color: c.primary, size: 20)
                       : GestureDetector(
                     onTap: () => player.removeFromQueue(i),
-                    child: const Padding(
+                    child: Padding(
                       padding: EdgeInsets.all(4),
                       child: Icon(Icons.close_rounded,
-                          color: AppColors.textDisabled, size: 18),
+                          color: c.textDisabled, size: 18),
                     ),
                   ),
                   onTap: () => player.skipToIndex(i),

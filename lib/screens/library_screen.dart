@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
 import '../models/song_item.dart';
@@ -54,11 +55,10 @@ class _LibraryScreenState extends State<LibraryScreen>
   Widget build(BuildContext context) {
     final music = context.watch<MusicProvider>();
     final isScanning = music.status == LibraryStatus.scanning;
-    // FIX 4: Search query để hiện scope indicator
     final hasSearchText = _searchCtrl.text.isNotEmpty;
-
+    final c = context.appColors;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: c.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -69,8 +69,8 @@ class _LibraryScreenState extends State<LibraryScreen>
                 children: [
                   if (!widget.isEmbedded)
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                          size: 20, color: AppColors.textPrimary),
+                      icon: Icon(Icons.arrow_back_ios_new_rounded,
+                          size: 20, color: c.textPrimary),
                       onPressed: () => Navigator.pop(context),
                     ),
                   if (widget.isEmbedded) const SizedBox(width: 16),
@@ -80,7 +80,7 @@ class _LibraryScreenState extends State<LibraryScreen>
                       style: GoogleFonts.outfit(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: c.textPrimary,
                       ),
                     ),
                   ),
@@ -92,14 +92,14 @@ class _LibraryScreenState extends State<LibraryScreen>
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: AppColors.primary,
+                          color: c.primary,
                         ),
                       ),
                     ),
                   PopupMenuButton<SortType>(
-                    color: AppColors.card,
-                    icon: const Icon(Icons.sort_rounded,
-                        color: AppColors.textSecondary),
+                    color: c.card,
+                    icon: Icon(Icons.sort_rounded,
+                        color: c.textSecondary),
                     onSelected: (t) => setState(() => _sortType = t),
                     itemBuilder: (_) => [
                       _menuItem(SortType.az, 'A → Z'),
@@ -117,8 +117,8 @@ class _LibraryScreenState extends State<LibraryScreen>
               height: isScanning ? 2 : 0,
               child: isScanning
                   ? LinearProgressIndicator(
-                backgroundColor: AppColors.divider,
-                color: AppColors.primary,
+                backgroundColor: c.divider,
+                color: c.primary,
               )
                   : const SizedBox.shrink(),
             ),
@@ -133,13 +133,13 @@ class _LibraryScreenState extends State<LibraryScreen>
                   setState(() {});
                 },
                 style: GoogleFonts.outfit(
-                    color: AppColors.textPrimary, fontSize: 14),
+                    color: c.textPrimary, fontSize: 14),
                 decoration: InputDecoration(
                   hintText: 'Tìm trong thư viện…',
                   hintStyle: GoogleFonts.outfit(
-                      color: AppColors.textDisabled, fontSize: 14),
-                  prefixIcon: const Icon(Icons.search_rounded,
-                      color: AppColors.textTertiary, size: 20),
+                      color: c.textDisabled, fontSize: 14),
+                  prefixIcon: Icon(Icons.search_rounded,
+                      color: c.textTertiary, size: 20),
                   suffixIcon: _searchCtrl.text.isNotEmpty
                       ? GestureDetector(
                     onTap: () {
@@ -149,12 +149,12 @@ class _LibraryScreenState extends State<LibraryScreen>
                           .setLibrarySearchQuery('');
                       setState(() {});
                     },
-                    child: const Icon(Icons.close_rounded,
-                        color: AppColors.textTertiary, size: 18),
+                    child: Icon(Icons.close_rounded,
+                        color: c.textTertiary, size: 18),
                   )
                       : null,
                   filled: true,
-                  fillColor: AppColors.surfaceElevated,
+                  fillColor: c.surfaceElevated,
                   contentPadding: const EdgeInsets.symmetric(vertical: 10),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -163,7 +163,7 @@ class _LibraryScreenState extends State<LibraryScreen>
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide:
-                    const BorderSide(color: AppColors.primary, width: 1),
+                    BorderSide(color: c.primary, width: 1),
                   ),
                 ),
               ),
@@ -179,14 +179,14 @@ class _LibraryScreenState extends State<LibraryScreen>
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
                 child: Row(
                   children: [
-                    const Icon(Icons.storage_rounded,
-                        size: 12, color: AppColors.textDisabled),
+                    Icon(Icons.storage_rounded,
+                        size: 12, color: c.textDisabled),
                     const SizedBox(width: 5),
                     Text(
                       'Tìm trong thư viện cục bộ · ${context.watch<MusicProvider>().allSongs.length} bài',
                       style: GoogleFonts.outfit(
                         fontSize: 11,
-                        color: AppColors.textDisabled,
+                        color: c.textDisabled,
                       ),
                     ),
                   ],
@@ -351,7 +351,7 @@ class _SongsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final music = context.watch<MusicProvider>();
     final player = context.watch<PlayerProvider>();
-
+    final c = context.appColors;
     final songs = _sorted(
       music.librarySearchQuery.isEmpty
           ? music.allSongs
@@ -372,8 +372,8 @@ class _SongsTab extends StatelessWidget {
     }
 
     return RefreshIndicator(
-      color: AppColors.primary,
-      backgroundColor: AppColors.card,
+      color: c.primary,
+      backgroundColor: c.card,
       onRefresh: () => context.read<MusicProvider>().scanMusic(),
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(
@@ -400,7 +400,7 @@ class _SongsTab extends StatelessWidget {
   }
 }
 
-// ── Albums Tab — FIX 5: tap → AlbumDetailScreen thay vì play ─────────────────
+// ── Albums Tab  ─────────────────
 
 class _AlbumsTab extends StatelessWidget {
   const _AlbumsTab({required this.onScanTap});
@@ -411,6 +411,7 @@ class _AlbumsTab extends StatelessWidget {
     final music = context.watch<MusicProvider>();
     final albums = music.albumMap.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
+    final c = context.appColors;
 
     if (albums.isEmpty) {
       return _EmptyState(
@@ -437,7 +438,6 @@ class _AlbumsTab extends StatelessWidget {
         final albumId = songs.first.albumId;
 
         return GestureDetector(
-          // FIX 5: Navigate to AlbumDetailScreen
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(
@@ -456,7 +456,7 @@ class _AlbumsTab extends StatelessWidget {
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    color: AppColors.surfaceElevated,
+                    color: c.surfaceElevated,
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
@@ -468,10 +468,10 @@ class _AlbumsTab extends StatelessWidget {
                       keepOldArtwork: true,
                       artworkQuality: FilterQuality.low,
                       nullArtworkWidget: Container(
-                        color: AppColors.surfaceElevated,
-                        child: const Icon(
+                        color: c.surfaceElevated,
+                        child: Icon(
                           Icons.album_rounded,
-                          color: AppColors.textDisabled,
+                          color: c.textDisabled,
                           size: 40,
                         ),
                       ),
@@ -487,14 +487,14 @@ class _AlbumsTab extends StatelessWidget {
                 style: GoogleFonts.outfit(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+                  color: c.textPrimary,
                 ),
               ),
               Text(
                 '${songs.length} bài',
                 style: GoogleFonts.outfit(
                   fontSize: 11,
-                  color: AppColors.textTertiary,
+                  color: c.textTertiary,
                 ),
               ),
             ],
@@ -516,7 +516,7 @@ class _ArtistsTab extends StatelessWidget {
     final music = context.watch<MusicProvider>();
     final artists = music.artistMap.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
-
+    final c = context.appColors;
     if (artists.isEmpty) {
       return _EmptyState(
         icon: Icons.person_rounded,
@@ -548,14 +548,14 @@ class _ArtistsTab extends StatelessWidget {
                 artworkBorder: BorderRadius.zero,
                 keepOldArtwork: true,
                 nullArtworkWidget: Container(
-                  color: AppColors.surfaceElevated,
+                  color: c.surfaceElevated,
                   child: Center(
                     child: Text(
                       entry.key.isNotEmpty ? entry.key[0].toUpperCase() : '?',
                       style: GoogleFonts.outfit(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
+                        color: c.primary,
                       ),
                     ),
                   ),
@@ -567,12 +567,12 @@ class _ArtistsTab extends StatelessWidget {
               style: GoogleFonts.outfit(
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.textPrimary)),
+                  color: c.textPrimary)),
           subtitle: Text('${songs.length} bài hát',
               style: GoogleFonts.outfit(
-                  fontSize: 12, color: AppColors.textTertiary)),
-          trailing: const Icon(Icons.chevron_right_rounded,
-              color: AppColors.textDisabled, size: 20),
+                  fontSize: 12, color: c.textTertiary)),
+          trailing: Icon(Icons.chevron_right_rounded,
+              color: c.textDisabled, size: 20),
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(
@@ -597,6 +597,7 @@ class _FoldersTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     final music = context.watch<MusicProvider>();
     final folderMap = <String, List<SongItem>>{};
     for (final s in music.allSongs) {
@@ -631,19 +632,19 @@ class _FoldersTab extends StatelessWidget {
             height: 48,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              color: AppColors.primary.withOpacity(0.15),
+              color: c.primary.withOpacity(0.15),
             ),
-            child: const Icon(Icons.folder_rounded,
-                color: AppColors.primary, size: 24),
+            child: Icon(Icons.folder_rounded,
+                color: c.primary, size: 24),
           ),
           title: Text(entry.key,
               style: GoogleFonts.outfit(
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.textPrimary)),
+                  color: c.textPrimary)),
           subtitle: Text('${entry.value.length} bài hát',
               style: GoogleFonts.outfit(
-                  fontSize: 12, color: AppColors.textTertiary)),
+                  fontSize: 12, color: c.textTertiary)),
           onTap: () {
             context.read<PlayerProvider>().playSongs(entry.value);
             Navigator.of(context).push(_playerRoute());
@@ -663,6 +664,7 @@ class _CountTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Tab(
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -675,7 +677,7 @@ class _CountTab extends StatelessWidget {
               padding:
               const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.15),
+                color: c.primary.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -683,7 +685,7 @@ class _CountTab extends StatelessWidget {
                 style: GoogleFonts.outfit(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
+                  color: c.primary,
                 ),
               ),
             ),
@@ -713,20 +715,19 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: AppColors.textDisabled, size: 52),
+          Icon(icon, color: c.textDisabled, size: 52),
           const SizedBox(height: 14),
           Text(
             message,
             textAlign: TextAlign.center,
             style: GoogleFonts.outfit(
-                color: AppColors.textTertiary, fontSize: 14, height: 1.6),
+                color: c.textTertiary, fontSize: 14, height: 1.6),
           ),
-
-          // FIX 3: Nút quét nếu có onScanTap
           if (onScanTap != null) ...[
             const SizedBox(height: 20),
             FilledButton.icon(
@@ -738,7 +739,7 @@ class _EmptyState extends StatelessWidget {
                     fontSize: 14, fontWeight: FontWeight.w600),
               ),
               style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primary,
+                backgroundColor: c.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                     horizontal: 24, vertical: 12),
@@ -756,16 +757,16 @@ class _EmptyState extends StatelessWidget {
               padding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: AppColors.surfaceElevated,
+                color: c.surfaceElevated,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: c.border),
               ),
               child: Column(
                 children: [
                   Text(
                     'Gợi ý tìm kiếm:',
                     style: GoogleFonts.outfit(
-                        fontSize: 12, color: AppColors.textTertiary),
+                        fontSize: 12, color: c.textTertiary),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -773,7 +774,7 @@ class _EmptyState extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: GoogleFonts.outfit(
                         fontSize: 12,
-                        color: AppColors.textSecondary,
+                        color: c.textSecondary,
                         fontWeight: FontWeight.w500),
                   ),
                 ],
@@ -784,12 +785,12 @@ class _EmptyState extends StatelessWidget {
               onPressed: () {
                 context.read<MusicProvider>().setLibrarySearchQuery('');
               },
-              icon: const Icon(Icons.close_rounded,
-                  size: 16, color: AppColors.primary),
+              icon: Icon(Icons.close_rounded,
+                  size: 16, color: c.primary),
               label: Text(
                 'Xóa tìm kiếm',
                 style: GoogleFonts.outfit(
-                    color: AppColors.primary, fontWeight: FontWeight.w600),
+                    color: c.primary, fontWeight: FontWeight.w600),
               ),
             ),
           ],

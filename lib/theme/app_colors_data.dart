@@ -71,6 +71,7 @@ class AppColorsData extends ThemeExtension<AppColorsData> {
     required this.mostPlayedGradient,
     required this.favoritesGradient,
     required this.randomMixGradient,
+    required this.avatarButton,
 
     // ── Meta ──────────────────────────────────────────────────────────────
     required this.brightness,
@@ -135,6 +136,7 @@ class AppColorsData extends ThemeExtension<AppColorsData> {
   final LinearGradient mostPlayedGradient;
   final LinearGradient favoritesGradient;
   final LinearGradient randomMixGradient;
+  final LinearGradient avatarButton;
 
   // ── Meta ─────────────────────────────────────────────────────────────────
   final Brightness brightness;
@@ -188,6 +190,7 @@ class AppColorsData extends ThemeExtension<AppColorsData> {
     LinearGradient? mostPlayedGradient,
     LinearGradient? favoritesGradient,
     LinearGradient? randomMixGradient,
+    LinearGradient? avatarButton,
     Brightness? brightness,
   }) {
     return AppColorsData(
@@ -234,6 +237,7 @@ class AppColorsData extends ThemeExtension<AppColorsData> {
       mostPlayedGradient: mostPlayedGradient ?? this.mostPlayedGradient,
       favoritesGradient: favoritesGradient ?? this.favoritesGradient,
       randomMixGradient: randomMixGradient ?? this.randomMixGradient,
+      avatarButton: avatarButton ?? this.avatarButton,
       brightness: brightness ?? this.brightness,
     );
   }
@@ -291,6 +295,8 @@ class AppColorsData extends ThemeExtension<AppColorsData> {
           favoritesGradient, other.favoritesGradient, t)!,
       randomMixGradient: LinearGradient.lerp(
           randomMixGradient, other.randomMixGradient, t)!,
+      avatarButton: LinearGradient.lerp(
+          avatarButton, other.avatarButton, t)!,
       brightness: t < 0.5 ? brightness : other.brightness,
     );
   }
@@ -394,6 +400,9 @@ abstract class AppColorPresets {
     randomMixGradient: LinearGradient(
       colors: [Color(0xFF00BCD4), Color(0xFF9D50FF)],
     ),
+    avatarButton: LinearGradient(
+      colors: [Color(0xFF9D50FF), Color(0xFFC25169)],
+    ),
   );
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -471,6 +480,9 @@ abstract class AppColorPresets {
     ),
     randomMixGradient: LinearGradient(
       colors: [Color(0xFF00D9F5), Color(0xFFAA6FFF)],
+    ),
+    avatarButton: LinearGradient(
+      colors: [Color(0xFF9D50FF), Color(0xFFC25169)],
     ),
   );
 
@@ -552,6 +564,9 @@ abstract class AppColorPresets {
     ),
     randomMixGradient: LinearGradient(
       colors: [Color(0xFF0097A7), Color(0xFF7C3AED)],
+    ),
+    avatarButton: LinearGradient(
+      colors: [Color(0xFF9D50FF), Color(0xFFC25169)],
     ),
   );
 }

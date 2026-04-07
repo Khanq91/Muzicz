@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
 import '../models/playlist_item.dart';
@@ -19,7 +20,7 @@ class PlaylistsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final music = context.watch<MusicProvider>();
     final playlists = music.playlists;
-
+    final c = context.appColors;
     return Stack(
       children: [
         playlists.isEmpty
@@ -27,14 +28,14 @@ class PlaylistsTab extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.playlist_play_rounded,
-                        color: AppColors.textDisabled, size: 52),
+                    Icon(Icons.playlist_play_rounded,
+                        color: c.textDisabled, size: 52),
                     const SizedBox(height: 14),
                     Text(
                       'Chưa có danh sách phát nào.\nNhấn + để tạo mới.',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.outfit(
-                        color: AppColors.textTertiary,
+                        color: c.textTertiary,
                         fontSize: 14,
                         height: 1.6,
                       ),
@@ -85,6 +86,7 @@ class _PlaylistTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       leading: _PlaylistCover(playlist: playlist, size: 52),
@@ -93,18 +95,18 @@ class _PlaylistTile extends StatelessWidget {
         style: GoogleFonts.outfit(
           fontSize: 15,
           fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
+          color: c.textPrimary,
         ),
       ),
       subtitle: Text(
         '${playlist.songCount} bài · ${_fmtDuration(playlist.totalDuration)}',
         style: GoogleFonts.outfit(
-            fontSize: 12, color: AppColors.textTertiary),
+            fontSize: 12, color: c.textTertiary),
       ),
       trailing: PopupMenuButton<String>(
-        color: AppColors.card,
-        icon: const Icon(Icons.more_vert_rounded,
-            color: AppColors.textTertiary, size: 20),
+        color: c.card,
+        icon: Icon(Icons.more_vert_rounded,
+            color: c.textTertiary, size: 20),
         onSelected: (val) {
           if (val == 'delete') onDelete();
         },
@@ -113,12 +115,12 @@ class _PlaylistTile extends StatelessWidget {
             value: 'delete',
             child: Row(
               children: [
-                const Icon(Icons.delete_outline_rounded,
-                    color: AppColors.tertiary, size: 20),
+                Icon(Icons.delete_outline_rounded,
+                    color: c.tertiary, size: 20),
                 const SizedBox(width: 12),
                 Text('Xóa',
                     style: GoogleFonts.outfit(
-                        color: AppColors.tertiary, fontSize: 14)),
+                        color: c.tertiary, fontSize: 14)),
               ],
             ),
           ),
@@ -143,6 +145,7 @@ class _PlaylistCover extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     // Custom image
     if (playlist.coverPath != null) {
       return ClipRRect(
@@ -163,12 +166,12 @@ class _PlaylistCover extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
-          gradient: const LinearGradient(
-            colors: [AppColors.primary, AppColors.secondary],
+          gradient: LinearGradient(
+            colors: [c.primary, c.secondary],
           ),
         ),
         child: Icon(Icons.playlist_play_rounded,
-            color: AppColors.onPlayer, size: size * 0.5),
+            color: c.onPlayer, size: size * 0.5),
       );
     }
     if (songs.length == 1) {
@@ -197,7 +200,7 @@ class _PlaylistCover extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           children: List.generate(4, (i) {
             if (i >= songs.length) {
-              return Container(color: AppColors.surfaceElevated);
+              return Container(color: c.surfaceElevated);
             }
             return QueryArtworkWidget(
               id: songs[i].albumId,
@@ -206,7 +209,7 @@ class _PlaylistCover extends StatelessWidget {
               artworkBorder: BorderRadius.zero,
               keepOldArtwork: true,
               nullArtworkWidget:
-                  Container(color: AppColors.surfaceElevated),
+                  Container(color: c.surfaceElevated),
             );
           }),
         ),
@@ -226,55 +229,57 @@ class _PlaylistCover extends StatelessWidget {
 class _CreatePlaylistFab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return GestureDetector(
       onTap: () => _showCreateDialog(context),
       child: Container(
         width: 56,
         height: 56,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: AppColors.primaryGradient,
+          gradient: c.primaryGradient,
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary,
+              color: c.primary,
               blurRadius: 16,
               offset: Offset(0, 4),
             ),
           ],
         ),
-        child: const Icon(Icons.add_rounded, color: AppColors.onPlayer, size: 28),
+        child: Icon(Icons.add_rounded, color: c.onPlayer, size: 28),
       ),
     );
   }
 
   void _showCreateDialog(BuildContext context) {
+    final c = context.appColors;
     final ctrl = TextEditingController();
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: AppColors.card,
+        backgroundColor: c.card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Tạo danh sách phát',
           style: GoogleFonts.outfit(
-              color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+              color: c.textPrimary, fontWeight: FontWeight.w600),
         ),
         content: TextField(
           controller: ctrl,
           autofocus: true,
-          style: GoogleFonts.outfit(color: AppColors.textPrimary),
+          style: GoogleFonts.outfit(color: c.textPrimary),
           decoration: InputDecoration(
             hintText: 'Tên danh sách…',
-            hintStyle: GoogleFonts.outfit(color: AppColors.textDisabled),
+            hintStyle: GoogleFonts.outfit(color: c.textDisabled),
             filled: true,
-            fillColor: AppColors.surfaceElevated,
+            fillColor: c.surfaceElevated,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide.none,
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AppColors.primary, width: 1),
+              borderSide: BorderSide(color: c.primary, width: 1),
             ),
           ),
         ),
@@ -283,7 +288,7 @@ class _CreatePlaylistFab extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
             child: Text('Hủy',
                 style:
-                    GoogleFonts.outfit(color: AppColors.textTertiary)),
+                    GoogleFonts.outfit(color: c.textTertiary)),
           ),
           TextButton(
             onPressed: () {
@@ -295,7 +300,7 @@ class _CreatePlaylistFab extends StatelessWidget {
             },
             child: Text('Tạo',
                 style: GoogleFonts.outfit(
-                    color: AppColors.primary,
+                    color: c.primary,
                     fontWeight: FontWeight.w600)),
           ),
         ],
@@ -316,9 +321,9 @@ class PlaylistDetailScreen extends StatelessWidget {
     final player = context.watch<PlayerProvider>();
     final playlist =
         music.playlists.firstWhere((p) => p.id == playlistId);
-
+    final c = context.appColors;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: c.background,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -326,16 +331,16 @@ class PlaylistDetailScreen extends StatelessWidget {
           SliverAppBar(
             expandedHeight: 260,
             pinned: true,
-            backgroundColor: AppColors.background,
+            backgroundColor: c.background,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                  size: 20, color: AppColors.onPlayer),
+              icon: Icon(Icons.arrow_back_ios_new_rounded,
+                  size: 20, color: c.onPlayer),
               onPressed: () => Navigator.pop(context),
             ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.edit_rounded,
-                    color: AppColors.onPlayer, size: 22),
+                icon: Icon(Icons.edit_rounded,
+                    color: c.onPlayer, size: 22),
                 onPressed: () => _showEditDialog(context, music, playlist),
               ),
             ],
@@ -402,20 +407,20 @@ class PlaylistDetailScreen extends StatelessWidget {
                   Text(
                     '${playlist.songCount} bài hát',
                     style: GoogleFonts.outfit(
-                        color: AppColors.textTertiary, fontSize: 13),
+                        color: c.textTertiary, fontSize: 13),
                   ),
                   GestureDetector(
                     onTap: () => _showAddSongsSheet(
                         context, music, playlist),
                     child: Row(
                       children: [
-                        const Icon(Icons.add_rounded,
-                            color: AppColors.primary, size: 18),
+                        Icon(Icons.add_rounded,
+                            color: c.primary, size: 18),
                         const SizedBox(width: 4),
                         Text(
                           'Thêm bài',
                           style: GoogleFonts.outfit(
-                              color: AppColors.primary,
+                              color: c.primary,
                               fontSize: 13,
                               fontWeight: FontWeight.w500),
                         ),
@@ -432,14 +437,14 @@ class PlaylistDetailScreen extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.music_note_rounded,
-                        color: AppColors.textDisabled, size: 48),
+                    Icon(Icons.music_note_rounded,
+                        color: c.textDisabled, size: 48),
                     const SizedBox(height: 12),
                     Text(
                       'Danh sách trống.\nNhấn "Thêm bài" để bắt đầu.',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.outfit(
-                          color: AppColors.textTertiary,
+                          color: c.textTertiary,
                           fontSize: 14,
                           height: 1.6),
                     ),
@@ -479,10 +484,10 @@ class PlaylistDetailScreen extends StatelessWidget {
                       onTap: () {
                         music.removeFromPlaylist(playlistId, song.id);
                       },
-                      child: const Padding(
+                      child: Padding(
                         padding: EdgeInsets.all(8),
                         child: Icon(Icons.remove_circle_outline_rounded,
-                            color: AppColors.textDisabled, size: 20),
+                            color: c.textDisabled, size: 20),
                       ),
                     ),
                   );
@@ -499,22 +504,23 @@ class PlaylistDetailScreen extends StatelessWidget {
   void _showEditDialog(
       BuildContext context, MusicProvider music, PlaylistItem playlist) {
     final ctrl = TextEditingController(text: playlist.name);
+    final c = context.appColors;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: AppColors.card,
+        backgroundColor: c.card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Đổi tên',
             style: GoogleFonts.outfit(
-                color: AppColors.textPrimary,
+                color: c.textPrimary,
                 fontWeight: FontWeight.w600)),
         content: TextField(
           controller: ctrl,
           autofocus: true,
-          style: GoogleFonts.outfit(color: AppColors.textPrimary),
+          style: GoogleFonts.outfit(color: c.textPrimary),
           decoration: InputDecoration(
             filled: true,
-            fillColor: AppColors.surfaceElevated,
+            fillColor: c.surfaceElevated,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide.none,
@@ -522,7 +528,7 @@ class PlaylistDetailScreen extends StatelessWidget {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide:
-                  const BorderSide(color: AppColors.primary, width: 1),
+                  BorderSide(color: c.primary, width: 1),
             ),
           ),
         ),
@@ -530,7 +536,7 @@ class PlaylistDetailScreen extends StatelessWidget {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text('Hủy',
-                style: GoogleFonts.outfit(color: AppColors.textTertiary)),
+                style: GoogleFonts.outfit(color: c.textTertiary)),
           ),
           TextButton(
             onPressed: () {
@@ -542,7 +548,7 @@ class PlaylistDetailScreen extends StatelessWidget {
             },
             child: Text('Lưu',
                 style: GoogleFonts.outfit(
-                    color: AppColors.primary,
+                    color: c.primary,
                     fontWeight: FontWeight.w600)),
           ),
         ],
@@ -552,6 +558,7 @@ class PlaylistDetailScreen extends StatelessWidget {
 
   void _showAddSongsSheet(
       BuildContext context, MusicProvider music, PlaylistItem playlist) {
+    final c = context.appColors;
     final existingIds = playlist.songs.map((s) => s.id).toSet();
     final available = music.allSongs
         .where((s) => !existingIds.contains(s.id))
@@ -559,7 +566,7 @@ class PlaylistDetailScreen extends StatelessWidget {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.card,
+      backgroundColor: c.card,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -576,7 +583,7 @@ class PlaylistDetailScreen extends StatelessWidget {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.divider,
+                color: c.divider,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -586,7 +593,7 @@ class PlaylistDetailScreen extends StatelessWidget {
               style: GoogleFonts.outfit(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                color: c.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
@@ -596,7 +603,7 @@ class PlaylistDetailScreen extends StatelessWidget {
                       child: Text(
                         'Tất cả bài hát đã có trong danh sách.',
                         style: GoogleFonts.outfit(
-                            color: AppColors.textTertiary),
+                            color: c.textTertiary),
                       ),
                     )
                   : ListView.builder(
@@ -620,10 +627,10 @@ class PlaylistDetailScreen extends StatelessWidget {
                                 artworkBorder: BorderRadius.zero,
                                 keepOldArtwork: true,
                                 nullArtworkWidget: Container(
-                                  color: AppColors.surfaceElevated,
-                                  child: const Icon(
+                                  color: c.surfaceElevated,
+                                  child: Icon(
                                       Icons.music_note_rounded,
-                                      color: AppColors.textDisabled,
+                                      color: c.textDisabled,
                                       size: 20),
                                 ),
                               ),
@@ -633,16 +640,16 @@ class PlaylistDetailScreen extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.outfit(
-                                  color: AppColors.textPrimary,
+                                  color: c.textPrimary,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500)),
                           subtitle: Text(song.artist,
                               maxLines: 1,
                               style: GoogleFonts.outfit(
-                                  color: AppColors.textTertiary,
+                                  color: c.textTertiary,
                                   fontSize: 12)),
-                          trailing: const Icon(Icons.add_rounded,
-                              color: AppColors.primary),
+                          trailing: Icon(Icons.add_rounded,
+                              color: c.primary),
                           onTap: () {
                             music.addToPlaylist(playlist.id, song);
                             Navigator.pop(context);
@@ -666,12 +673,13 @@ class _PlaylistHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Stack(
       fit: StackFit.expand,
       children: [
         // Background
         Container(
-          decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
+          decoration: BoxDecoration(gradient: c.backgroundGradient),
         ),
         // Cover image or generated mosaic
         if (playlist.coverPath != null)
@@ -696,7 +704,7 @@ class _PlaylistHeader extends StatelessWidget {
               end: Alignment.bottomCenter,
               colors: [
                 Colors.transparent,
-                AppColors.background.withOpacity(0.95),
+                c.background.withOpacity(0.95),
               ],
             ),
           ),
@@ -714,7 +722,7 @@ class _PlaylistHeader extends StatelessWidget {
                 style: GoogleFonts.outfit(
                   fontSize: 26,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.onPlayer,
+                  color: c.onPlayer,
                   letterSpacing: -0.5,
                 ),
               ),
@@ -722,7 +730,7 @@ class _PlaylistHeader extends StatelessWidget {
                 '${playlist.songCount} bài hát',
                 style: GoogleFonts.outfit(
                   fontSize: 14,
-                  color: AppColors.onPlayerHigh,
+                  color: c.onPlayerHigh,
                   fontWeight: FontWeight.w300,
                 ),
               ),
@@ -750,27 +758,28 @@ class _PlayButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         height: 46,
         decoration: BoxDecoration(
-          gradient: primary ? const LinearGradient(
+          gradient: primary ? LinearGradient(
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
-            colors: [AppColors.primary, AppColors.secondary],
+            colors: [c.primary, c.secondary],
           ) : null,
-          color: primary ? null : AppColors.surfaceElevated,
+          color: primary ? null : c.surfaceElevated,
           borderRadius: BorderRadius.circular(12),
           border: primary
               ? null
-              : Border.all(color: AppColors.border, width: 0.5),
+              : Border.all(color: c.border, width: 0.5),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon,
-                color: primary ? AppColors.onPlayer : AppColors.textSecondary,
+                color: primary ? c.onPlayer : c.textSecondary,
                 size: 20),
             const SizedBox(width: 6),
             Text(
@@ -778,7 +787,7 @@ class _PlayButton extends StatelessWidget {
               style: GoogleFonts.outfit(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: primary ? AppColors.onPlayer : AppColors.textSecondary,
+                color: primary ? c.onPlayer : c.textSecondary,
               ),
             ),
           ],

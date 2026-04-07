@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
 import '../models/song_item.dart';
@@ -27,8 +28,9 @@ class AlbumDetailScreen extends StatelessWidget {
     final albumId = songs.isNotEmpty ? songs.first.albumId : 0;
     final artistName = songs.isNotEmpty ? songs.first.artist : '';
 
+    final c = context.appColors;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: c.background,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -36,7 +38,7 @@ class AlbumDetailScreen extends StatelessWidget {
           SliverAppBar(
             expandedHeight: 280,
             pinned: true,
-            backgroundColor: AppColors.background,
+            backgroundColor: c.background,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new_rounded,
                   size: 20, color: Colors.white),
@@ -98,7 +100,7 @@ class AlbumDetailScreen extends StatelessWidget {
                 '${songs.length} bài hát',
                 style: GoogleFonts.outfit(
                   fontSize: 13,
-                  color: AppColors.textTertiary,
+                  color: c.textTertiary,
                   fontWeight: FontWeight.w400,
                 ),
               ),
@@ -147,12 +149,13 @@ class _AlbumHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Stack(
       fit: StackFit.expand,
       children: [
         // Background gradient
         Container(
-          decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
+          decoration: BoxDecoration(gradient: c.backgroundGradient),
         ),
         // Album art full-bleed (blurred)
         QueryArtworkWidget(
@@ -168,8 +171,8 @@ class _AlbumHeader extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  AppColors.primary.withOpacity(0.4),
-                  AppColors.secondary.withOpacity(0.4),
+                  c.primary.withOpacity(0.4),
+                  c.secondary.withOpacity(0.4),
                 ],
               ),
             ),
@@ -205,8 +208,8 @@ class _AlbumHeader extends StatelessWidget {
                   artworkBorder: BorderRadius.zero,
                   keepOldArtwork: true,
                   nullArtworkWidget: Container(
-                    decoration: const BoxDecoration(
-                      gradient: AppColors.primaryGradient,
+                    decoration: BoxDecoration(
+                      gradient: c.primaryGradient,
                     ),
                     child: const Icon(Icons.album_rounded,
                         color: Colors.white54, size: 48),
@@ -270,25 +273,26 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         height: 46,
         decoration: BoxDecoration(
           gradient: primary
-              ? const LinearGradient(
-              colors: [AppColors.primary, AppColors.secondary])
+              ? LinearGradient(
+              colors: [c.primary, c.secondary])
               : null,
-          color: primary ? null : AppColors.surfaceElevated,
+          color: primary ? null : c.surfaceElevated,
           borderRadius: BorderRadius.circular(12),
           border:
-          primary ? null : Border.all(color: AppColors.border, width: 0.5),
+          primary ? null : Border.all(color: c.border, width: 0.5),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon,
-                color: primary ? Colors.white : AppColors.textSecondary,
+                color: primary ? Colors.white : c.textSecondary,
                 size: 20),
             const SizedBox(width: 6),
             Text(
@@ -296,7 +300,7 @@ class _ActionButton extends StatelessWidget {
               style: GoogleFonts.outfit(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: primary ? Colors.white : AppColors.textSecondary,
+                color: primary ? Colors.white : c.textSecondary,
               ),
             ),
           ],
