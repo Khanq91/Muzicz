@@ -107,7 +107,7 @@ class ProfileScreen extends StatelessWidget {
                           icon: Icons.info_outline_rounded,
                           iconColor: c.textTertiary,
                           title: 'Về ứng dụng',
-                          subtitle: 'Nocturne Audio v1.0.0',
+                          subtitle: 'Muzicz Audio v1.0.0',
                           onTap: () => _showAbout(context),
                           colors: c,
                         ),
@@ -146,9 +146,9 @@ class ProfileScreen extends StatelessWidget {
   void _showAbout(BuildContext context) {
     showAboutDialog(
       context: context,
-      applicationName: 'Nocturne Audio',
+      applicationName: 'Muzizc Audio',
       applicationVersion: '1.0.0',
-      applicationLegalese: '© 2024 Nocturne Audio',
+      applicationLegalese: '© 2026 Muzizc Audio',
     );
   }
 }

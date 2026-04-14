@@ -185,7 +185,7 @@ class _PlaylistCover extends StatelessWidget {
           keepOldArtwork: true,
           artworkWidth: size,
           artworkHeight: size,
-          nullArtworkWidget: _defaultCover(size),
+          nullArtworkWidget: _defaultCover(context, size),
         ),
       );
     }
@@ -217,11 +217,19 @@ class _PlaylistCover extends StatelessWidget {
     );
   }
 
-  Widget _defaultCover(double size) => Container(
-        color: AppColors.surfaceElevated,
-        child: Icon(Icons.music_note_rounded,
-            color: AppColors.textDisabled, size: size * 0.4),
-      );
+  // Widget _defaultCover(double size) => Container(
+  //   color: AppColors.surfaceElevated,
+  //   child: Icon(Icons.music_note_rounded,
+  //       color: AppColors.textDisabled, size: size * 0.4),
+  // );
+  Widget _defaultCover(BuildContext context, double size) {
+    final c = context.appColors;
+    return Container(
+      color: c.surfaceElevated,
+      child: Icon(Icons.music_note_rounded,
+          color: c.textDisabled, size: size * 0.4),
+    );
+  }
 }
 
 // ── FAB create playlist ───────────────────────────────────

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:muziczz/theme/app_colors_data.dart';
 import '../theme/app_colors.dart';
 import 'splash_screen.dart';
 import 'onboarding_screen.dart';
@@ -40,8 +41,9 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: c.background,
       body: Stack(
         children: [
           // Background glow
@@ -55,7 +57,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.primary.withOpacity(0.12),
+                    c.primary.withOpacity(0.12),
                     Colors.transparent,
                   ],
                 ),
@@ -72,7 +74,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.tertiary.withOpacity(0.08),
+                    c.tertiary.withOpacity(0.08),
                     Colors.transparent,
                   ],
                 ),
@@ -107,7 +109,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                         style: GoogleFonts.outfit(
                           fontSize: 11,
                           fontWeight: FontWeight.w300,
-                          color: AppColors.textTertiary,
+                          color: c.textTertiary,
                           letterSpacing: 5,
                         ),
                       ),
@@ -118,7 +120,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                         style: GoogleFonts.outfit(
                           fontSize: 14,
                           fontWeight: FontWeight.w300,
-                          color: AppColors.textTertiary,
+                          color: c.textTertiary,
                           height: 1.6,
                         ),
                       ),
@@ -199,6 +201,7 @@ class _GradientButtonState extends State<_GradientButton>
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return GestureDetector(
       onTapDown: (_) => _ctrl.forward(),
       onTapUp: (_) async {
@@ -212,15 +215,15 @@ class _GradientButtonState extends State<_GradientButton>
           width: double.infinity,
           height: 56,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
-              colors: [AppColors.primary, AppColors.secondary],
+              colors: [c.primary, c.secondary],
             ),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.35),
+                color: c.primary.withOpacity(0.35),
                 blurRadius: 20,
                 offset: const Offset(0, 6),
               ),
@@ -283,6 +286,7 @@ class _OutlinedButtonState extends State<_OutlinedButton>
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return GestureDetector(
       onTapDown: (_) => _ctrl.forward(),
       onTapUp: (_) async {
@@ -297,8 +301,8 @@ class _OutlinedButtonState extends State<_OutlinedButton>
           height: 56,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border, width: 1),
-            color: AppColors.glassBg,
+            border: Border.all(color: c.border, width: 1),
+            color: c.glassBg,
           ),
           child: Center(
             child: Text(
@@ -306,7 +310,7 @@ class _OutlinedButtonState extends State<_OutlinedButton>
               style: GoogleFonts.outfit(
                 fontSize: 16,
                 fontWeight: FontWeight.w400,
-                color: AppColors.textSecondary,
+                color: c.textSecondary,
               ),
             ),
           ),

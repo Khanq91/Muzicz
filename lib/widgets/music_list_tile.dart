@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
 import '../models/song_item.dart';
@@ -30,7 +31,7 @@ class MusicListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final musicProvider = context.watch<MusicProvider>();
     final isFav = musicProvider.isFavorite(song.id);
-
+    final c = context.appColors;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -40,15 +41,15 @@ class MusicListTile extends StatelessWidget {
           _showContextMenu(context, isFav, musicProvider);
         },
         borderRadius: BorderRadius.circular(12),
-        splashColor: AppColors.primary.withOpacity(0.1),
-        highlightColor: AppColors.primary.withOpacity(0.05),
+        splashColor: c.primary.withOpacity(0.1),
+        highlightColor: c.primary.withOpacity(0.05),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             color: isActive
-                ? AppColors.primary.withOpacity(0.08)
+                ? c.primary.withOpacity(0.08)
                 : Colors.transparent,
           ),
           child: Row(
@@ -67,8 +68,8 @@ class MusicListTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: isActive
-                            ? AppColors.primary
-                            : AppColors.textPrimary,
+                            ? c.primary
+                            : c.textPrimary,
                         fontSize: 15,
                         fontWeight:
                         isActive ? FontWeight.w600 : FontWeight.w500,
@@ -79,8 +80,8 @@ class MusicListTile extends StatelessWidget {
                       '${song.artist} · ${song.album}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.textTertiary,
+                      style: TextStyle(
+                        color: c.textTertiary,
                         fontSize: 12,
                         fontWeight: FontWeight.w300,
                       ),
@@ -94,8 +95,8 @@ class MusicListTile extends StatelessWidget {
               else
                 Text(
                   song.durationFormatted,
-                  style: const TextStyle(
-                    color: AppColors.textDisabled,
+                  style: TextStyle(
+                    color: c.textDisabled,
                     fontSize: 12,
                     fontWeight: FontWeight.w300,
                   ),
@@ -109,9 +110,10 @@ class MusicListTile extends StatelessWidget {
 
   void _showContextMenu(
       BuildContext context, bool isFav, MusicProvider musicProvider) {
+    final c = context.appColors;
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.card,
+      backgroundColor: c.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -134,14 +136,15 @@ class _AlbumArtThumbnail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Container(
       width: 48,
       height: 48,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
-        color: AppColors.surfaceElevated,
+        color: c.surfaceElevated,
         border:
-        isActive ? Border.all(color: AppColors.primary, width: 1.5) : null,
+        isActive ? Border.all(color: c.primary, width: 1.5) : null,
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(10),
@@ -163,10 +166,11 @@ class _DefaultArtwork extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Container(
-      color: AppColors.surfaceElevated,
-      child: const Icon(Icons.music_note_rounded,
-          color: AppColors.textDisabled, size: 22),
+      color: c.surfaceElevated,
+      child: Icon(Icons.music_note_rounded,
+          color: c.textDisabled, size: 22),
     );
   }
 }
@@ -188,6 +192,7 @@ class _SongContextMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
       child: Column(
@@ -196,7 +201,7 @@ class _SongContextMenu extends StatelessWidget {
           Container(
             width: 36, height: 4,
             decoration: BoxDecoration(
-              color: AppColors.divider,
+              color: c.divider,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -215,15 +220,15 @@ class _SongContextMenu extends StatelessWidget {
                       Text(song.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              color: AppColors.textPrimary,
+                          style: TextStyle(
+                              color: c.textPrimary,
                               fontSize: 15,
                               fontWeight: FontWeight.w600)),
                       Text(song.artist,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              color: AppColors.textTertiary, fontSize: 13)),
+                          style: TextStyle(
+                              color: c.textTertiary, fontSize: 13)),
                     ],
                   ),
                 ),
@@ -231,14 +236,14 @@ class _SongContextMenu extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          const Divider(color: AppColors.divider),
+          Divider(color: c.divider),
 
           // Yêu thích
           _ContextMenuItem(
             icon: isFavorite
                 ? Icons.favorite_rounded
                 : Icons.favorite_border_rounded,
-            iconColor: isFavorite ? AppColors.tertiary : null,
+            iconColor: isFavorite ? c.tertiary : null,
             label: isFavorite ? 'Bỏ yêu thích' : 'Thêm vào yêu thích',
             onTap: () {
               onFavoriteToggle();
@@ -282,7 +287,7 @@ class _SongContextMenu extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     duration: const Duration(seconds: 2),
-                    backgroundColor: AppColors.surfaceElevated,
+                    backgroundColor: c.surfaceElevated,
                     behavior: SnackBarBehavior.floating,
                     margin: const EdgeInsets.fromLTRB(16, 0, 16, 80),
                     shape: RoundedRectangleBorder(
@@ -309,9 +314,10 @@ class _SongContextMenu extends StatelessWidget {
   }
 
   void _showSongInfo(BuildContext context) {
+    final c = context.appColors;
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.card,
+      backgroundColor: c.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -321,17 +327,17 @@ class _SongContextMenu extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Thông tin bài hát',
+            Text('Thông tin bài hát',
                 style: TextStyle(
-                    color: AppColors.textPrimary,
+                    color: c.textPrimary,
                     fontSize: 16,
                     fontWeight: FontWeight.w700)),
             const SizedBox(height: 16),
-            _infoRow('Tên bài', song.title),
-            _infoRow('Nghệ sĩ', song.artist),
-            _infoRow('Album', song.album),
-            _infoRow('Thời lượng', song.durationFormatted),
-            _infoRow('Đường dẫn', song.data),
+            _infoRow(context, 'Tên bài', song.title),
+            _infoRow(context, 'Nghệ sĩ', song.artist),
+            _infoRow(context, 'Album', song.album),
+            _infoRow(context, 'Thời lượng', song.durationFormatted),
+            _infoRow(context, 'Đường dẫn', song.data),
             const SizedBox(height: 8),
           ],
         ),
@@ -339,7 +345,8 @@ class _SongContextMenu extends StatelessWidget {
     );
   }
 
-  Widget _infoRow(String label, String value) {
+  Widget _infoRow(BuildContext context, String label, String value) {
+    final c = context.appColors;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
@@ -348,13 +355,13 @@ class _SongContextMenu extends StatelessWidget {
           SizedBox(
             width: 90,
             child: Text(label,
-                style: const TextStyle(
-                    color: AppColors.textTertiary, fontSize: 13)),
+                style: TextStyle(
+                    color: c.textTertiary, fontSize: 13)),
           ),
           Expanded(
             child: Text(value,
-                style: const TextStyle(
-                    color: AppColors.textPrimary,
+                style: TextStyle(
+                    color: c.textPrimary,
                     fontSize: 13,
                     fontWeight: FontWeight.w500)),
           ),
@@ -379,12 +386,13 @@ class _ContextMenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return ListTile(
       leading: Icon(icon,
-          color: iconColor ?? AppColors.textSecondary, size: 22),
+          color: iconColor ?? c.textSecondary, size: 22),
       title: Text(label,
-          style: const TextStyle(
-              color: AppColors.textPrimary,
+          style: TextStyle(
+              color: c.textPrimary,
               fontSize: 15,
               fontWeight: FontWeight.w400)),
       onTap: onTap,

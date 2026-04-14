@@ -120,7 +120,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
               child: _BlurredBackground(albumId: song.albumId),
             ),
             Positioned.fill(
-              child: Container(color: AppColors.scrimDark),
+              child: Container(color: c.scrimDark),
             ),
             SafeArea(
               child: FadeTransition(
@@ -204,14 +204,15 @@ class _SwipeHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return GestureDetector(
       onTap: onTap,
       child: Column(
         children: [
-          const Icon(Icons.keyboard_arrow_up_rounded,
-              color: AppColors.onPlayerMinimal, size: 20),
+          Icon(Icons.keyboard_arrow_up_rounded,
+              color: c.onPlayerMinimal, size: 20),
           Text('Hàng chờ',
-              style: GoogleFonts.outfit(fontSize: 11, color: AppColors.onPlayerMinimal)),
+              style: GoogleFonts.outfit(fontSize: 11, color: c.onPlayerMinimal)),
         ],
       ),
     );
@@ -226,12 +227,13 @@ class _BlurredBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Stack(
       fit: StackFit.expand,
       children: [
         Container(
-            decoration: const BoxDecoration(
-                gradient: AppColors.backgroundGradient)),
+            decoration: BoxDecoration(
+                gradient: c.backgroundGradient)),
         QueryArtworkWidget(
           id: albumId,
           type: ArtworkType.ALBUM,
@@ -292,14 +294,14 @@ class _TopBar extends StatelessWidget {
                         style: GoogleFonts.outfit(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.onPlayerHigh,
+                          color: c.onPlayerHigh,
                           decoration: TextDecoration.underline,
                           decorationColor: Colors.white38,
                         ),
                       ),
                       const SizedBox(width: 3),
-                      const Icon(Icons.arrow_forward_ios_rounded,
-                          size: 9, color: AppColors.onPlayerSubtle),
+                      Icon(Icons.arrow_forward_ios_rounded,
+                          size: 9, color: c.onPlayerSubtle),
                     ],
                   ),
                 ),
@@ -309,7 +311,7 @@ class _TopBar extends StatelessWidget {
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert_rounded,
                 size: 24, color: Colors.white),
-            color: AppColors.card,
+            color: c.card,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14)),
             onSelected: (val) {
@@ -336,7 +338,7 @@ class _TopBar extends StatelessWidget {
                     SnackBar(
                       content: Text('Chia sẻ: ${song.title}'),
                       duration: const Duration(seconds: 2),
-                      backgroundColor: AppColors.surfaceElevated,
+                      backgroundColor: c.surfaceElevated,
                     ),
                   );
                   break;
@@ -347,17 +349,18 @@ class _TopBar extends StatelessWidget {
               context.read<MusicProvider>().isFavorite(song.id);
               return [
                 _popItem(
+                  context,
                   'fav',
                   isFav
                       ? Icons.favorite_rounded
                       : Icons.favorite_border_rounded,
                   isFav ? 'Bỏ yêu thích' : 'Yêu thích',
-                  iconColor: isFav ? AppColors.tertiary : null,
+                  iconColor: isFav ? c.tertiary : null,
                 ),
-                _popItem('playlist', Icons.playlist_add_rounded,
+                _popItem(context,'playlist', Icons.playlist_add_rounded,
                     'Thêm vào danh sách phát'),
-                _popItem('share', Icons.share_rounded, 'Chia sẻ'),
-                _popItem('info', Icons.info_outline_rounded,
+                _popItem(context,'share', Icons.share_rounded, 'Chia sẻ'),
+                _popItem(context,'info', Icons.info_outline_rounded,
                     'Thông tin bài hát'),
               ];
             },
@@ -503,17 +506,18 @@ class _TopBar extends StatelessWidget {
     );
   }
 
-  PopupMenuItem<String> _popItem(String val, IconData icon, String label,
+  PopupMenuItem<String> _popItem(BuildContext context, String val, IconData icon, String label,
       {Color? iconColor}) {
+    final c = context.appColors;
     return PopupMenuItem(
       value: val,
       child: Row(
         children: [
-          Icon(icon, color: iconColor ?? AppColors.textSecondary, size: 20),
+          Icon(icon, color: iconColor ?? c.textSecondary, size: 20),
           const SizedBox(width: 12),
           Text(label,
               style: GoogleFonts.outfit(
-                  color: AppColors.textPrimary, fontSize: 14)),
+                  color: c.textPrimary, fontSize: 14)),
         ],
       ),
     );
@@ -539,10 +543,10 @@ class _TopBar extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                     color: c.textPrimary)),
             const SizedBox(height: 16),
-            _infoRow('Tên bài', song.title),
-            _infoRow('Nghệ sĩ', song.artist),
-            _infoRow('Album', song.album),
-            _infoRow('Thời lượng', song.durationFormatted),
+            _infoRow(context,'Tên bài', song.title),
+            _infoRow(context,'Nghệ sĩ', song.artist),
+            _infoRow(context,'Album', song.album),
+            _infoRow(context,'Thời lượng', song.durationFormatted),
             const SizedBox(height: 8),
           ],
         ),
@@ -550,7 +554,8 @@ class _TopBar extends StatelessWidget {
     );
   }
 
-  Widget _infoRow(String label, String value) {
+  Widget _infoRow(BuildContext context, String label, String value) {
+    final c = context.appColors;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -560,12 +565,12 @@ class _TopBar extends StatelessWidget {
             width: 90,
             child: Text(label,
                 style: GoogleFonts.outfit(
-                    color: AppColors.textTertiary, fontSize: 13)),
+                    color: c.textTertiary, fontSize: 13)),
           ),
           Expanded(
             child: Text(value,
                 style: GoogleFonts.outfit(
-                    color: AppColors.textPrimary,
+                    color: c.textPrimary,
                     fontSize: 13,
                     fontWeight: FontWeight.w500)),
           ),
@@ -585,7 +590,7 @@ class _AlbumArtSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size.width * 0.70;
-
+    final c = context.appColors;
     return Center(
       child: AnimatedBuilder(
         animation: rotateCtrl,
@@ -600,7 +605,7 @@ class _AlbumArtSection extends StatelessWidget {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                  color: AppColors.primary.withOpacity(0.3),
+                  color: c.primary.withOpacity(0.3),
                   blurRadius: 60,
                   offset: const Offset(0, 20)),
               BoxShadow(
@@ -618,7 +623,7 @@ class _AlbumArtSection extends StatelessWidget {
               keepOldArtwork: true,
               nullArtworkWidget: Container(
                 decoration:
-                const BoxDecoration(gradient: AppColors.primaryGradient),
+                BoxDecoration(gradient: c.primaryGradient),
                 child: const Icon(Icons.music_note_rounded,
                     color: Colors.white54, size: 80),
               ),
@@ -640,7 +645,7 @@ class _SongInfo extends StatelessWidget {
   Widget build(BuildContext context) {
     final music = context.watch<MusicProvider>();
     final isFav = music.isFavorite(song.id);
-
+    final c = context.appColors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 28),
       child: Row(
@@ -668,7 +673,7 @@ class _SongInfo extends StatelessWidget {
                   style: GoogleFonts.outfit(
                     fontSize: 14,
                     fontWeight: FontWeight.w300,
-                    color: AppColors.onPlayerMedium,
+                    color: c.onPlayerMedium,
                   ),
                 ),
               ],
@@ -686,8 +691,8 @@ class _SongInfo extends StatelessWidget {
                 ),
               );
             },
-            icon: const Icon(Icons.playlist_add_rounded,
-                color: AppColors.onPlayerLow, size: 26),
+            icon: Icon(Icons.playlist_add_rounded,
+                color: c.onPlayerLow, size: 26),
           ),
           IconButton(
             onPressed: () {
@@ -703,7 +708,7 @@ class _SongInfo extends StatelessWidget {
                     ? Icons.favorite_rounded
                     : Icons.favorite_border_rounded,
                 key: ValueKey(isFav),
-                color: isFav ? AppColors.tertiary : AppColors.onPlayerLow,
+                color: isFav ? c.tertiary : c.onPlayerLow,
                 size: 26,
               ),
             ),
@@ -716,21 +721,40 @@ class _SongInfo extends StatelessWidget {
 
 // ── Progress ──────────────────────────────────────────────────────────────────
 
-class _ProgressSection extends StatelessWidget {
+class _ProgressSection extends StatefulWidget {
   const _ProgressSection({required this.player});
   final PlayerProvider player;
 
   @override
+  State<_ProgressSection> createState() => _ProgressSectionState();
+}
+
+class _ProgressSectionState extends State<_ProgressSection> {
+  double? _dragValue; // null = không drag; có giá trị = đang kéo
+  int _cachedDurMs = 0;
+
+  @override
   Widget build(BuildContext context) {
     return StreamBuilder<PositionData>(
-      stream: player.positionDataStream,
+      stream: widget.player.positionDataStream,
       builder: (_, snap) {
         final data = snap.data ??
             const PositionData(Duration.zero, Duration.zero, Duration.zero);
-        final dur = data.duration.inMilliseconds;
-        final pos = data.position.inMilliseconds;
-        final progress = dur > 0 ? (pos / dur).clamp(0.0, 1.0) : 0.0;
 
+        final durMs = data.duration.inMilliseconds;
+        if (durMs > 0) _cachedDurMs = durMs; // cache lại khi có giá trị
+
+        // Khi đang drag → dùng local value; ngược lại dùng stream
+        final progress = _dragValue ??
+            (_cachedDurMs > 0
+                ? (data.position.inMilliseconds / _cachedDurMs).clamp(0.0, 1.0)
+                : 0.0);
+
+        // Vị trí hiển thị cho label thời gian
+        final displayPos = _dragValue != null
+            ? Duration(milliseconds: (_dragValue! * _cachedDurMs).toInt())
+            : data.position;
+        final c = context.appColors;
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 28),
           child: Column(
@@ -749,11 +773,21 @@ class _ProgressSection extends StatelessWidget {
                 ),
                 child: Slider(
                   value: progress.toDouble(),
-                  onChanged: (v) {
-                    if (dur > 0) {
-                      player.seekTo(
-                          Duration(milliseconds: (v * dur).toInt()));
+                  // Bắt đầu kéo → freeze stream, chỉ update local value
+                  onChangeStart: (v) => setState(() => _dragValue = v),
+                  // Đang kéo → cập nhật local value ngay lập tức (mượt)
+                  onChanged: (v) => setState(() => _dragValue = v),
+                  // Nhả tay → seek thật, rồi xóa local value
+                  onChangeEnd: (v) async {
+                    if (_cachedDurMs > 0) {
+                      await widget.player.seekTo(
+                        Duration(milliseconds: (v * _cachedDurMs).toInt()),
+                      );
                     }
+                    // Delay nhỏ để chờ stream cập nhật vị trí mới
+                    // trước khi trả quyền điều khiển lại cho stream
+                    await Future.delayed(const Duration(milliseconds: 100));
+                    if (mounted) setState(() => _dragValue = null);
                   },
                 ),
               ),
@@ -762,12 +796,12 @@ class _ProgressSection extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(_fmt(data.position),
+                    Text(_fmt(displayPos),
                         style: GoogleFonts.outfit(
-                            fontSize: 12, color: AppColors.onPlayerLow)),
+                            fontSize: 12, color: c.onPlayerLow)),
                     Text(_fmt(data.duration),
                         style: GoogleFonts.outfit(
-                            fontSize: 12, color: AppColors.onPlayerLow)),
+                            fontSize: 12, color: c.onPlayerLow)),
                   ],
                 ),
               ),
@@ -793,6 +827,7 @@ class _ControlsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
@@ -801,8 +836,8 @@ class _ControlsSection extends StatelessWidget {
           _IconBtn(
             icon: Icons.shuffle_rounded,
             color: player.shuffleEnabled
-                ? AppColors.primary
-                : AppColors.onPlayerLow,
+                ? c.primary
+                : c.onPlayerLow,
             size: 24,
             onTap: () {
               player.toggleShuffle();
@@ -833,8 +868,8 @@ class _ControlsSection extends StatelessWidget {
                 ? Icons.repeat_one_rounded
                 : Icons.repeat_rounded,
             color: player.repeatMode != RepeatMode.none
-                ? AppColors.primary
-                : AppColors.onPlayerLow,
+                ? c.primary
+                : c.onPlayerLow,
             size: 24,
             onTap: () {
               player.toggleRepeat();
@@ -877,6 +912,7 @@ class _PlayButtonState extends State<_PlayButton>
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return GestureDetector(
       onTapDown: (_) => _ctrl.forward(),
       onTapUp: (_) async {
@@ -909,7 +945,7 @@ class _PlayButtonState extends State<_PlayButton>
                   ? Icons.pause_rounded
                   : Icons.play_arrow_rounded,
               key: ValueKey(widget.player.isPlaying),
-              color: AppColors.background,
+              color: c.background,
               size: 38,
             ),
           ),
@@ -989,6 +1025,7 @@ class _ExtraActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 28),
       child: Row(
@@ -996,7 +1033,7 @@ class _ExtraActions extends StatelessWidget {
         children: [
           _IconBtn(
             icon: Icons.volume_up_rounded,
-            color: AppColors.onPlayerSubtle,
+            color: c.onPlayerSubtle,
             size: 22,
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -1004,7 +1041,7 @@ class _ExtraActions extends StatelessWidget {
                   content: Text('Dùng nút âm lượng vật lý để điều chỉnh',
                       style: GoogleFonts.outfit(fontSize: 13)),
                   duration: const Duration(seconds: 2),
-                  backgroundColor: AppColors.surfaceElevated,
+                  backgroundColor: c.surfaceElevated,
                   behavior: SnackBarBehavior.floating,
                   margin: const EdgeInsets.fromLTRB(16, 0, 16, 80),
                   shape: RoundedRectangleBorder(
@@ -1023,7 +1060,7 @@ class _ExtraActions extends StatelessWidget {
                   content:
                   Text('Chia sẻ: ${player.currentSong?.title ?? ""}'),
                   duration: const Duration(seconds: 2),
-                  backgroundColor: AppColors.surfaceElevated,
+                  backgroundColor: c.surfaceElevated,
                 ),
               );
             },
@@ -1036,13 +1073,13 @@ class _ExtraActions extends StatelessWidget {
               const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
                 color: queueVisible
-                    ? AppColors.primary.withOpacity(0.25)
-                    : AppColors.onPlayerGhostBg,
+                    ? c.primary.withOpacity(0.25)
+                    : c.onPlayerGhostBg,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: queueVisible
-                      ? AppColors.primary.withOpacity(0.5)
-                      : AppColors.onPlayerGhost,
+                      ? c.primary.withOpacity(0.5)
+                      : c.onPlayerGhost,
                 ),
               ),
               child: Row(
@@ -1050,7 +1087,7 @@ class _ExtraActions extends StatelessWidget {
                 children: [
                   Icon(Icons.queue_music_rounded,
                       color:
-                      queueVisible ? AppColors.primary : Colors.white54,
+                      queueVisible ? c.primary : Colors.white54,
                       size: 18),
                   const SizedBox(width: 6),
                   Text(
@@ -1058,7 +1095,7 @@ class _ExtraActions extends StatelessWidget {
                     style: GoogleFonts.outfit(
                         fontSize: 13,
                         color: queueVisible
-                            ? AppColors.primary
+                            ? c.primary
                             : Colors.white54),
                   ),
                 ],

@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:provider/provider.dart';
 import '../providers/music_provider.dart';
 import '../theme/app_colors.dart';
@@ -135,8 +136,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: c.background,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -159,8 +161,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       shape: BoxShape.circle,
                       gradient: RadialGradient(
                         colors: [
-                          AppColors.primary.withOpacity(0.3),
-                          AppColors.primary.withOpacity(0.05),
+                          c.primary.withOpacity(0.3),
+                          c.primary.withOpacity(0.05),
                         ],
                       ),
                     ),
@@ -168,12 +170,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       child: Container(
                         width: 64,
                         height: 64,
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                            colors: [AppColors.primary, AppColors.secondary],
+                            colors: [c.primary, c.secondary],
                           ),
                         ),
                         child: const Icon(
@@ -216,6 +218,7 @@ class _ScanningText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Column(
       children: [
         Text(
@@ -224,7 +227,7 @@ class _ScanningText extends StatelessWidget {
           style: GoogleFonts.outfit(
             fontSize: 18,
             fontWeight: FontWeight.w400,
-            color: AppColors.textSecondary,
+            color: c.textSecondary,
             height: 1.6,
           ),
         ),
@@ -234,7 +237,7 @@ class _ScanningText extends StatelessWidget {
           style: GoogleFonts.outfit(
             fontSize: 15,
             fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+            color: c.textPrimary,
           ),
         ),
         const SizedBox(height: 8),
@@ -243,7 +246,7 @@ class _ScanningText extends StatelessWidget {
           style: GoogleFonts.outfit(
             fontSize: 13,
             fontWeight: FontWeight.w300,
-            color: AppColors.textDisabled,
+            color: c.textDisabled,
           ),
         ),
       ],
@@ -291,7 +294,7 @@ class _ResultWidget extends StatelessWidget {
         curve: const Interval(0.2, 0.8),
       ),
     );
-
+    final c = context.appColors;
     return Column(
       children: [
         FadeTransition(
@@ -301,7 +304,7 @@ class _ResultWidget extends StatelessWidget {
             child: _ResultRow(
               icon: Icons.music_note_rounded,
               value: '$songCount bài hát',
-              color: AppColors.primary,
+              color: c.primary,
             ),
           ),
         ),
@@ -313,7 +316,7 @@ class _ResultWidget extends StatelessWidget {
             child: _ResultRow(
               icon: Icons.person_rounded,
               value: '$artistCount nghệ sĩ',
-              color: AppColors.tertiary,
+              color: c.tertiary,
             ),
           ),
         ),
@@ -334,6 +337,7 @@ class _ResultRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -344,7 +348,7 @@ class _ResultRow extends StatelessWidget {
           style: GoogleFonts.outfit(
             fontSize: 22,
             fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+            color: c.textPrimary,
           ),
         ),
       ],
@@ -358,6 +362,7 @@ class _AnimatedProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -368,7 +373,7 @@ class _AnimatedProgressBar extends StatelessWidget {
               builder: (_, constraints) => Container(
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.divider,
+                  color: c.divider,
                   borderRadius: BorderRadius.circular(2),
                 ),
                 child: Align(
@@ -377,13 +382,13 @@ class _AnimatedProgressBar extends StatelessWidget {
                     height: 4,
                     width: constraints.maxWidth * controller.value,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppColors.primary, AppColors.secondary],
+                      gradient: LinearGradient(
+                        colors: [c.primary, c.secondary],
                       ),
                       borderRadius: BorderRadius.circular(2),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primary.withOpacity(0.4),
+                          color: c.primary.withOpacity(0.4),
                           blurRadius: 6,
                         ),
                       ],

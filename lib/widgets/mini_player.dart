@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
 import '../providers/player_provider.dart';
@@ -16,7 +17,7 @@ class MiniPlayer extends StatelessWidget {
     final player = context.watch<PlayerProvider>();
     final song = player.currentSong;
     if (song == null) return const SizedBox.shrink();
-
+    final c = context.appColors;
     return GestureDetector(
       onTap: () {
         Navigator.of(context).push(
@@ -51,12 +52,12 @@ class MiniPlayer extends StatelessWidget {
         margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
         height: 68,
         decoration: BoxDecoration(
-          color: AppColors.surfaceElevated,
+          color: c.surfaceElevated,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: AppColors.border, width: 0.5),
+          border: Border.all(color: c.border, width: 0.5),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.08),
+              color: c.primary.withOpacity(0.08),
               blurRadius: 20,
               offset: const Offset(0, 4),
             ),
@@ -94,8 +95,8 @@ class MiniPlayer extends StatelessWidget {
                             song.title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
+                            style: TextStyle(
+                              color: c.textPrimary,
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
@@ -105,8 +106,8 @@ class MiniPlayer extends StatelessWidget {
                             song.artist,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: AppColors.textTertiary,
+                            style: TextStyle(
+                              color: c.textTertiary,
                               fontSize: 12,
                               fontWeight: FontWeight.w300,
                             ),
@@ -136,6 +137,7 @@ class _CloseButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
@@ -151,12 +153,12 @@ class _CloseButton extends StatelessWidget {
             height: 24,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.surfaceElevated,
-              border: Border.all(color: AppColors.border, width: 0.5),
+              color: c.surfaceElevated,
+              border: Border.all(color: c.border, width: 0.5),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.close_rounded,
-              color: AppColors.textDisabled,
+              color: c.textDisabled,
               size: 14,
             ),
           ),
@@ -170,39 +172,39 @@ class _CloseButton extends StatelessWidget {
       context.read<PlayerProvider>().stopAndClear();
       return;
     }
-
+    final c = context.appColors;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.card,
+        backgroundColor: c.card,
         shape:
         RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
+        title: Text(
           'Dừng phát nhạc?',
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: c.textPrimary,
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
         ),
-        content: const Text(
+        content: Text(
           'Hàng chờ hiện tại sẽ bị xóa.',
-          style: TextStyle(color: AppColors.textTertiary, fontSize: 14),
+          style: TextStyle(color: c.textTertiary, fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Hủy',
-                style: TextStyle(color: AppColors.textTertiary)),
+            child: Text('Hủy',
+                style: TextStyle(color: c.textTertiary)),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               context.read<PlayerProvider>().stopAndClear();
             },
-            child: const Text('Dừng',
+            child: Text('Dừng',
                 style: TextStyle(
-                    color: AppColors.tertiary,
+                    color: c.tertiary,
                     fontWeight: FontWeight.w600)),
           ),
         ],
@@ -219,12 +221,13 @@ class _AlbumArt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Container(
       width: 44,
       height: 44,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
-        color: AppColors.surface,
+        color: c.surface,
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(10),
@@ -233,9 +236,9 @@ class _AlbumArt extends StatelessWidget {
           type: ArtworkType.ALBUM,
           artworkFit: BoxFit.cover,
           artworkBorder: BorderRadius.zero,
-          nullArtworkWidget: const Icon(
+          nullArtworkWidget: Icon(
             Icons.music_note_rounded,
-            color: AppColors.textDisabled,
+            color: c.textDisabled,
             size: 20,
           ),
           keepOldArtwork: true,
@@ -288,6 +291,7 @@ class _SmartPlayPauseButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return StreamBuilder<ProcessingState>(
       stream: player.processingStateStream,
       builder: (context, snap) {
@@ -308,8 +312,8 @@ class _SmartPlayPauseButton extends StatelessWidget {
             height: 36,
             decoration: BoxDecoration(
               color: isLoading
-                  ? AppColors.primary.withOpacity(0.5)
-                  : AppColors.primary,
+                  ? c.primary.withOpacity(0.5)
+                  : c.primary,
               shape: BoxShape.circle,
             ),
             child: isLoading
@@ -382,6 +386,7 @@ class _ControlButtonState extends State<_ControlButton>
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return GestureDetector(
       onTap: _onTap,
       child: ScaleTransition(
@@ -389,7 +394,7 @@ class _ControlButtonState extends State<_ControlButton>
         child: Padding(
           padding: const EdgeInsets.all(6),
           child: Icon(widget.icon,
-              color: AppColors.textSecondary, size: widget.size),
+              color: c.textSecondary, size: widget.size),
         ),
       ),
     );
@@ -404,6 +409,7 @@ class _MiniProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return StreamBuilder<PositionData>(
       stream: player.positionDataStream,
       builder: (_, snap) {
@@ -417,15 +423,15 @@ class _MiniProgressBar extends StatelessWidget {
           builder: (_, constraints) => Container(
             height: 2,
             width: constraints.maxWidth,
-            color: AppColors.divider,
+            color: c.divider,
             child: Align(
               alignment: Alignment.centerLeft,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 500),
                 width: constraints.maxWidth * progress,
                 height: 2,
-                decoration: const BoxDecoration(
-                  gradient: AppColors.primaryGradient,
+                decoration: BoxDecoration(
+                  gradient: c.primaryGradient,
                 ),
               ),
             ),

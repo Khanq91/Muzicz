@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:provider/provider.dart';
 import '../providers/music_provider.dart';
 import '../theme/app_colors.dart';
@@ -133,8 +134,9 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: c.background,
       body: Stack(
         children: [
           // Subtle radial glow behind logo
@@ -146,7 +148,7 @@ class _SplashScreenState extends State<SplashScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.primary.withOpacity(0.08),
+                    c.primary.withOpacity(0.08),
                     Colors.transparent,
                   ],
                 ),
@@ -188,7 +190,7 @@ class _SplashScreenState extends State<SplashScreen>
                         style: GoogleFonts.outfit(
                           fontSize: 13,
                           fontWeight: FontWeight.w300,
-                          color: AppColors.textTertiary,
+                          color: c.textTertiary,
                           letterSpacing: 6,
                         ),
                       ),
@@ -222,8 +224,8 @@ class _SplashScreenState extends State<SplashScreen>
                               begin: Alignment.bottomCenter,
                               end: Alignment.topCenter,
                               colors: [
-                                AppColors.primary,
-                                AppColors.primaryLight.withOpacity(0.5),
+                                c.primary,
+                                c.primaryLight.withOpacity(0.5),
                               ],
                             ),
                           ),
@@ -248,19 +250,20 @@ class MuziczLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.primary, AppColors.secondary],
+          colors: [c.primary, c.secondary],
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.4),
+            color: c.primary.withOpacity(0.4),
             blurRadius: size * 0.4,
             offset: Offset(0, size * 0.1),
           ),

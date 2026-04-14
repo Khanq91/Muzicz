@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:muziczz/theme/app_colors_data.dart';
 import '../theme/app_colors.dart';
 
 class OnlineScreen extends StatelessWidget {
@@ -8,8 +9,9 @@ class OnlineScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: c.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -21,8 +23,8 @@ class OnlineScreen extends StatelessWidget {
                   // ← Ẩn back button khi isEmbedded
                   if (!isEmbedded)
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                          size: 20, color: AppColors.textPrimary),
+                      icon: Icon(Icons.arrow_back_ios_new_rounded,
+                          size: 20, color: c.textPrimary),
                       onPressed: () => Navigator.pop(context),
                     ),
                   if (isEmbedded)
@@ -32,7 +34,7 @@ class OnlineScreen extends StatelessWidget {
                     style: GoogleFonts.outfit(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                      color: c.textPrimary,
                     ),
                   ),
                 ],
@@ -55,15 +57,15 @@ class OnlineScreen extends StatelessWidget {
                             height: 88,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: AppColors.primary.withOpacity(0.12),
+                              color: c.primary.withOpacity(0.12),
                               border: Border.all(
-                                color: AppColors.primary.withOpacity(0.2),
+                                color: c.primary.withOpacity(0.2),
                                 width: 1,
                               ),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.wifi_rounded,
-                              color: AppColors.primary,
+                              color: c.primary,
                               size: 38,
                             ),
                           ),
@@ -73,7 +75,7 @@ class OnlineScreen extends StatelessWidget {
                             style: GoogleFonts.outfit(
                               fontSize: 22,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
+                              color: c.textPrimary,
                               letterSpacing: -0.3,
                             ),
                           ),
@@ -84,7 +86,7 @@ class OnlineScreen extends StatelessWidget {
                             style: GoogleFonts.outfit(
                               fontSize: 14,
                               fontWeight: FontWeight.w300,
-                              color: AppColors.textTertiary,
+                              color: c.textTertiary,
                               height: 1.65,
                             ),
                           ),
@@ -103,7 +105,7 @@ class OnlineScreen extends StatelessWidget {
                         style: GoogleFonts.outfit(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.textTertiary,
+                          color: c.textTertiary,
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -116,28 +118,28 @@ class OnlineScreen extends StatelessWidget {
                       delegate: SliverChildListDelegate([
                         _FeatureTile(
                           icon: Icons.download_rounded,
-                          iconColor: AppColors.secondary,
+                          iconColor: c.secondary,
                           title: 'Tải nhạc từ URL',
                           subtitle: 'TikTok, YouTube, SoundCloud và hơn thế nữa',
                           badge: 'Sớm',
                         ),
                         _FeatureTile(
                           icon: Icons.radio_rounded,
-                          iconColor: AppColors.primary,
+                          iconColor: c.primary,
                           title: 'Radio trực tuyến',
                           subtitle: 'Nghe các kênh radio từ khắp nơi',
                           badge: 'Sắp có',
                         ),
                         _FeatureTile(
                           icon: Icons.search_rounded,
-                          iconColor: AppColors.accentCyan,
+                          iconColor: c.accentCyan,
                           title: 'Tìm kiếm trực tuyến',
                           subtitle: 'Tìm và phát nhạc trực tiếp từ web',
                           badge: 'Đang phát triển',
                         ),
                         _FeatureTile(
                           icon: Icons.sync_rounded,
-                          iconColor: AppColors.tertiary,
+                          iconColor: c.tertiary,
                           title: 'Đồng bộ danh sách phát',
                           subtitle: 'Đồng bộ playlist với các nền tảng khác',
                           badge: 'Sắp có',
@@ -175,13 +177,14 @@ class _FeatureTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
+        color: c.surfaceElevated,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        border: Border.all(color: c.border, width: 0.5),
       ),
       child: Row(
         children: [
@@ -204,7 +207,7 @@ class _FeatureTile extends StatelessWidget {
                   style: GoogleFonts.outfit(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
+                    color: c.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -212,7 +215,7 @@ class _FeatureTile extends StatelessWidget {
                   subtitle,
                   style: GoogleFonts.outfit(
                     fontSize: 12,
-                    color: AppColors.textTertiary,
+                    color: c.textTertiary,
                   ),
                 ),
               ],
@@ -223,10 +226,10 @@ class _FeatureTile extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.12),
+              color: c.primary.withOpacity(0.12),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: AppColors.primary.withOpacity(0.2),
+                color: c.primary.withOpacity(0.2),
                 width: 0.5,
               ),
             ),
@@ -235,7 +238,7 @@ class _FeatureTile extends StatelessWidget {
               style: GoogleFonts.outfit(
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
-                color: AppColors.primary,
+                color: c.primary,
               ),
             ),
           ),
