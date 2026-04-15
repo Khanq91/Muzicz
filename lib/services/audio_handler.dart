@@ -17,7 +17,6 @@ class MuzicAudioHandler {
     try {
       await _player.setAudioSource(_playlist);
     } catch (_) {}
-    // Không còn onRepeatOneDone — PlayerProvider tự handle end-of-playlist
   }
 
   Future<void> loadSongs(List<SongItem> songs, {int initialIndex = 0}) async {
@@ -27,6 +26,30 @@ class MuzicAudioHandler {
       songs.map((s) => AudioSource.file(s.data)).toList(),
     );
     await _player.seek(Duration.zero, index: initialIndex);
+  }
+
+  /// Reorder ConcatenatingAudioSource to match [newOrder] using move() operations.
+  /// Does NOT interrupt currently playing audio — no clear/rebuild.
+  Future<void> reorderTo(List<SongItem> newOrder) async {
+    if (newOrder.length != _currentSongs.length) return;
+
+    // Tracking array mirrors current physical order in _playlist
+    final tracking = List<SongItem>.from(_currentSongs);
+
+    for (int targetIdx = 0; targetIdx < newOrder.length; targetIdx++) {
+      final targetSong = newOrder[targetIdx];
+      final currentIdx = tracking.indexWhere((s) => s.id == targetSong.id);
+
+      if (currentIdx < 0 || currentIdx == targetIdx) continue;
+
+      await _playlist.move(currentIdx, targetIdx);
+
+      // Keep tracking in sync
+      final song = tracking.removeAt(currentIdx);
+      tracking.insert(targetIdx, song);
+    }
+
+    _currentSongs = List.from(newOrder);
   }
 
   Future<void> addSongToQueue(SongItem song) async {
@@ -47,7 +70,6 @@ class MuzicAudioHandler {
 
   Future<void> setLoopMode(LoopMode mode) => _player.setLoopMode(mode);
 
-  // Không dùng native shuffle — PlayerProvider tự quản lý
   Future<void> setShuffleModeEnabled(bool enabled) async {
     await _player.setShuffleModeEnabled(false);
   }

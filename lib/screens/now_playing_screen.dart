@@ -864,8 +864,10 @@ class _ControlsSection extends StatelessWidget {
             },
           ),
           _IconBtn(
-            icon: Icons.repeat_rounded,
-            color: player.repeatMode == RepeatMode.all ? c.primary : c.onPlayerLow,
+            icon: player.repeatMode == RepeatMode.one
+                ? Icons.repeat_one_rounded
+                : Icons.repeat_rounded,
+            color: player.repeatMode == RepeatMode.one ? c.primary : c.onPlayerLow,
             size: 24,
             onTap: () {
               player.toggleRepeat();

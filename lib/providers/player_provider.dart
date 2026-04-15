@@ -4,8 +4,8 @@ import 'package:just_audio/just_audio.dart';
 import '../models/song_item.dart';
 import '../services/audio_handler.dart';
 
-// Chỉ còn 2 mode: none và all
-enum RepeatMode { none, all }
+// RepeatMode.one = lặp vô hạn bài hiện tại (dùng LoopMode.one của just_audio)
+enum RepeatMode { none, one }
 
 class PlayerProvider extends ChangeNotifier {
   final MuzicAudioHandler _handler;
@@ -19,17 +19,11 @@ class PlayerProvider extends ChangeNotifier {
   SongItem? _currentSong;
   SongItem? get currentSong => _currentSong;
 
-  /// _originalQueue: thứ tự gốc user chọn, không bao giờ thay đổi sau khi load
   List<SongItem> _originalQueue = [];
-
-  /// _playQueue: thứ tự đang thực sự phát (= original khi shuffle OFF,
-  ///             = shuffled list khi shuffle ON)
   List<SongItem> _playQueue = [];
 
-  /// _currentPlayIndex: vị trí hiện tại trong _playQueue
   int _currentPlayIndex = 0;
 
-  /// queue exposed ra UI (Queue Sheet dùng cái này)
   List<SongItem> get queue => _playQueue;
 
   bool _isPlaying = false;
@@ -41,8 +35,10 @@ class PlayerProvider extends ChangeNotifier {
   bool _shuffleEnabled = false;
   bool get shuffleEnabled => _shuffleEnabled;
 
-  /// History stack cho Previous — lưu index trong _playQueue
   final List<int> _historyStack = [];
+
+  // Flag để suppress currentIndexStream events trong khi reorder
+  bool _isReordering = false;
 
   // ── Listen to audio handler ────────────────────────────────────────────────
 
@@ -52,11 +48,10 @@ class PlayerProvider extends ChangeNotifier {
       notifyListeners();
     });
 
-    // Handler báo track đổi (tự next bởi just_audio) → sync state
     _handler.currentIndexStream.listen((index) {
-      // just_audio sẽ chỉ tự advance khi LoopMode.off/all với sequential playlist
-      // Ta dùng LoopMode.off + single-item hoặc sequential tuỳ mode
-      // Khi just_audio tự chuyển track → sync _currentSong
+      // Suppress events trong khi đang reorder (tránh state nhảy lung tung)
+      if (_isReordering) return;
+
       if (index != null && index < _playQueue.length) {
         if (_playQueue[index].id != (_currentSong?.id ?? -1)) {
           _historyStack.add(_currentPlayIndex);
@@ -67,7 +62,8 @@ class PlayerProvider extends ChangeNotifier {
       }
     });
 
-    // Khi playlist kết thúc (processingState == completed)
+    // Chỉ xử lý khi hết playlist (RepeatMode.none)
+    // RepeatMode.one được LoopMode.one của just_audio tự handle
     _handler.processingStateStream.listen((state) {
       if (state == ProcessingState.completed) {
         _onPlaylistEnded();
@@ -76,18 +72,8 @@ class PlayerProvider extends ChangeNotifier {
   }
 
   void _onPlaylistEnded() {
-    if (_repeatMode == RepeatMode.all) {
-      // Loop: nếu shuffle ON → re-shuffle rồi play lại từ đầu
-      if (_shuffleEnabled) {
-        _rebuildShuffledQueue(keepCurrentFirst: false);
-      }
-      _handler.seekToIndex(0);
-      _handler.play();
-      _currentPlayIndex = 0;
-      _currentSong = _playQueue.isNotEmpty ? _playQueue[0] : null;
-      notifyListeners();
-    }
-    // RepeatMode.none → dừng, handler tự stop
+    // RepeatMode.one → just_audio tự loop, completed sẽ không fire
+    // RepeatMode.none → dừng tự nhiên, không cần làm gì
   }
 
   // ── Load & Play ────────────────────────────────────────────────────────────
@@ -97,6 +83,12 @@ class PlayerProvider extends ChangeNotifier {
         int initialIndex = 0,
         SongItem? specificSong,
       }) async {
+    // Reset repeat khi load bài mới
+    if (_repeatMode == RepeatMode.one) {
+      _repeatMode = RepeatMode.none;
+      await _handler.setLoopMode(LoopMode.off);
+    }
+
     _originalQueue = List.from(songs);
     _historyStack.clear();
 
@@ -107,7 +99,6 @@ class PlayerProvider extends ChangeNotifier {
     }
 
     if (_shuffleEnabled) {
-      // Shuffle nhưng đặt bài được chọn lên đầu
       _buildShuffledQueue(anchorIndex: startIndex);
       _currentPlayIndex = 0;
     } else {
@@ -132,23 +123,12 @@ class PlayerProvider extends ChangeNotifier {
     final nextIndex = _currentPlayIndex + 1;
 
     if (nextIndex >= _playQueue.length) {
-      // Cuối danh sách
-      if (_repeatMode == RepeatMode.all) {
-        if (_shuffleEnabled) {
-          _rebuildShuffledQueue(keepCurrentFirst: false);
-        }
-        await _handler.seekToIndex(0);
-        _currentPlayIndex = 0;
-      } else {
-        // Không loop → không làm gì
-        _historyStack.removeLast();
-        return;
-      }
-    } else {
-      await _handler.seekToIndex(nextIndex);
-      _currentPlayIndex = nextIndex;
+      _historyStack.removeLast();
+      return; // Hết danh sách, không loop playlist
     }
 
+    await _handler.seekToIndex(nextIndex);
+    _currentPlayIndex = nextIndex;
     _currentSong = _playQueue[_currentPlayIndex];
     await _handler.play();
     notifyListeners();
@@ -157,9 +137,6 @@ class PlayerProvider extends ChangeNotifier {
   Future<void> skipToPrevious() async {
     if (_playQueue.isEmpty) return;
 
-    // Nếu đang phát > 3 giây → restart bài hiện tại
-    // (hành vi chuẩn như Spotify)
-    // Không có position access trực tiếp nên dùng seekToIndex cùng index
     if (_historyStack.isNotEmpty) {
       final prevIndex = _historyStack.removeLast();
       _currentPlayIndex = prevIndex;
@@ -168,7 +145,6 @@ class PlayerProvider extends ChangeNotifier {
       await _handler.play();
       notifyListeners();
     } else {
-      // Không có history → quay lại đầu bài
       await _handler.seek(Duration.zero);
     }
   }
@@ -186,21 +162,24 @@ class PlayerProvider extends ChangeNotifier {
   // ── Shuffle ───────────────────────────────────────────────────────────────
 
   Future<void> toggleShuffle() async {
-    _shuffleEnabled = !_shuffleEnabled;
+    if (_playQueue.isEmpty) {
+      _shuffleEnabled = !_shuffleEnabled;
+      notifyListeners();
+      return;
+    }
 
-    // Tắt shuffle native của just_audio — ta tự quản lý
+    _shuffleEnabled = !_shuffleEnabled;
     await _handler.setShuffleModeEnabled(false);
 
     if (_shuffleEnabled) {
-      // Bật shuffle: shuffle _originalQueue, giữ bài hiện tại ở đầu
       final currentSongId = _currentSong?.id;
       final anchorInOriginal = currentSongId != null
           ? _originalQueue.indexWhere((s) => s.id == currentSongId)
           : 0;
-      _buildShuffledQueue(anchorIndex: anchorInOriginal < 0 ? 0 : anchorInOriginal);
-      _currentPlayIndex = 0; // bài hiện tại luôn ở vị trí 0 sau khi shuffle
+      _buildShuffledQueue(
+          anchorIndex: anchorInOriginal < 0 ? 0 : anchorInOriginal);
+      _currentPlayIndex = 0; // bài hiện tại luôn ở đầu sau khi shuffle
     } else {
-      // Tắt shuffle: quay về _originalQueue, tìm lại vị trí bài hiện tại
       _playQueue = List.from(_originalQueue);
       final currentSongId = _currentSong?.id;
       _currentPlayIndex = currentSongId != null
@@ -212,8 +191,14 @@ class PlayerProvider extends ChangeNotifier {
     _historyStack.clear();
     _currentSong = _playQueue[_currentPlayIndex];
 
-    await _loadQueueToHandler(_currentPlayIndex);
-    await _handler.play();
+    // ── Reorder in-place bằng move() — KHÔNG dừng audio ──────────────────
+    _isReordering = true;
+    try {
+      await _handler.reorderTo(_playQueue);
+    } finally {
+      _isReordering = false;
+    }
+
     notifyListeners();
   }
 
@@ -222,11 +207,11 @@ class PlayerProvider extends ChangeNotifier {
   Future<void> toggleRepeat() async {
     switch (_repeatMode) {
       case RepeatMode.none:
-        _repeatMode = RepeatMode.all;
-        // just_audio loop off — ta tự handle end-of-playlist
-        await _handler.setLoopMode(LoopMode.off);
+        _repeatMode = RepeatMode.one;
+        // just_audio tự loop bài hiện tại — không cần xử lý thủ công
+        await _handler.setLoopMode(LoopMode.one);
         break;
-      case RepeatMode.all:
+      case RepeatMode.one:
         _repeatMode = RepeatMode.none;
         await _handler.setLoopMode(LoopMode.off);
         break;
@@ -292,24 +277,22 @@ class PlayerProvider extends ChangeNotifier {
 
   Stream<PositionData> get positionDataStream => _handler.positionDataStream;
   Stream<bool> get playingStream => _handler.playingStream;
-  Stream<ProcessingState> get processingStateStream => _handler.processingStateStream;
+  Stream<ProcessingState> get processingStateStream =>
+      _handler.processingStateStream;
 
   // ── Private helpers ───────────────────────────────────────────────────────
 
-  /// Fisher-Yates shuffle, đặt bài tại [anchorIndex] lên đầu
   void _buildShuffledQueue({required int anchorIndex}) {
     final rng = Random();
     final list = List<SongItem>.from(_originalQueue);
 
-    // Đặt anchor lên đầu
     if (anchorIndex > 0 && anchorIndex < list.length) {
       final anchor = list.removeAt(anchorIndex);
       list.insert(0, anchor);
     }
 
-    // Shuffle phần còn lại (index 1 trở đi)
     for (int i = list.length - 1; i > 1; i--) {
-      final j = rng.nextInt(i - 1) + 1; // chỉ shuffle từ index 1
+      final j = rng.nextInt(i - 1) + 1;
       final tmp = list[i];
       list[i] = list[j];
       list[j] = tmp;
@@ -318,37 +301,6 @@ class PlayerProvider extends ChangeNotifier {
     _playQueue = list;
   }
 
-  /// Tạo lại shuffled queue mới (cho loop all) — không giữ anchor
-  void _rebuildShuffledQueue({bool keepCurrentFirst = false}) {
-    final rng = Random();
-    final list = List<SongItem>.from(_originalQueue);
-
-    if (keepCurrentFirst && _currentSong != null) {
-      final idx = list.indexWhere((s) => s.id == _currentSong!.id);
-      if (idx > 0) {
-        final anchor = list.removeAt(idx);
-        list.insert(0, anchor);
-      }
-      for (int i = list.length - 1; i > 1; i--) {
-        final j = rng.nextInt(i - 1) + 1;
-        final tmp = list[i];
-        list[i] = list[j];
-        list[j] = tmp;
-      }
-    } else {
-      // Full shuffle không giữ anchor
-      for (int i = list.length - 1; i > 0; i--) {
-        final j = rng.nextInt(i + 1);
-        final tmp = list[i];
-        list[i] = list[j];
-        list[j] = tmp;
-      }
-    }
-
-    _playQueue = list;
-  }
-
-  /// Load toàn bộ _playQueue vào just_audio handler, seek đến [startIndex]
   Future<void> _loadQueueToHandler(int startIndex) async {
     await _handler.loadSongs(_playQueue, initialIndex: startIndex);
   }
