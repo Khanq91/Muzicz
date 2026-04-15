@@ -9,8 +9,6 @@ class MuzicAudioHandler {
   final _playlist = ConcatenatingAudioSource(children: []);
   List<SongItem> _currentSongs = [];
 
-  VoidCallback? onRepeatOneDone;
-
   MuzicAudioHandler() {
     _init();
   }
@@ -19,12 +17,7 @@ class MuzicAudioHandler {
     try {
       await _player.setAudioSource(_playlist);
     } catch (_) {}
-
-    _player.processingStateStream.listen((state) {
-      if (state == ProcessingState.completed) {
-        onRepeatOneDone?.call();
-      }
-    });
+    // Không còn onRepeatOneDone — PlayerProvider tự handle end-of-playlist
   }
 
   Future<void> loadSongs(List<SongItem> songs, {int initialIndex = 0}) async {
@@ -50,21 +43,17 @@ class MuzicAudioHandler {
 
   Future<void> seekToIndex(int index) async {
     await _player.seek(Duration.zero, index: index);
-    await _player.play();
   }
 
   Future<void> setLoopMode(LoopMode mode) => _player.setLoopMode(mode);
 
+  // Không dùng native shuffle — PlayerProvider tự quản lý
   Future<void> setShuffleModeEnabled(bool enabled) async {
-    await _player.setShuffleModeEnabled(enabled);
-    if (enabled && _player.loopMode == LoopMode.off) {
-      await _player.setLoopMode(LoopMode.all);
-    }
+    await _player.setShuffleModeEnabled(false);
   }
 
   Stream<bool>             get playingStream          => _player.playingStream;
   Stream<int?>             get currentIndexStream     => _player.currentIndexStream;
-  // UX 4: Expose for loading indicator
   Stream<ProcessingState>  get processingStateStream  => _player.processingStateStream;
 
   Stream<PositionData> get positionDataStream =>
