@@ -317,6 +317,12 @@ class _TopBar extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14)),
             onSelected: (val) {
               switch (val) {
+                case 'edit':
+                  _showEditDialog(context, song);
+                  break;
+                case 'hide':
+                  _showHideConfirm(context, song);
+                  break;
                 case 'fav':
                   context.read<MusicProvider>().toggleFavorite(song.id);
                   break;
@@ -349,20 +355,17 @@ class _TopBar extends StatelessWidget {
               final isFav =
               context.read<MusicProvider>().isFavorite(song.id);
               return [
-                _popItem(
-                  context,
-                  'fav',
-                  isFav
+                _popItem(context, 'fav', isFav
                       ? Icons.favorite_rounded
                       : Icons.favorite_border_rounded,
                   isFav ? 'Bỏ yêu thích' : 'Yêu thích',
                   iconColor: isFav ? c.tertiary : null,
                 ),
-                _popItem(context,'playlist', Icons.playlist_add_rounded,
-                    'Thêm vào danh sách phát'),
+                _popItem(context,'playlist', Icons.playlist_add_rounded, 'Thêm vào danh sách phát'),
+                _popItem(context, 'edit', Icons.edit_rounded, 'Sửa thông tin'),
+                _popItem(context, 'hide', Icons.visibility_off_rounded, 'Ẩn khỏi thư viện'),
                 _popItem(context,'share', Icons.share_rounded, 'Chia sẻ'),
-                _popItem(context,'info', Icons.info_outline_rounded,
-                    'Thông tin bài hát'),
+                _popItem(context,'info', Icons.info_outline_rounded, 'Thông tin bài hát'),
               ];
             },
           ),
@@ -574,6 +577,136 @@ class _TopBar extends StatelessWidget {
                     color: c.textPrimary,
                     fontSize: 13,
                     fontWeight: FontWeight.w500)),
+          ),
+        ],
+      ),
+    );
+  }
+  void _showEditDialog(BuildContext context, SongItem song) {
+    final titleCtrl  = TextEditingController(text: song.title);
+    final artistCtrl = TextEditingController(text: song.artist);
+    final c = context.appColors;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: c.card,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          24, 20, 24,
+          24 + MediaQuery.of(ctx).viewInsets.bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Sửa thông tin',
+                style: GoogleFonts.outfit(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: c.textPrimary)),
+            const SizedBox(height: 16),
+            _metaField(ctx, 'Tên bài hát', titleCtrl),
+            const SizedBox(height: 12),
+            _metaField(ctx, 'Nghệ sĩ', artistCtrl),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: Text('Hủy',
+                        style: GoogleFonts.outfit(color: c.textTertiary)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(backgroundColor: c.primary),
+                    onPressed: () {
+                      final t = titleCtrl.text.trim();
+                      final a = artistCtrl.text.trim();
+                      if (t.isNotEmpty) {
+                        context.read<MusicProvider>().updateSongMeta(
+                          song.id,
+                          t.isEmpty ? song.title : t,
+                          a.isEmpty ? song.artist : a,
+                        );
+                      }
+                      Navigator.pop(ctx);
+                    },
+                    child: Text('Lưu',
+                        style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _metaField(BuildContext context, String label, TextEditingController ctrl) {
+    final c = context.appColors;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: GoogleFonts.outfit(fontSize: 12, color: c.textTertiary)),
+        const SizedBox(height: 6),
+        TextField(
+          controller: ctrl,
+          style: GoogleFonts.outfit(color: c.textPrimary),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: c.surfaceElevated,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: c.primary, width: 1),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showHideConfirm(BuildContext context, SongItem song) {
+    final c = context.appColors;
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: c.card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Ẩn bài hát?',
+            style: GoogleFonts.outfit(
+                color: c.textPrimary, fontWeight: FontWeight.w600)),
+        content: Text(
+          '"${song.title}" sẽ bị ẩn khỏi thư viện. File gốc không bị xóa. Có thể quét lại để khôi phục.',
+          style: GoogleFonts.outfit(color: c.textSecondary, height: 1.6),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Hủy',
+                style: GoogleFonts.outfit(color: c.textTertiary)),
+          ),
+          TextButton(
+            onPressed: () {
+              context.read<MusicProvider>().hideSongFromLibrary(song);
+              Navigator.pop(context);
+              Navigator.pop(context);
+            },
+            child: Text('Ẩn',
+                style: GoogleFonts.outfit(
+                    color: c.tertiary, fontWeight: FontWeight.w600)),
           ),
         ],
       ),

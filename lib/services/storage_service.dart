@@ -8,7 +8,9 @@ class StorageService {
   static const _keyRecentlyPlayed = 'recently_played';
   static const _keyPlayCount     = 'play_count';
   static const _keyFavorites     = 'favorites';
-  static const _keyPlaylists     = 'playlists'; // ← mới
+  static const _keyPlaylists     = 'playlists';
+  static const _keyMetaOverrides = 'meta_overrides'; // Map<id, {title, artist}>
+  static const _keyHiddenSongs   = 'hidden_songs';   // Set<int>
 
   late SharedPreferences _prefs;
 
@@ -109,5 +111,66 @@ class StorageService {
         return true;
       }());
     }
+  }
+  // ── Meta overrides ────────────────────────────────────────────────────────
+
+  Map<int, Map<String, String>> get metaOverrides {
+    final raw = _prefs.getString(_keyMetaOverrides);
+    if (raw == null) return {};
+    final map = jsonDecode(raw) as Map<String, dynamic>;
+    return map.map((k, v) => MapEntry(
+      int.parse(k),
+      Map<String, String>.from(v as Map),
+    ));
+  }
+
+  Future<void> saveMetaOverride(int songId, String title, String artist) async {
+    final map = metaOverrides;
+    map[songId] = {'title': title, 'artist': artist};
+    await _prefs.setString(
+      _keyMetaOverrides,
+      jsonEncode(map.map((k, v) => MapEntry(k.toString(), v))),
+    );
+  }
+
+  Future<void> removeMetaOverride(int songId) async {
+    final map = metaOverrides;
+    map.remove(songId);
+    await _prefs.setString(
+      _keyMetaOverrides,
+      jsonEncode(map.map((k, v) => MapEntry(k.toString(), v))),
+    );
+  }
+
+// ── Hidden songs ──────────────────────────────────────────────────────────
+
+  Map<int, Map<String, String>> get hiddenSongs {
+    final raw = _prefs.getString(_keyHiddenSongs);
+    if (raw == null) return {};
+    final map = jsonDecode(raw) as Map<String, dynamic>;
+    return map.map((k, v) => MapEntry(
+      int.parse(k),
+      Map<String, String>.from(v as Map),
+    ));
+  }
+
+  Set<int> get hiddenSongIds => hiddenSongs.keys.toSet();
+
+  Future<void> hideSong(int songId, String title, String artist, String data) async {
+    final map = hiddenSongs;
+    map[songId] = {'title': title, 'artist': artist, 'data': data};
+    await _prefs.setString(
+      _keyHiddenSongs,
+      jsonEncode(map.map((k, v) => MapEntry(k.toString(), v))),
+    );
+  }
+
+  Future<void> unhideSong(int songId) async {
+    final map = hiddenSongs;
+    map.remove(songId);
+    await _prefs.setString(
+      _keyHiddenSongs,
+      jsonEncode(map.map((k, v) => MapEntry(k.toString(), v))),
+    );
   }
 }

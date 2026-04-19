@@ -9,6 +9,7 @@ import '../theme/app_colors.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/mini_player.dart';
 import '../widgets/theme_selector_sheet.dart';
+import 'hidden_songs_screen.dart';
 import 'onboarding_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -280,6 +281,29 @@ class _SettingsSheetState extends State<_SettingsSheet> {
           ),
 
           const SizedBox(height: 8),
+
+          _SettingsTappableRow(
+            icon: Icons.visibility_off_rounded,
+            iconColor: c.textSecondary,
+            label: 'Bài hát đã ẩn',
+            subtitle: 'Xem và khôi phục bài hát bị ẩn',
+            trailing: Icon(Icons.chevron_right_rounded,
+                color: c.textDisabled, size: 20),
+            onTap: () {
+              Navigator.pop(context); // đóng settings sheet
+              Future.microtask(() {
+                Navigator.of(widget.parentContext).push(
+                  MaterialPageRoute(
+                    builder: (_) => ChangeNotifierProvider.value(
+                      value: widget.music,
+                      child: const HiddenSongsScreen(),
+                    ),
+                  ),
+                );
+              });
+            },
+            colors: c,
+          ),
         ],
       ),
     );

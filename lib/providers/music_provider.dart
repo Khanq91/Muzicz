@@ -28,8 +28,8 @@ class MusicProvider extends ChangeNotifier {
   int _scanCount = 0;
   int get scanCount => _scanCount;
 
-  // ── FIX Bug 1: Separate search query per scope ────────────────────────────
-  // Mỗi screen có search riêng, không dùng chung 1 global string
+  Map<int, Map<String, String>> get hiddenSongs => _storage.hiddenSongs;
+
   String _homeSearchQuery = '';
   String _librarySearchQuery = '';
 
@@ -47,6 +47,11 @@ class MusicProvider extends ChangeNotifier {
   void setLibrarySearchQuery(String q) {
     _librarySearchQuery = q.toLowerCase().trim();
     notifyListeners();
+  }
+
+  Future<void> unhideSong(int songId) async {
+    await _storage.unhideSong(songId);
+    await scanMusic();
   }
 
   // Deprecated
@@ -107,6 +112,14 @@ class MusicProvider extends ChangeNotifier {
           }
         },
       );
+
+      // Filter hidden
+      final hidden = _storage.hiddenSongIds;
+      _allSongs = _allSongs.where((s) => !hidden.contains(s.id)).toList();
+
+      // Apply overrides
+      final overrides = _storage.metaOverrides;
+      _allSongs = _allSongs.map((s) => _applyOverride(s, overrides)).toList();
 
       _albumMap  = await _scanner.groupByAlbum(_allSongs);
       _artistMap = await _scanner.groupByArtist(_allSongs);
@@ -217,4 +230,44 @@ class MusicProvider extends ChangeNotifier {
     await _storage.incrementPlayCount(songId);
     notifyListeners();
   }
+
+  SongItem _applyOverride(SongItem song, Map<int, Map<String, String>> overrides) {
+    final o = overrides[song.id];
+    if (o == null) return song;
+    return SongItem(
+      id:       song.id,
+      title:    o['title']  ?? song.title,
+      artist:   o['artist'] ?? song.artist,
+      album:    song.album,
+      albumId:  song.albumId,
+      artistId: song.artistId,
+      data:     song.data,
+      duration: song.duration,
+      size:     song.size,
+      track:    song.track,
+      dateAdded: song.dateAdded,
+    );
+  }
+  Future<void> updateSongMeta(int songId, String title, String artist) async {
+    await _storage.saveMetaOverride(songId, title, artist);
+
+    final overrides = _storage.metaOverrides;
+    _allSongs = _allSongs.map((s) => _applyOverride(s, overrides)).toList();
+    _albumMap  = await _scanner.groupByAlbum(_allSongs);
+    _artistMap = await _scanner.groupByArtist(_allSongs);
+    notifyListeners();
+  }
+
+  Future<void> hideSongFromLibrary(SongItem song) async {
+    await _storage.hideSong(song.id, song.title, song.artist, song.data);
+    _allSongs = _allSongs.where((s) => s.id != song.id).toList();
+    _albumMap  = await _scanner.groupByAlbum(_allSongs);
+    _artistMap = await _scanner.groupByArtist(_allSongs);
+    for (final pl in _playlists) {
+      pl.removeSong(song.id);
+    }
+    await _persistPlaylists();
+    notifyListeners();
+  }
+
 }
