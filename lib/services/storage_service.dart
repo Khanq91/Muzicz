@@ -80,6 +80,14 @@ class StorageService {
 
   bool isFavorite(int songId) => favoriteIds.contains(songId);
 
+  Future<void> setBulkFavoriteStatus(List<int> songIds, bool addToFav) async {
+    final favs = favoriteIds;
+    for (final id in songIds) {
+      if (addToFav) favs.add(id); else favs.remove(id);
+    }
+    await _prefs.setString(_keyFavorites, jsonEncode(favs.toList()));
+  }
+
   // ── Playlists (persist across restarts) ──────────────────────────────────
 
   /// Đọc danh sách playlist từ SharedPreferences.

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:on_audio_query/on_audio_query.dart';
@@ -31,6 +32,10 @@ class _LibraryScreenState extends State<LibraryScreen>
   final _searchCtrl = TextEditingController();
   SortType _sortType = SortType.az;
 
+  // ── Selection state ────────────────────────────────────────────────────────
+  bool _isSelecting = false;
+  final Set<int> _selectedIds = {};
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +50,140 @@ class _LibraryScreenState extends State<LibraryScreen>
     super.dispose();
   }
 
+  // ── Selection methods ──────────────────────────────────────────────────────
+
+  void _enterSelecting(SongItem song) {
+    setState(() {
+      _isSelecting = true;
+      _selectedIds.add(song.id);
+    });
+  }
+
+  void _exitSelecting() {
+    setState(() {
+      _isSelecting = false;
+      _selectedIds.clear();
+    });
+  }
+
+  void _toggleSelect(SongItem song) {
+    setState(() {
+      if (_selectedIds.contains(song.id)) {
+        _selectedIds.remove(song.id);
+        if (_selectedIds.isEmpty) _isSelecting = false;
+      } else {
+        _selectedIds.add(song.id);
+      }
+    });
+  }
+
+  void _toggleSelectAll(MusicProvider music) {
+    setState(() {
+      final allSongs = music.librarySearchQuery.isEmpty
+          ? music.allSongs
+          : music.libraryFilteredSongs;
+      final allIds = allSongs.map((s) => s.id).toSet();
+      if (_selectedIds.containsAll(allIds) && allIds.isNotEmpty) {
+        _selectedIds.clear();
+      } else {
+        _selectedIds.addAll(allIds);
+      }
+    });
+  }
+
+  List<SongItem> _getSelectedSongs(MusicProvider music) =>
+      music.allSongs.where((s) => _selectedIds.contains(s.id)).toList();
+
+  Future<void> _bulkFavorite(MusicProvider music) async {
+    if (_selectedIds.isEmpty) return;
+    await music.bulkFavoriteToggle(_selectedIds.toList());
+    final allWereFav = music.allSongs
+        .where((s) => _selectedIds.contains(s.id))
+        .every((s) => music.isFavorite(s.id));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+        allWereFav
+            ? 'Đã thêm ${_selectedIds.length} bài vào yêu thích'
+            : 'Đã bỏ ${_selectedIds.length} bài khỏi yêu thích',
+        style: GoogleFonts.outfit(fontSize: 13),
+      ),
+      duration: const Duration(seconds: 2),
+      backgroundColor: context.appColors.surfaceElevated,
+      behavior: SnackBarBehavior.floating,
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    ));
+  }
+
+  Future<void> _bulkHide(MusicProvider music) async {
+    if (_selectedIds.isEmpty) return;
+    final songs = _getSelectedSongs(music);
+    final count = songs.length;
+    final c = context.appColors;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: c.card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Ẩn $count bài hát?',
+            style: GoogleFonts.outfit(
+                color: c.textPrimary, fontWeight: FontWeight.w600)),
+        content: Text(
+          'Các bài hát này sẽ bị ẩn khỏi thư viện. File gốc không bị xóa.',
+          style: GoogleFonts.outfit(
+              color: c.textSecondary, fontSize: 14, height: 1.6),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Hủy',
+                style: GoogleFonts.outfit(color: c.textTertiary)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('Ẩn',
+                style: GoogleFonts.outfit(
+                    color: c.tertiary, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+    await music.hideSongsFromLibrary(songs);
+    _exitSelecting();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text('Đã ẩn $count bài hát',
+          style: GoogleFonts.outfit(fontSize: 13)),
+      duration: const Duration(seconds: 2),
+      backgroundColor: context.appColors.surfaceElevated,
+      behavior: SnackBarBehavior.floating,
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    ));
+  }
+
+  void _showBulkPlaylistSheet(MusicProvider music) {
+    if (_selectedIds.isEmpty) return;
+    final songs = _getSelectedSongs(music);
+    final c = context.appColors;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: c.card,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => ChangeNotifierProvider.value(
+        value: music,
+        child: _BulkPlaylistSheet(songs: songs),
+      ),
+    );
+  }
+
   void _navigateToScan() {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const OnboardingScreen()),
@@ -57,61 +196,74 @@ class _LibraryScreenState extends State<LibraryScreen>
     final isScanning = music.status == LibraryStatus.scanning;
     final hasSearchText = _searchCtrl.text.isNotEmpty;
     final c = context.appColors;
+
+    // Tổng bài đang hiển thị (dùng cho "Chọn tất cả")
+    final displayedTotal = music.librarySearchQuery.isEmpty
+        ? music.allSongs.length
+        : music.libraryFilteredSongs.length;
+
     return Scaffold(
       backgroundColor: c.background,
       body: SafeArea(
         child: Column(
           children: [
             // ── Header ───────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
-              child: Row(
-                children: [
-                  if (!widget.isEmbedded)
-                    IconButton(
-                      icon: Icon(Icons.arrow_back_ios_new_rounded,
-                          size: 20, color: c.textPrimary),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  if (widget.isEmbedded) const SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      'Thư viện',
-                      style: GoogleFonts.outfit(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: c.textPrimary,
+            if (_isSelecting)
+              _SelectionHeader(
+                count: _selectedIds.length,
+                total: displayedTotal,
+                onToggleSelectAll: () => _toggleSelectAll(music),
+                onCancel: _exitSelecting,
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+                child: Row(
+                  children: [
+                    if (!widget.isEmbedded)
+                      IconButton(
+                        icon: Icon(Icons.arrow_back_ios_new_rounded,
+                            size: 20, color: c.textPrimary),
+                        onPressed: () => Navigator.pop(context),
                       ),
-                    ),
-                  ),
-                  if (isScanning)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: c.primary,
+                    if (widget.isEmbedded) const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        'Thư viện',
+                        style: GoogleFonts.outfit(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: c.textPrimary,
                         ),
                       ),
                     ),
-                  PopupMenuButton<SortType>(
-                    color: c.card,
-                    icon: Icon(Icons.sort_rounded,
-                        color: c.textSecondary),
-                    onSelected: (t) => setState(() => _sortType = t),
-                    itemBuilder: (_) => [
-                      _menuItem(SortType.az, 'A → Z'),
-                      _menuItem(SortType.recentlyAdded, 'Mới thêm'),
-                      _menuItem(SortType.duration, 'Thời lượng'),
-                    ],
-                  ),
-                ],
+                    if (isScanning)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: c.primary,
+                          ),
+                        ),
+                      ),
+                    PopupMenuButton<SortType>(
+                      color: c.card,
+                      icon: Icon(Icons.sort_rounded, color: c.textSecondary),
+                      onSelected: (t) => setState(() => _sortType = t),
+                      itemBuilder: (_) => [
+                        _menuItem(SortType.az, 'A → Z'),
+                        _menuItem(SortType.recentlyAdded, 'Mới thêm'),
+                        _menuItem(SortType.duration, 'Thời lượng'),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
 
-            // Thin progress bar khi scanning
+            // Scan progress bar
             AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               height: isScanning ? 2 : 0,
@@ -123,89 +275,103 @@ class _LibraryScreenState extends State<LibraryScreen>
                   : const SizedBox.shrink(),
             ),
 
-            // ── Search bar ───────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-              child: TextField(
-                controller: _searchCtrl,
-                onChanged: (q) {
-                  context.read<MusicProvider>().setLibrarySearchQuery(q);
-                  setState(() {});
-                },
-                style: GoogleFonts.outfit(
-                    color: c.textPrimary, fontSize: 14),
-                decoration: InputDecoration(
-                  hintText: 'Tìm trong thư viện…',
-                  hintStyle: GoogleFonts.outfit(
-                      color: c.textDisabled, fontSize: 14),
-                  prefixIcon: Icon(Icons.search_rounded,
-                      color: c.textTertiary, size: 20),
-                  suffixIcon: _searchCtrl.text.isNotEmpty
-                      ? GestureDetector(
-                    onTap: () {
-                      _searchCtrl.clear();
-                      context
-                          .read<MusicProvider>()
-                          .setLibrarySearchQuery('');
-                      setState(() {});
-                    },
-                    child: Icon(Icons.close_rounded,
-                        color: c.textTertiary, size: 18),
-                  )
-                      : null,
-                  filled: true,
-                  fillColor: c.surfaceElevated,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                    BorderSide(color: c.primary, width: 1),
+            // ── Search bar + scope indicator — ẩn khi selecting ──
+            if (!_isSelecting) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                child: TextField(
+                  controller: _searchCtrl,
+                  onChanged: (q) {
+                    context.read<MusicProvider>().setLibrarySearchQuery(q);
+                    setState(() {});
+                  },
+                  style: GoogleFonts.outfit(
+                      color: c.textPrimary, fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: 'Tìm trong thư viện…',
+                    hintStyle: GoogleFonts.outfit(
+                        color: c.textDisabled, fontSize: 14),
+                    prefixIcon: Icon(Icons.search_rounded,
+                        color: c.textTertiary, size: 20),
+                    suffixIcon: _searchCtrl.text.isNotEmpty
+                        ? GestureDetector(
+                      onTap: () {
+                        _searchCtrl.clear();
+                        context
+                            .read<MusicProvider>()
+                            .setLibrarySearchQuery('');
+                        setState(() {});
+                      },
+                      child: Icon(Icons.close_rounded,
+                          color: c.textTertiary, size: 18),
+                    )
+                        : null,
+                    filled: true,
+                    fillColor: c.surfaceElevated,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: c.primary, width: 1),
+                    ),
                   ),
                 ),
               ),
-            ),
 
-            // FIX 4: Search scope indicator — chỉ hiện khi đang gõ
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              height: hasSearchText ? 28 : 0,
-              curve: Curves.easeOut,
-              child: hasSearchText
-                  ? Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-                child: Row(
-                  children: [
-                    Icon(Icons.storage_rounded,
-                        size: 12, color: c.textDisabled),
-                    const SizedBox(width: 5),
-                    Text(
-                      'Tìm trong thư viện cục bộ · ${context.watch<MusicProvider>().allSongs.length} bài',
-                      style: GoogleFonts.outfit(
-                        fontSize: 11,
-                        color: c.textDisabled,
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                height: hasSearchText ? 28 : 0,
+                curve: Curves.easeOut,
+                child: hasSearchText
+                    ? Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.storage_rounded,
+                          size: 12, color: c.textDisabled),
+                      const SizedBox(width: 5),
+                      Text(
+                        'Tìm trong thư viện cục bộ · ${context.watch<MusicProvider>().allSongs.length} bài',
+                        style: GoogleFonts.outfit(
+                          fontSize: 11,
+                          color: c.textDisabled,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              )
-                  : const SizedBox.shrink(),
-            ),
+                    ],
+                  ),
+                )
+                    : const SizedBox.shrink(),
+              ),
 
-            // ── TabBar ───────────────────────────────────────
-            _LibraryTabBar(tabCtrl: _tabCtrl, music: music),
+              // ── TabBar ──────────────────────────────────────
+              _LibraryTabBar(tabCtrl: _tabCtrl, music: music),
+            ],
 
             // ── Tab content ──────────────────────────────────
             Expanded(
-              child: _FadeTabBarView(
+              child: _isSelecting
+              // Khi selecting: chỉ hiện danh sách bài hát (không có tab)
+                  ? _SongsTab(
+                sortType: _sortType,
+                onScanTap: _navigateToScan,
+                isSelecting: true,
+                selectedIds: _selectedIds,
+                onEnterSelect: _enterSelecting,
+                onToggleSelect: _toggleSelect,
+              )
+                  : _FadeTabBarView(
                 controller: _tabCtrl,
                 children: [
                   _SongsTab(
                     sortType: _sortType,
                     onScanTap: _navigateToScan,
+                    isSelecting: false,
+                    selectedIds: const {},
+                    onEnterSelect: _enterSelecting,
+                    onToggleSelect: _toggleSelect,
                   ),
                   const PlaylistsTab(),
                   _AlbumsTab(onScanTap: _navigateToScan),
@@ -214,6 +380,15 @@ class _LibraryScreenState extends State<LibraryScreen>
                 ],
               ),
             ),
+
+            // ── Action bar — chỉ hiện khi selecting ─────────
+            if (_isSelecting)
+              _SelectionActionBar(
+                count: _selectedIds.length,
+                onAddToPlaylist: () => _showBulkPlaylistSheet(music),
+                onFavorite: () => _bulkFavorite(music),
+                onHide: () => _bulkHide(music),
+              ),
 
             if (!widget.isEmbedded)
               Consumer<PlayerProvider>(
@@ -236,6 +411,293 @@ class _LibraryScreenState extends State<LibraryScreen>
           color: _sortType == t ? AppColors.primary : AppColors.textPrimary,
           fontSize: 14,
         ),
+      ),
+    );
+  }
+}
+
+// ── Selection header ──────────────────────────────────────────────────────────
+
+class _SelectionHeader extends StatelessWidget {
+  const _SelectionHeader({
+    required this.count,
+    required this.total,
+    required this.onToggleSelectAll,
+    required this.onCancel,
+  });
+  final int count;
+  final int total;
+  final VoidCallback onToggleSelectAll;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.appColors;
+    final allSelected = total > 0 && count >= total;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 4, 8, 0),
+      child: Row(
+        children: [
+          IconButton(
+            icon: Icon(Icons.close_rounded, color: c.textPrimary, size: 22),
+            onPressed: onCancel,
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              count == 0 ? 'Chọn bài hát' : '$count bài đã chọn',
+              style: GoogleFonts.outfit(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: c.textPrimary,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: onToggleSelectAll,
+            child: Text(
+              allSelected ? 'Bỏ chọn tất cả' : 'Chọn tất cả',
+              style: GoogleFonts.outfit(
+                fontSize: 14,
+                color: c.primary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Selection action bar ──────────────────────────────────────────────────────
+
+class _SelectionActionBar extends StatelessWidget {
+  const _SelectionActionBar({
+    required this.count,
+    required this.onAddToPlaylist,
+    required this.onFavorite,
+    required this.onHide,
+  });
+  final int count;
+  final VoidCallback onAddToPlaylist;
+  final VoidCallback onFavorite;
+  final VoidCallback onHide;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.appColors;
+    final enabled = count > 0;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: c.card,
+        border: Border(top: BorderSide(color: c.border, width: 0.5)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _ActionBarBtn(
+            icon: Icons.playlist_add_rounded,
+            label: 'Playlist',
+            onTap: enabled ? onAddToPlaylist : null,
+          ),
+          _ActionBarBtn(
+            icon: Icons.favorite_rounded,
+            label: 'Yêu thích',
+            onTap: enabled ? onFavorite : null,
+          ),
+          _ActionBarBtn(
+            icon: Icons.visibility_off_rounded,
+            label: 'Ẩn',
+            onTap: enabled ? onHide : null,
+            isDestructive: true,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActionBarBtn extends StatelessWidget {
+  const _ActionBarBtn({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.isDestructive = false,
+  });
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+  final bool isDestructive;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.appColors;
+    final enabled = onTap != null;
+    final color = !enabled
+        ? c.textDisabled
+        : isDestructive
+        ? c.tertiary
+        : c.primary;
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: GoogleFonts.outfit(
+                fontSize: 11,
+                color: color,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Bulk playlist sheet ───────────────────────────────────────────────────────
+
+class _BulkPlaylistSheet extends StatelessWidget {
+  const _BulkPlaylistSheet({required this.songs});
+  final List<SongItem> songs;
+
+  @override
+  Widget build(BuildContext context) {
+    final music = context.watch<MusicProvider>();
+    final c = context.appColors;
+    final playlists = music.playlists;
+
+    return Container(
+      constraints:
+      BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.6),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Center(
+            child: Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: c.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 12, 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Thêm vào danh sách phát',
+                        style: GoogleFonts.outfit(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: c.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        '${songs.length} bài hát',
+                        style: GoogleFonts.outfit(
+                            fontSize: 12, color: c.textTertiary),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: Icon(Icons.close_rounded,
+                      color: c.textTertiary, size: 22),
+                ),
+              ],
+            ),
+          ),
+          Divider(color: c.divider, height: 1),
+          playlists.isEmpty
+              ? Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.playlist_play_rounded,
+                    color: c.textDisabled, size: 48),
+                const SizedBox(height: 12),
+                Text(
+                  'Chưa có danh sách phát nào.',
+                  style: GoogleFonts.outfit(
+                      color: c.textTertiary, fontSize: 14),
+                ),
+              ],
+            ),
+          )
+              : Flexible(
+            child: ListView.builder(
+              padding: const EdgeInsets.only(bottom: 16),
+              itemCount: playlists.length,
+              itemBuilder: (_, i) {
+                final pl = playlists[i];
+                return ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 4),
+                  leading: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      gradient: LinearGradient(
+                          colors: [c.primary, c.secondary]),
+                    ),
+                    child: const Icon(Icons.playlist_play_rounded,
+                        color: Colors.white, size: 22),
+                  ),
+                  title: Text(pl.name,
+                      style: GoogleFonts.outfit(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: c.textPrimary,
+                      )),
+                  subtitle: Text('${pl.songCount} bài hát',
+                      style: GoogleFonts.outfit(
+                          fontSize: 12, color: c.textTertiary)),
+                  trailing:
+                  Icon(Icons.add_rounded, color: c.primary),
+                  onTap: () async {
+                    await music.bulkAddToPlaylist(pl.id, songs);
+                    if (!context.mounted) return;
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(
+                        'Đã thêm ${songs.length} bài vào "${pl.name}"',
+                        style: GoogleFonts.outfit(fontSize: 13),
+                      ),
+                      duration: const Duration(seconds: 2),
+                      backgroundColor: c.surfaceElevated,
+                      behavior: SnackBarBehavior.floating,
+                      margin:
+                      const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ));
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -329,9 +791,20 @@ class _FadeTabBarViewState extends State<_FadeTabBarView> {
 // ── Songs Tab ─────────────────────────────────────────────────────────────────
 
 class _SongsTab extends StatelessWidget {
-  const _SongsTab({required this.sortType, required this.onScanTap});
+  const _SongsTab({
+    required this.sortType,
+    required this.onScanTap,
+    this.isSelecting = false,
+    this.selectedIds = const {},
+    this.onEnterSelect,
+    this.onToggleSelect,
+  });
   final SortType sortType;
   final VoidCallback onScanTap;
+  final bool isSelecting;
+  final Set<int> selectedIds;
+  final void Function(SongItem)? onEnterSelect;
+  final void Function(SongItem)? onToggleSelect;
 
   List<SongItem> _sorted(List<SongItem> songs) {
     final list = [...songs];
@@ -366,7 +839,6 @@ class _SongsTab extends StatelessWidget {
             : 'Không tìm thấy kết quả.',
         showSearchTip: music.librarySearchQuery.isNotEmpty,
         searchQuery: music.librarySearchQuery,
-        // FIX 3: Nút scan khi thư viện rỗng (không phải khi filter rỗng)
         onScanTap: music.librarySearchQuery.isEmpty ? onScanTap : null,
       );
     }
@@ -379,19 +851,30 @@ class _SongsTab extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),
         ),
-        padding: const EdgeInsets.only(bottom: 12),
+        // Extra padding khi selecting để action bar không che list
+        padding: EdgeInsets.only(bottom: isSelecting ? 8 : 12),
         itemCount: songs.length,
         itemBuilder: (_, i) {
           final song = songs[i];
           return MusicListTile(
             song: song,
-            isActive: player.currentSong?.id == song.id,
-            onTap: () {
+            isActive: !isSelecting && player.currentSong?.id == song.id,
+            isSelecting: isSelecting,
+            isSelected: selectedIds.contains(song.id),
+            onTap: isSelecting
+                ? () => onToggleSelect?.call(song)
+                : () {
               context
                   .read<PlayerProvider>()
                   .playSongs(songs, specificSong: song);
               context.read<MusicProvider>().onSongPlayed(song.id);
               Navigator.of(context).push(_playerRoute());
+            },
+            onLongPress: isSelecting
+                ? null
+                : () {
+              HapticFeedback.mediumImpact();
+              onEnterSelect?.call(song);
             },
           );
         },
@@ -400,7 +883,7 @@ class _SongsTab extends StatelessWidget {
   }
 }
 
-// ── Albums Tab  ─────────────────
+// ── Albums Tab ────────────────────────────────────────────────────────────────
 
 class _AlbumsTab extends StatelessWidget {
   const _AlbumsTab({required this.onScanTap});
@@ -417,7 +900,6 @@ class _AlbumsTab extends StatelessWidget {
       return _EmptyState(
         icon: Icons.album_rounded,
         message: 'Không có album nào.',
-        // FIX 3: Nút scan
         onScanTap: onScanTap,
       );
     }
@@ -634,8 +1116,7 @@ class _FoldersTab extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               color: c.primary.withOpacity(0.15),
             ),
-            child: Icon(Icons.folder_rounded,
-                color: c.primary, size: 24),
+            child: Icon(Icons.folder_rounded, color: c.primary, size: 24),
           ),
           title: Text(entry.key,
               style: GoogleFonts.outfit(
@@ -696,7 +1177,7 @@ class _CountTab extends StatelessWidget {
   }
 }
 
-// ── Empty state — FIX 3: thêm onScanTap ──────────────────────────────────────
+// ── Empty state ───────────────────────────────────────────────────────────────
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState({
@@ -704,7 +1185,6 @@ class _EmptyState extends StatelessWidget {
     required this.message,
     this.showSearchTip = false,
     this.searchQuery = '',
-    // FIX 3: optional — chỉ truyền khi thư viện thực sự rỗng
     this.onScanTap,
   });
   final IconData icon;
@@ -748,8 +1228,6 @@ class _EmptyState extends StatelessWidget {
               ),
             ),
           ],
-
-          // Search tip
           if (showSearchTip) ...[
             const SizedBox(height: 16),
             Container(
@@ -785,8 +1263,7 @@ class _EmptyState extends StatelessWidget {
               onPressed: () {
                 context.read<MusicProvider>().setLibrarySearchQuery('');
               },
-              icon: Icon(Icons.close_rounded,
-                  size: 16, color: c.primary),
+              icon: Icon(Icons.close_rounded, size: 16, color: c.primary),
               label: Text(
                 'Xóa tìm kiếm',
                 style: GoogleFonts.outfit(

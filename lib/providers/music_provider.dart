@@ -270,4 +270,38 @@ class MusicProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Bulk hide — rescan 1 lần thay vì N lần
+  Future<void> hideSongsFromLibrary(List<SongItem> songs) async {
+    for (final song in songs) {
+      await _storage.hideSong(song.id, song.title, song.artist, song.data);
+      for (final pl in _playlists) {
+        pl.removeSong(song.id);
+      }
+    }
+    final hiddenIds = songs.map((s) => s.id).toSet();
+    _allSongs = _allSongs.where((s) => !hiddenIds.contains(s.id)).toList();
+    _albumMap = await _scanner.groupByAlbum(_allSongs);
+    _artistMap = await _scanner.groupByArtist(_allSongs);
+    await _persistPlaylists();
+    notifyListeners();
+  }
+
+  /// Smart toggle: tất cả đã fav → bỏ fav; còn lại → thêm fav
+  Future<void> bulkFavoriteToggle(List<int> songIds) async {
+    if (songIds.isEmpty) return;
+    final allFav = songIds.every((id) => _storage.isFavorite(id));
+    await _storage.setBulkFavoriteStatus(songIds, !allFav);
+    notifyListeners();
+  }
+
+  /// Thêm nhiều bài vào playlist — bài đã có bị bỏ qua
+  Future<void> bulkAddToPlaylist(String playlistId, List<SongItem> songs) async {
+    final pl = _playlists.firstWhere((p) => p.id == playlistId);
+    for (final song in songs) {
+      pl.addSong(song);
+    }
+    notifyListeners();
+    await _persistPlaylists();
+  }
+
 }

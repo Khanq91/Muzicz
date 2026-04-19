@@ -18,6 +18,10 @@ class MusicListTile extends StatelessWidget {
     this.trailing,
     this.isActive = false,
     this.index,
+    // ── Selection support ──────────────────────────────────────────────────
+    this.isSelecting = false,
+    this.isSelected = false,
+    this.onLongPress, // overrides default context menu
   });
 
   final SongItem song;
@@ -26,20 +30,33 @@ class MusicListTile extends StatelessWidget {
   final Widget? trailing;
   final bool isActive;
   final int? index;
+  final bool isSelecting;
+  final bool isSelected;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
     final musicProvider = context.watch<MusicProvider>();
     final isFav = musicProvider.isFavorite(song.id);
     final c = context.appColors;
+
+    final bgColor = isSelected
+        ? c.primary.withOpacity(0.14)
+        : isActive
+        ? c.primary.withOpacity(0.08)
+        : Colors.transparent;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        onLongPress: () {
-          HapticFeedback.mediumImpact();
-          _showContextMenu(context, isFav, musicProvider);
-        },
+        onLongPress: isSelecting
+            ? null
+            : (onLongPress ??
+                () {
+              HapticFeedback.mediumImpact();
+              _showContextMenu(context, isFav, musicProvider);
+            }),
         borderRadius: BorderRadius.circular(12),
         splashColor: c.primary.withOpacity(0.1),
         highlightColor: c.primary.withOpacity(0.05),
@@ -48,14 +65,17 @@ class MusicListTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            color: isActive
-                ? c.primary.withOpacity(0.08)
-                : Colors.transparent,
+            color: bgColor,
           ),
           child: Row(
             children: [
               if (showAlbumArt) ...[
-                _AlbumArtThumbnail(albumId: song.albumId, isActive: isActive),
+                _AlbumArtWithCheckbox(
+                  albumId: song.albumId,
+                  isActive: isActive && !isSelecting,
+                  isSelecting: isSelecting,
+                  isSelected: isSelected,
+                ),
                 const SizedBox(width: 14),
               ],
               Expanded(
@@ -67,12 +87,11 @@ class MusicListTile extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: isActive
-                            ? c.primary
-                            : c.textPrimary,
+                        color: isSelected || isActive ? c.primary : c.textPrimary,
                         fontSize: 15,
-                        fontWeight:
-                        isActive ? FontWeight.w600 : FontWeight.w500,
+                        fontWeight: isActive || isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w500,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -90,17 +109,19 @@ class MusicListTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              if (trailing != null)
-                trailing!
-              else
-                Text(
-                  song.durationFormatted,
-                  style: TextStyle(
-                    color: c.textDisabled,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w300,
+              if (!isSelecting) ...[
+                if (trailing != null)
+                  trailing!
+                else
+                  Text(
+                    song.durationFormatted,
+                    style: TextStyle(
+                      color: c.textDisabled,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w300,
+                    ),
                   ),
-                ),
+              ],
             ],
           ),
         ),
@@ -122,6 +143,56 @@ class MusicListTile extends StatelessWidget {
         isFavorite: isFav,
         onFavoriteToggle: () => musicProvider.toggleFavorite(song.id),
         parentContext: context,
+      ),
+    );
+  }
+}
+
+// ── Album art với selection overlay ──────────────────────────────────────────
+
+class _AlbumArtWithCheckbox extends StatelessWidget {
+  const _AlbumArtWithCheckbox({
+    required this.albumId,
+    required this.isActive,
+    required this.isSelecting,
+    required this.isSelected,
+  });
+  final int albumId;
+  final bool isActive;
+  final bool isSelecting;
+  final bool isSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.appColors;
+    return SizedBox(
+      width: 48,
+      height: 48,
+      child: Stack(
+        children: [
+          _AlbumArtThumbnail(albumId: albumId, isActive: isActive),
+          if (isSelecting)
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: isSelected
+                    ? c.primary.withOpacity(0.65)
+                    : Colors.black.withOpacity(0.35),
+              ),
+              child: Center(
+                child: Icon(
+                  isSelected
+                      ? Icons.check_circle_rounded
+                      : Icons.circle_outlined,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -206,7 +277,6 @@ class _SongContextMenu extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          // Header
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
@@ -238,7 +308,6 @@ class _SongContextMenu extends StatelessWidget {
           const SizedBox(height: 8),
           Divider(color: c.divider),
 
-          // Yêu thích
           _ContextMenuItem(
             icon: isFavorite
                 ? Icons.favorite_rounded
@@ -251,7 +320,6 @@ class _SongContextMenu extends StatelessWidget {
             },
           ),
 
-          // ✅ Thêm vào playlist — mở AddToPlaylistSheet
           _ContextMenuItem(
             icon: Icons.playlist_add_rounded,
             label: 'Thêm vào danh sách phát',
@@ -269,7 +337,6 @@ class _SongContextMenu extends StatelessWidget {
             },
           ),
 
-          // ✅ Thêm vào hàng chờ — gọi PlayerProvider.addToQueue()
           _ContextMenuItem(
             icon: Icons.queue_music_rounded,
             label: 'Phát tiếp theo',
@@ -299,7 +366,6 @@ class _SongContextMenu extends StatelessWidget {
             },
           ),
 
-          // Chi tiết
           _ContextMenuItem(
             icon: Icons.info_outline_rounded,
             label: 'Chi tiết bài hát',
