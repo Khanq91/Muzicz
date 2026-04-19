@@ -85,8 +85,7 @@ class ArtistDetailScreen extends StatelessWidget {
                       icon: Icons.shuffle_rounded,
                       primary: false,
                       onTap: () async {
-                        await player.playSongs(songs);
-                        await player.toggleShuffle();
+                        await player.playSongsShuffled(songs);
                         if (context.mounted) {
                           Navigator.of(context).push(_playerRoute());
                         }
@@ -97,7 +96,82 @@ class ArtistDetailScreen extends StatelessWidget {
               ),
             ),
           ),
-
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _ActionButton(
+                      label: 'Shuffle Loop',
+                      icon: Icons.all_inclusive_rounded,
+                      primary: false,
+                      onTap: () async {
+                        await player.enableShuffleLoop(songs);
+                        if (context.mounted) {
+                          Navigator.of(context).push(_playerRoute());
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () {
+                      final c = context.appColors;
+                      showDialog(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          backgroundColor: c.card,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                          title: Row(
+                            children: [
+                              Icon(Icons.all_inclusive_rounded, color: c.primary, size: 20),
+                              const SizedBox(width: 8),
+                              Text('Shuffle Loop',
+                                  style: GoogleFonts.outfit(
+                                      color: c.textPrimary,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 16)),
+                            ],
+                          ),
+                          content: Text(
+                            'Phát ngẫu nhiên toàn bộ danh sách. Khi hết, tự động xáo bài và phát lại từ đầu — không trùng lặp theo chu kì.',
+                            style: GoogleFonts.outfit(
+                                color: c.textSecondary, fontSize: 14, height: 1.6),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: Text('OK',
+                                  style: GoogleFonts.outfit(
+                                      color: c.primary, fontWeight: FontWeight.w600)),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    child: Builder(
+                      builder: (context) {
+                        final c = context.appColors;
+                        return Container(
+                          width: 40,
+                          height: 46,
+                          decoration: BoxDecoration(
+                            color: c.surfaceElevated,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: c.border, width: 0.5),
+                          ),
+                          child: Icon(Icons.info_outline_rounded,
+                              color: c.textTertiary, size: 20),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           // ── Albums section ────────────────────────────
           if (albumMap.length > 1) ...[
             SliverToBoxAdapter(

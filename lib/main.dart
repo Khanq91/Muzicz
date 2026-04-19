@@ -10,9 +10,17 @@ import 'providers/player_provider.dart';
 import 'screens/splash_screen.dart';
 import 'services/audio_handler.dart';
 import 'theme/app_theme.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await JustAudioBackground.init(
+    androidNotificationChannelId: 'com.muziczz.muziczz.channel.audio',
+    androidNotificationChannelName: 'Muziczz Audio',
+    androidNotificationOngoing: true,
+    androidStopForegroundOnPause: true,
+  );
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,

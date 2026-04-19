@@ -1,6 +1,7 @@
 import 'package:just_audio/just_audio.dart';
 import 'package:rxdart/rxdart.dart';
 import '../models/song_item.dart';
+import 'package:audio_service/audio_service.dart';
 
 typedef VoidCallback = void Function();
 
@@ -22,8 +23,23 @@ class MuzicAudioHandler {
   Future<void> loadSongs(List<SongItem> songs, {int initialIndex = 0}) async {
     _currentSongs = List.from(songs);
     await _playlist.clear();
+    // await _playlist.addAll(
+    //   songs.map((s) => AudioSource.file(s.data)).toList(),
+    // );
     await _playlist.addAll(
-      songs.map((s) => AudioSource.file(s.data)).toList(),
+      songs.map((s) => AudioSource.uri(
+        Uri.file(s.data),
+        tag: MediaItem(
+          id: s.id.toString(),
+          title: s.title,
+          artist: s.artist,
+          album: s.album,
+          duration: Duration(milliseconds: s.duration),
+          artUri: Uri.parse(
+            'content://media/external/audio/albumart/${s.albumId}',
+          ),
+        ),
+      )).toList(),
     );
     await _player.seek(Duration.zero, index: initialIndex);
   }
@@ -54,7 +70,20 @@ class MuzicAudioHandler {
 
   Future<void> addSongToQueue(SongItem song) async {
     _currentSongs.add(song);
-    await _playlist.add(AudioSource.file(song.data));
+    // await _playlist.add(AudioSource.file(song.data));
+    await _playlist.add(AudioSource.uri(
+      Uri.file(song.data),
+      tag: MediaItem(
+        id: song.id.toString(),
+        title: song.title,
+        artist: song.artist,
+        album: song.album,
+        duration: Duration(milliseconds: song.duration),
+        artUri: Uri.parse(
+          'content://media/external/audio/albumart/${song.albumId}',
+        ),
+      ),
+    ));
   }
 
   Future<void> play()                  => _player.play();

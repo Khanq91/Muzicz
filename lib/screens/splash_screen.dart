@@ -181,7 +181,7 @@ class _SplashScreenState extends State<SplashScreen>
                         style: GoogleFonts.outfit(
                           fontSize: 36,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                          color: c.textPrimary,
                           letterSpacing: -1.0,
                         ),
                       ),

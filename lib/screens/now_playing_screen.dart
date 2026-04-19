@@ -26,10 +26,13 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
   bool _queueVisible = false;
   // FIX 1: Track whether queue sheet has finished animating open
   bool _queueFullyOpen = false;
+  late final PlayerProvider _playerProvider;
 
   @override
   void initState() {
     super.initState();
+
+    _playerProvider = context.read<PlayerProvider>();
 
     _artRotateCtrl = AnimationController(
       vsync: this,
@@ -41,14 +44,12 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
       duration: const Duration(milliseconds: 400),
     )..forward();
 
-    final player = context.read<PlayerProvider>();
-    if (player.isPlaying) _artRotateCtrl.repeat();
-    player.addListener(_onPlayerChange);
+    if (_playerProvider.isPlaying) _artRotateCtrl.repeat();
+    _playerProvider.addListener(_onPlayerChange);
   }
 
   void _onPlayerChange() {
-    final player = context.read<PlayerProvider>();
-    if (player.isPlaying) {
+    if (_playerProvider.isPlaying) {
       if (!_artRotateCtrl.isAnimating) _artRotateCtrl.repeat();
     } else {
       _artRotateCtrl.stop();
@@ -59,7 +60,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
   void dispose() {
     _artRotateCtrl.dispose();
     _appearCtrl.dispose();
-    context.read<PlayerProvider>().removeListener(_onPlayerChange);
+    _playerProvider.removeListener(_onPlayerChange);
     super.dispose();
   }
 
@@ -120,7 +121,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
               child: _BlurredBackground(albumId: song.albumId),
             ),
             Positioned.fill(
-              child: Container(color: c.scrimDark),
+              child: Container(color: Colors.black.withOpacity(0.55)),
             ),
             SafeArea(
               child: FadeTransition(
@@ -266,8 +267,8 @@ class _TopBar extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.keyboard_arrow_down_rounded,
-                size: 32, color: Colors.white),
+            icon: Icon(Icons.keyboard_arrow_down_rounded,
+                size: 32, color: c.onPlayer),
             onPressed: () => Navigator.pop(context),
           ),
           Expanded(
@@ -278,7 +279,7 @@ class _TopBar extends StatelessWidget {
                   style: GoogleFonts.outfit(
                     fontSize: 10,
                     fontWeight: FontWeight.w300,
-                    color: Colors.white54,
+                    color: c.onPlayerLow,
                     letterSpacing: 2.5,
                   ),
                 ),
@@ -309,8 +310,8 @@ class _TopBar extends StatelessWidget {
             ),
           ),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert_rounded,
-                size: 24, color: Colors.white),
+            icon: Icon(Icons.more_vert_rounded,
+                size: 24, color: c.onPlayer),
             color: c.card,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14)),
@@ -661,7 +662,7 @@ class _SongInfo extends StatelessWidget {
                   style: GoogleFonts.outfit(
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                    color: c.onPlayer,
                     letterSpacing: -0.3,
                   ),
                 ),

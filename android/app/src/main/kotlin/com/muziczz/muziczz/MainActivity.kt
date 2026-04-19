@@ -17,9 +17,12 @@ import kotlinx.coroutines.*
 import java.io.File
 import java.nio.ByteBuffer
 
-import io.flutter.embedding.android.FlutterFragmentActivity
+//import io.flutter.embedding.android.FlutterFragmentActivity
+import com.ryanheise.audioservice.AudioServiceFragmentActivity
 
-class MainActivity : FlutterFragmentActivity() {
+
+//class MainActivity : FlutterFragmentActivity() {
+class MainActivity : AudioServiceFragmentActivity() {
 
     // ── Channel dùng chung cho ytdlp feature ──────────────────────────────────
     private val YTDLP_CHANNEL = "ytdlp_channel"

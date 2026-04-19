@@ -5,7 +5,8 @@ import '../models/song_item.dart';
 import '../services/audio_handler.dart';
 
 // RepeatMode.one = lặp vô hạn bài hiện tại (dùng LoopMode.one của just_audio)
-enum RepeatMode { none, one }
+// enum RepeatMode { none, one }
+enum RepeatMode { none, one, shuffleLoop }
 
 class PlayerProvider extends ChangeNotifier {
   final MuzicAudioHandler _handler;
@@ -72,8 +73,15 @@ class PlayerProvider extends ChangeNotifier {
   }
 
   void _onPlaylistEnded() {
-    // RepeatMode.one → just_audio tự loop, completed sẽ không fire
-    // RepeatMode.none → dừng tự nhiên, không cần làm gì
+    if (_repeatMode == RepeatMode.shuffleLoop && _originalQueue.isNotEmpty) {
+      _buildShuffledQueueTrueRandom(
+        startIndex: Random().nextInt(_originalQueue.length),
+      );
+      _currentPlayIndex = 0;
+      _currentSong = _playQueue[0];
+      _loadQueueToHandler(0).then((_) => _handler.play());
+      notifyListeners();
+    }
   }
 
   // ── Load & Play ────────────────────────────────────────────────────────────
@@ -111,6 +119,45 @@ class PlayerProvider extends ChangeNotifier {
 
     await _loadQueueToHandler(_currentPlayIndex);
     await _handler.play();
+  }
+
+  Future<void> playSongsShuffled(List<SongItem> songs) async {
+    if (songs.isEmpty) return;
+
+    if (_repeatMode == RepeatMode.one) {
+      _repeatMode = RepeatMode.none;
+      await _handler.setLoopMode(LoopMode.off);
+    }
+
+    _originalQueue = List.from(songs);
+    _historyStack.clear();
+    _shuffleEnabled = true;
+
+    // Pick random start — không cố định bài 0
+    final randomStart = Random().nextInt(songs.length);
+    _buildShuffledQueueTrueRandom(startIndex: randomStart);
+    _currentPlayIndex = 0;
+    _currentSong = _playQueue[0];
+    notifyListeners();
+
+    await _loadQueueToHandler(0);
+    await _handler.play();
+  }
+
+  void _buildShuffledQueueTrueRandom({required int startIndex}) {
+    final rng = Random();
+    final list = List<SongItem>.from(_originalQueue);
+    final chosen = list.removeAt(startIndex); // lấy bài random ra
+    list.shuffle(rng);                         // shuffle toàn bộ phần còn lại
+    list.insert(0, chosen);                    // đặt bài random lên đầu
+    _playQueue = list;
+  }
+
+  Future<void> enableShuffleLoop(List<SongItem> songs) async {
+    await playSongsShuffled(songs);
+    _repeatMode = RepeatMode.shuffleLoop;
+    await _handler.setLoopMode(LoopMode.off); // tự handle loop, không dùng just_audio
+    notifyListeners();
   }
 
   // ── Skip Next / Previous ──────────────────────────────────────────────────
@@ -208,10 +255,13 @@ class PlayerProvider extends ChangeNotifier {
     switch (_repeatMode) {
       case RepeatMode.none:
         _repeatMode = RepeatMode.one;
-        // just_audio tự loop bài hiện tại — không cần xử lý thủ công
         await _handler.setLoopMode(LoopMode.one);
         break;
       case RepeatMode.one:
+        _repeatMode = RepeatMode.none;
+        await _handler.setLoopMode(LoopMode.off);
+        break;
+      case RepeatMode.shuffleLoop:
         _repeatMode = RepeatMode.none;
         await _handler.setLoopMode(LoopMode.off);
         break;
