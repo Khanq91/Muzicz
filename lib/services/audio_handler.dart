@@ -23,9 +23,6 @@ class MuzicAudioHandler {
   Future<void> loadSongs(List<SongItem> songs, {int initialIndex = 0}) async {
     _currentSongs = List.from(songs);
     await _playlist.clear();
-    // await _playlist.addAll(
-    //   songs.map((s) => AudioSource.file(s.data)).toList(),
-    // );
     await _playlist.addAll(
       songs.map((s) => AudioSource.uri(
         Uri.file(s.data),
@@ -49,7 +46,6 @@ class MuzicAudioHandler {
   Future<void> reorderTo(List<SongItem> newOrder) async {
     if (newOrder.length != _currentSongs.length) return;
 
-    // Tracking array mirrors current physical order in _playlist
     final tracking = List<SongItem>.from(_currentSongs);
 
     for (int targetIdx = 0; targetIdx < newOrder.length; targetIdx++) {
@@ -60,7 +56,6 @@ class MuzicAudioHandler {
 
       await _playlist.move(currentIdx, targetIdx);
 
-      // Keep tracking in sync
       final song = tracking.removeAt(currentIdx);
       tracking.insert(targetIdx, song);
     }
@@ -70,7 +65,6 @@ class MuzicAudioHandler {
 
   Future<void> addSongToQueue(SongItem song) async {
     _currentSongs.add(song);
-    // await _playlist.add(AudioSource.file(song.data));
     await _playlist.add(AudioSource.uri(
       Uri.file(song.data),
       tag: MediaItem(
@@ -98,6 +92,9 @@ class MuzicAudioHandler {
   }
 
   Future<void> setLoopMode(LoopMode mode) => _player.setLoopMode(mode);
+
+  // ── Playback speed (0.5x → 2.0x) ─────────────────────────────────────────
+  Future<void> setSpeed(double speed) => _player.setSpeed(speed);
 
   Future<void> setShuffleModeEnabled(bool enabled) async {
     await _player.setShuffleModeEnabled(false);

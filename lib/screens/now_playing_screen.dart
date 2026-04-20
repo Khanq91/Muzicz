@@ -24,7 +24,6 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
   late final AnimationController _artRotateCtrl;
   late final AnimationController _appearCtrl;
   bool _queueVisible = false;
-  // FIX 1: Track whether queue sheet has finished animating open
   bool _queueFullyOpen = false;
   late final PlayerProvider _playerProvider;
 
@@ -67,7 +66,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
   void _openQueue() {
     setState(() {
       _queueVisible = true;
-      _queueFullyOpen = false; // reset — sẽ set true sau khi animation done
+      _queueFullyOpen = false;
     });
     HapticFeedback.lightImpact();
   }
@@ -155,6 +154,9 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
                             queueVisible: _queueVisible,
                           ),
                           const SizedBox(height: 12),
+                          // ── Speed + Sleep Timer row ──────────────────────
+                          _SpeedAndTimerRow(player: player),
+                          const SizedBox(height: 8),
                           if (!_queueVisible)
                             _SwipeHint(onTap: _openQueue),
                         ],
@@ -165,12 +167,10 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
               ),
             ),
 
-            // FIX 1: AnimatedPositioned + onEnd callback để track trạng thái
             AnimatedPositioned(
               duration: const Duration(milliseconds: 350),
               curve: Curves.easeOutCubic,
               onEnd: () {
-                // Sheet đã đứng yên → bật blur
                 if (_queueVisible) {
                   setState(() => _queueFullyOpen = true);
                 }
@@ -185,7 +185,6 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
                 child: _QueueSheet(
                   player: player,
                   onClose: _closeQueue,
-                  // FIX 1: chỉ bật blur khi sheet đã fully open
                   useBlur: _queueFullyOpen,
                 ),
               ),
@@ -194,6 +193,391 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
         ),
       ),
     );
+  }
+}
+
+// ── Speed + Sleep Timer row ───────────────────────────────────────────────────
+
+class _SpeedAndTimerRow extends StatelessWidget {
+  const _SpeedAndTimerRow({required this.player});
+  final PlayerProvider player;
+
+  String _speedLabel(double s) {
+    if (s == 1.0) return '1×';
+    if (s == s.roundToDouble()) return '${s.toInt()}×';
+    return '${s}×';
+  }
+
+  String _timerLabel(PlayerProvider p) {
+    final rem = p.sleepRemaining;
+    if (rem == null) return 'Hẹn giờ';
+    final m = rem.inMinutes;
+    final s = rem.inSeconds % 60;
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.appColors;
+    final speedActive = player.speed != 1.0;
+    final timerActive = player.sleepTimerActive;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 28),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Speed button
+          GestureDetector(
+            onTap: () => _showSpeedSheet(context, player),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: speedActive
+                    ? c.primary.withOpacity(0.22)
+                    : c.onPlayerGhostBg,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: speedActive
+                      ? c.primary.withOpacity(0.5)
+                      : c.onPlayerGhost,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.speed_rounded,
+                      color: speedActive ? c.primary : Colors.white54,
+                      size: 16),
+                  const SizedBox(width: 5),
+                  Text(
+                    _speedLabel(player.speed),
+                    style: GoogleFonts.outfit(
+                      fontSize: 13,
+                      color: speedActive ? c.primary : Colors.white54,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 12),
+
+          // Sleep timer button
+          GestureDetector(
+            onTap: () => _showSleepTimerSheet(context, player),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: timerActive
+                    ? c.primary.withOpacity(0.22)
+                    : c.onPlayerGhostBg,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: timerActive
+                      ? c.primary.withOpacity(0.5)
+                      : c.onPlayerGhost,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.bedtime_rounded,
+                      color: timerActive ? c.primary : Colors.white54,
+                      size: 16),
+                  const SizedBox(width: 5),
+                  Text(
+                    _timerLabel(player),
+                    style: GoogleFonts.outfit(
+                      fontSize: 13,
+                      color: timerActive ? c.primary : Colors.white54,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSpeedSheet(BuildContext context, PlayerProvider player) {
+    final c = context.appColors;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: c.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => ChangeNotifierProvider.value(
+        value: player,
+        child: const _SpeedSheet(),
+      ),
+    );
+  }
+
+  void _showSleepTimerSheet(BuildContext context, PlayerProvider player) {
+    final c = context.appColors;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: c.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => ChangeNotifierProvider.value(
+        value: player,
+        child: const _SleepTimerSheet(),
+      ),
+    );
+  }
+}
+
+// ── Speed sheet ───────────────────────────────────────────────────────────────
+
+class _SpeedSheet extends StatelessWidget {
+  const _SpeedSheet();
+
+  static const _speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
+
+  @override
+  Widget build(BuildContext context) {
+    final player = context.watch<PlayerProvider>();
+    final c = context.appColors;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Center(
+            child: Container(
+              width: 36, height: 4,
+              decoration: BoxDecoration(
+                color: c.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Text(
+                'Tốc độ phát',
+                style: GoogleFonts.outfit(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: c.textPrimary,
+                ),
+              ),
+              const Spacer(),
+              if (player.speed != 1.0)
+                TextButton(
+                  onPressed: () {
+                    player.setSpeed(1.0);
+                    Navigator.pop(context);
+                  },
+                  child: Text('Đặt lại',
+                      style: GoogleFonts.outfit(
+                          color: c.primary, fontSize: 14)),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: _speeds.map((s) {
+              final active = player.speed == s;
+              return GestureDetector(
+                onTap: () {
+                  player.setSpeed(s);
+                  Navigator.pop(context);
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  width: 72,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: active
+                        ? c.primary.withOpacity(0.18)
+                        : c.surfaceElevated,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: active ? c.primary : c.border,
+                      width: active ? 1.5 : 0.5,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      s == 1.0 ? 'Bình thường' : '${s}×',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.outfit(
+                        fontSize: s == 1.0 ? 10 : 15,
+                        fontWeight: active
+                            ? FontWeight.w700
+                            : FontWeight.w400,
+                        color: active ? c.primary : c.textSecondary,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Sleep timer sheet ─────────────────────────────────────────────────────────
+
+class _SleepTimerSheet extends StatelessWidget {
+  const _SleepTimerSheet();
+
+  static const _presets = [
+    (label: '5 phút',   duration: Duration(minutes: 5)),
+    (label: '10 phút',  duration: Duration(minutes: 10)),
+    (label: '15 phút',  duration: Duration(minutes: 15)),
+    (label: '30 phút',  duration: Duration(minutes: 30)),
+    (label: '45 phút',  duration: Duration(minutes: 45)),
+    (label: '60 phút',  duration: Duration(hours: 1)),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final player = context.watch<PlayerProvider>();
+    final c = context.appColors;
+    final rem = player.sleepRemaining;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Handle
+          Center(
+            child: Container(
+              width: 36, height: 4,
+              decoration: BoxDecoration(
+                color: c.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Text(
+                'Hẹn giờ tắt nhạc',
+                style: GoogleFonts.outfit(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: c.textPrimary,
+                ),
+              ),
+              const Spacer(),
+              if (player.sleepTimerActive)
+                TextButton(
+                  onPressed: () {
+                    player.cancelSleepTimer();
+                    Navigator.pop(context);
+                  },
+                  child: Text('Hủy hẹn giờ',
+                      style: GoogleFonts.outfit(
+                          color: c.tertiary, fontSize: 14)),
+                ),
+            ],
+          ),
+
+          // Active timer countdown
+          if (rem != null && rem > Duration.zero) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+              decoration: BoxDecoration(
+                color: c.primary.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: c.primary.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.bedtime_rounded, color: c.primary, size: 20),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Dừng sau ',
+                    style: GoogleFonts.outfit(
+                        color: c.textSecondary, fontSize: 14),
+                  ),
+                  Text(
+                    _formatRemaining(rem),
+                    style: GoogleFonts.outfit(
+                      color: c.primary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 16),
+          Text(
+            'Chọn thời gian',
+            style: GoogleFonts.outfit(
+              fontSize: 13,
+              color: c.textTertiary,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: _presets.map((p) {
+              return GestureDetector(
+                onTap: () {
+                  player.setSleepTimer(p.duration);
+                  Navigator.pop(context);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 18, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: c.surfaceElevated,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: c.border, width: 0.5),
+                  ),
+                  child: Text(
+                    p.label,
+                    style: GoogleFonts.outfit(
+                      fontSize: 14,
+                      color: c.textPrimary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatRemaining(Duration d) {
+    final m = d.inMinutes;
+    final s = d.inSeconds % 60;
+    if (m == 0) return '${s}s';
+    if (s == 0) return '${m} phút';
+    return '${m}:${s.toString().padLeft(2, '0')}';
   }
 }
 
@@ -356,8 +740,8 @@ class _TopBar extends StatelessWidget {
               context.read<MusicProvider>().isFavorite(song.id);
               return [
                 _popItem(context, 'fav', isFav
-                      ? Icons.favorite_rounded
-                      : Icons.favorite_border_rounded,
+                    ? Icons.favorite_rounded
+                    : Icons.favorite_border_rounded,
                   isFav ? 'Bỏ yêu thích' : 'Yêu thích',
                   iconColor: isFav ? c.tertiary : null,
                 ),
@@ -582,6 +966,7 @@ class _TopBar extends StatelessWidget {
       ),
     );
   }
+
   void _showEditDialog(BuildContext context, SongItem song) {
     final titleCtrl  = TextEditingController(text: song.title);
     final artistCtrl = TextEditingController(text: song.artist);
@@ -864,7 +1249,7 @@ class _ProgressSection extends StatefulWidget {
 }
 
 class _ProgressSectionState extends State<_ProgressSection> {
-  double? _dragValue; // null = không drag; có giá trị = đang kéo
+  double? _dragValue;
   int _cachedDurMs = 0;
 
   @override
@@ -876,15 +1261,13 @@ class _ProgressSectionState extends State<_ProgressSection> {
             const PositionData(Duration.zero, Duration.zero, Duration.zero);
 
         final durMs = data.duration.inMilliseconds;
-        if (durMs > 0) _cachedDurMs = durMs; // cache lại khi có giá trị
+        if (durMs > 0) _cachedDurMs = durMs;
 
-        // Khi đang drag → dùng local value; ngược lại dùng stream
         final progress = _dragValue ??
             (_cachedDurMs > 0
                 ? (data.position.inMilliseconds / _cachedDurMs).clamp(0.0, 1.0)
                 : 0.0);
 
-        // Vị trí hiển thị cho label thời gian
         final displayPos = _dragValue != null
             ? Duration(milliseconds: (_dragValue! * _cachedDurMs).toInt())
             : data.position;
@@ -907,19 +1290,14 @@ class _ProgressSectionState extends State<_ProgressSection> {
                 ),
                 child: Slider(
                   value: progress.toDouble(),
-                  // Bắt đầu kéo → freeze stream, chỉ update local value
                   onChangeStart: (v) => setState(() => _dragValue = v),
-                  // Đang kéo → cập nhật local value ngay lập tức (mượt)
                   onChanged: (v) => setState(() => _dragValue = v),
-                  // Nhả tay → seek thật, rồi xóa local value
                   onChangeEnd: (v) async {
                     if (_cachedDurMs > 0) {
                       await widget.player.seekTo(
                         Duration(milliseconds: (v * _cachedDurMs).toInt()),
                       );
                     }
-                    // Delay nhỏ để chờ stream cập nhật vị trí mới
-                    // trước khi trả quyền điều khiển lại cho stream
                     await Future.delayed(const Duration(milliseconds: 100));
                     if (mounted) setState(() => _dragValue = null);
                   },
@@ -1257,7 +1635,6 @@ class _QueueSheet extends StatelessWidget {
     final c = context.appColors;
     final sheetContent = Container(
       decoration: BoxDecoration(
-        // Solid base color luôn có — tránh flickering
         color: c.surface.withOpacity(useBlur ? 0.75 : 0.95),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         border: Border(

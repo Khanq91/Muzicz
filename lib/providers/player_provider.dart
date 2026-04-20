@@ -1,11 +1,10 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import '../models/song_item.dart';
 import '../services/audio_handler.dart';
 
-// RepeatMode.one = lặp vô hạn bài hiện tại (dùng LoopMode.one của just_audio)
-// enum RepeatMode { none, one }
 enum RepeatMode { none, one, shuffleLoop }
 
 class PlayerProvider extends ChangeNotifier {
@@ -38,8 +37,62 @@ class PlayerProvider extends ChangeNotifier {
 
   final List<int> _historyStack = [];
 
-  // Flag để suppress currentIndexStream events trong khi reorder
   bool _isReordering = false;
+
+  // ── Playback speed ─────────────────────────────────────────────────────────
+
+  double _speed = 1.0;
+  double get speed => _speed;
+
+  Future<void> setSpeed(double speed) async {
+    _speed = speed;
+    await _handler.setSpeed(speed);
+    notifyListeners();
+  }
+
+  // ── Sleep timer ────────────────────────────────────────────────────────────
+
+  Timer? _sleepTimer;
+  DateTime? _sleepEndTime;
+
+  /// null = không bật; Duration.zero = đã hết
+  Duration? get sleepRemaining {
+    if (_sleepEndTime == null) return null;
+    final remaining = _sleepEndTime!.difference(DateTime.now());
+    return remaining.isNegative ? Duration.zero : remaining;
+  }
+
+  bool get sleepTimerActive => _sleepEndTime != null;
+
+  void setSleepTimer(Duration duration) {
+    _sleepTimer?.cancel();
+    _sleepEndTime = DateTime.now().add(duration);
+
+    _sleepTimer = Timer(duration, () {
+      _handler.pause();
+      _sleepEndTime = null;
+      _sleepTimer = null;
+      notifyListeners();
+    });
+
+    // Tick mỗi giây để UI cập nhật countdown
+    Timer.periodic(const Duration(seconds: 1), (t) {
+      if (_sleepEndTime == null) {
+        t.cancel();
+        return;
+      }
+      notifyListeners();
+    });
+
+    notifyListeners();
+  }
+
+  void cancelSleepTimer() {
+    _sleepTimer?.cancel();
+    _sleepTimer = null;
+    _sleepEndTime = null;
+    notifyListeners();
+  }
 
   // ── Listen to audio handler ────────────────────────────────────────────────
 
@@ -50,7 +103,6 @@ class PlayerProvider extends ChangeNotifier {
     });
 
     _handler.currentIndexStream.listen((index) {
-      // Suppress events trong khi đang reorder (tránh state nhảy lung tung)
       if (_isReordering) return;
 
       if (index != null && index < _playQueue.length) {
@@ -63,8 +115,6 @@ class PlayerProvider extends ChangeNotifier {
       }
     });
 
-    // Chỉ xử lý khi hết playlist (RepeatMode.none)
-    // RepeatMode.one được LoopMode.one của just_audio tự handle
     _handler.processingStateStream.listen((state) {
       if (state == ProcessingState.completed) {
         _onPlaylistEnded();
@@ -91,7 +141,6 @@ class PlayerProvider extends ChangeNotifier {
         int initialIndex = 0,
         SongItem? specificSong,
       }) async {
-    // Reset repeat khi load bài mới
     if (_repeatMode == RepeatMode.one) {
       _repeatMode = RepeatMode.none;
       await _handler.setLoopMode(LoopMode.off);
@@ -133,7 +182,6 @@ class PlayerProvider extends ChangeNotifier {
     _historyStack.clear();
     _shuffleEnabled = true;
 
-    // Pick random start — không cố định bài 0
     final randomStart = Random().nextInt(songs.length);
     _buildShuffledQueueTrueRandom(startIndex: randomStart);
     _currentPlayIndex = 0;
@@ -147,20 +195,20 @@ class PlayerProvider extends ChangeNotifier {
   void _buildShuffledQueueTrueRandom({required int startIndex}) {
     final rng = Random();
     final list = List<SongItem>.from(_originalQueue);
-    final chosen = list.removeAt(startIndex); // lấy bài random ra
-    list.shuffle(rng);                         // shuffle toàn bộ phần còn lại
-    list.insert(0, chosen);                    // đặt bài random lên đầu
+    final chosen = list.removeAt(startIndex);
+    list.shuffle(rng);
+    list.insert(0, chosen);
     _playQueue = list;
   }
 
   Future<void> enableShuffleLoop(List<SongItem> songs) async {
     await playSongsShuffled(songs);
     _repeatMode = RepeatMode.shuffleLoop;
-    await _handler.setLoopMode(LoopMode.off); // tự handle loop, không dùng just_audio
+    await _handler.setLoopMode(LoopMode.off);
     notifyListeners();
   }
 
-  // ── Skip Next / Previous ──────────────────────────────────────────────────
+  // ── Skip ──────────────────────────────────────────────────────────────────
 
   Future<void> skipToNext() async {
     if (_playQueue.isEmpty) return;
@@ -171,7 +219,7 @@ class PlayerProvider extends ChangeNotifier {
 
     if (nextIndex >= _playQueue.length) {
       _historyStack.removeLast();
-      return; // Hết danh sách, không loop playlist
+      return;
     }
 
     await _handler.seekToIndex(nextIndex);
@@ -225,7 +273,7 @@ class PlayerProvider extends ChangeNotifier {
           : 0;
       _buildShuffledQueue(
           anchorIndex: anchorInOriginal < 0 ? 0 : anchorInOriginal);
-      _currentPlayIndex = 0; // bài hiện tại luôn ở đầu sau khi shuffle
+      _currentPlayIndex = 0;
     } else {
       _playQueue = List.from(_originalQueue);
       final currentSongId = _currentSong?.id;
@@ -238,7 +286,6 @@ class PlayerProvider extends ChangeNotifier {
     _historyStack.clear();
     _currentSong = _playQueue[_currentPlayIndex];
 
-    // ── Reorder in-place bằng move() — KHÔNG dừng audio ──────────────────
     _isReordering = true;
     try {
       await _handler.reorderTo(_playQueue);
@@ -280,6 +327,7 @@ class PlayerProvider extends ChangeNotifier {
   }
 
   Future<void> stopAndClear() async {
+    cancelSleepTimer();
     await _handler.stop();
     _currentSong = null;
     _playQueue = [];
@@ -353,5 +401,11 @@ class PlayerProvider extends ChangeNotifier {
 
   Future<void> _loadQueueToHandler(int startIndex) async {
     await _handler.loadSongs(_playQueue, initialIndex: startIndex);
+  }
+
+  @override
+  void dispose() {
+    _sleepTimer?.cancel();
+    super.dispose();
   }
 }
