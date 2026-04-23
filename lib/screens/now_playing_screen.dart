@@ -247,7 +247,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
                           const SizedBox(height: 20),
                           _ControlsSection(player: player),
                           const SizedBox(height: 16),
-                          _ExtraActions(
+                          _ExpandablePillBar(
                             player: player,
                             lyricsProvider: lyricsProvider,
                             onQueueTap: () {
@@ -258,9 +258,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
                             showingLyrics: _showingLyrics,
                             queueVisible: _queueVisible,
                           ),
-                          const SizedBox(height: 12),
-                          _SpeedAndTimerRow(player: player),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 20),
                           if (!_queueVisible)
                             _SwipeHint(onTap: _openQueue),
                         ],
@@ -489,15 +487,13 @@ class _LyricsListView extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.appColors;
 
-    // Subscribe to position stream cho synced lyrics
     if (lyricsProvider.isSynced) {
       return StreamBuilder<PositionData>(
         stream: player.positionDataStream,
         builder: (context, snap) {
           if (snap.hasData) {
-            lyricsProvider.updatePosition(snap.data!.position);
-            // Trigger auto-scroll
             WidgetsBinding.instance.addPostFrameCallback((_) {
+              lyricsProvider.updatePosition(snap.data!.position);
               onScrollToLine(lyricsProvider.currentIndex);
             });
           }
@@ -651,8 +647,8 @@ class _AlbumArtSection extends StatelessWidget {
 // _ExtraActions — thêm lyrics button
 // ════════════════════════════════════════════════════════════════════════════
 
-class _ExtraActions extends StatelessWidget {
-  const _ExtraActions({
+class _ExpandablePillBar extends StatefulWidget {
+  const _ExpandablePillBar({
     required this.player,
     required this.lyricsProvider,
     required this.onQueueTap,
@@ -669,245 +665,11 @@ class _ExtraActions extends StatelessWidget {
   final bool queueVisible;
 
   @override
-  Widget build(BuildContext context) {
-    final c = context.appColors;
-    final lyricsActive = showingLyrics;
-    final lyricsAvailable = lyricsProvider.hasLyrics;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 28),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Volume hint
-          _IconBtn(
-            icon: Icons.volume_up_rounded,
-            color: c.onPlayerSubtle,
-            size: 22,
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Dùng nút âm lượng vật lý để điều chỉnh',
-                      style: GoogleFonts.outfit(fontSize: 13)),
-                  duration: const Duration(seconds: 2),
-                  backgroundColor: c.surfaceElevated,
-                  behavior: SnackBarBehavior.floating,
-                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 80),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                ),
-              );
-            },
-          ),
-
-          // Lyrics button
-          GestureDetector(
-            onTap: onLyricsTap,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: lyricsActive
-                    ? c.primary.withOpacity(0.25)
-                    : c.onPlayerGhostBg,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: lyricsActive
-                      ? c.primary.withOpacity(0.5)
-                      : c.onPlayerGhost,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.lyrics_rounded,
-                    color: lyricsActive
-                        ? c.primary
-                        : lyricsAvailable
-                        ? Colors.white70
-                        : Colors.white30,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Lời bài hát',
-                    style: GoogleFonts.outfit(
-                      fontSize: 13,
-                      color: lyricsActive
-                          ? c.primary
-                          : lyricsAvailable
-                          ? Colors.white70
-                          : Colors.white30,
-                    ),
-                  ),
-                  // Loading indicator nhỏ
-                  if (lyricsProvider.isLoading) ...[
-                    const SizedBox(width: 6),
-                    SizedBox(
-                      width: 10,
-                      height: 10,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 1.5,
-                        color: Colors.white38,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-
-          // Queue button
-          GestureDetector(
-            onTap: onQueueTap,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: queueVisible
-                    ? c.primary.withOpacity(0.25)
-                    : c.onPlayerGhostBg,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: queueVisible
-                      ? c.primary.withOpacity(0.5)
-                      : c.onPlayerGhost,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.queue_music_rounded,
-                      color: queueVisible ? c.primary : Colors.white54,
-                      size: 18),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Hàng chờ (${player.queue.length})',
-                    style: GoogleFonts.outfit(
-                        fontSize: 13,
-                        color: queueVisible ? c.primary : Colors.white54),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  State<_ExpandablePillBar> createState() => _ExpandablePillBarState();
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// Các widget không thay đổi so với original — copy nguyên
-// ════════════════════════════════════════════════════════════════════════════
-
-class _SpeedAndTimerRow extends StatelessWidget {
-  const _SpeedAndTimerRow({required this.player});
-  final PlayerProvider player;
-
-  String _speedLabel(double s) {
-    if (s == 1.0) return '1×';
-    if (s == s.roundToDouble()) return '${s.toInt()}×';
-    return '${s}×';
-  }
-
-  String _timerLabel(PlayerProvider p) {
-    final rem = p.sleepRemaining;
-    if (rem == null) return 'Hẹn giờ';
-    final m = rem.inMinutes;
-    final s = rem.inSeconds % 60;
-    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.appColors;
-    final speedActive = player.speed != 1.0;
-    final timerActive = player.sleepTimerActive;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 28),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          GestureDetector(
-            onTap: () => _showSpeedSheet(context, player),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: speedActive
-                    ? c.primary.withOpacity(0.22)
-                    : c.onPlayerGhostBg,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: speedActive
-                      ? c.primary.withOpacity(0.5)
-                      : c.onPlayerGhost,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.speed_rounded,
-                      color: speedActive ? c.primary : Colors.white54,
-                      size: 16),
-                  const SizedBox(width: 5),
-                  Text(
-                    _speedLabel(player.speed),
-                    style: GoogleFonts.outfit(
-                      fontSize: 13,
-                      color: speedActive ? c.primary : Colors.white54,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          GestureDetector(
-            onTap: () => _showSleepTimerSheet(context, player),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: timerActive
-                    ? c.primary.withOpacity(0.22)
-                    : c.onPlayerGhostBg,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: timerActive
-                      ? c.primary.withOpacity(0.5)
-                      : c.onPlayerGhost,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.bedtime_rounded,
-                      color: timerActive ? c.primary : Colors.white54,
-                      size: 16),
-                  const SizedBox(width: 5),
-                  Text(
-                    _timerLabel(player),
-                    style: GoogleFonts.outfit(
-                      fontSize: 13,
-                      color: timerActive ? c.primary : Colors.white54,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+class _ExpandablePillBarState extends State<_ExpandablePillBar> {
+  bool _isExpanded = false;
 
   void _showSpeedSheet(BuildContext context, PlayerProvider player) {
     final c = context.appColors;
@@ -938,7 +700,147 @@ class _SpeedAndTimerRow extends StatelessWidget {
       ),
     );
   }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.appColors;
+
+    final lyricsActive = widget.showingLyrics;
+    final queueActive = widget.queueVisible;
+    final speedActive = widget.player.speed != 1.0;
+    final timerActive = widget.player.sleepTimerActive;
+
+    return Center(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+        height: 52,
+        width: _isExpanded ? 280 : 64,
+        decoration: BoxDecoration(
+          color: _isExpanded ? c.surfaceElevated.withOpacity(0.9) : c.onPlayerGhostBg,
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(color: _isExpanded ? c.border.withOpacity(0.3) : c.onPlayerGhost),
+          boxShadow: _isExpanded ? [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            )
+          ] : [],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(26),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              AnimatedOpacity(
+                duration: const Duration(milliseconds: 200),
+                opacity: _isExpanded ? 0.0 : 1.0,
+                child: IgnorePointer(
+                  ignoring: _isExpanded,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => setState(() => _isExpanded = true),
+                      child: Container(
+                        alignment: Alignment.center,
+                        child: const Icon(Icons.more_horiz_rounded, color: Colors.white, size: 28),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              AnimatedOpacity(
+                duration: const Duration(milliseconds: 200),
+                opacity: _isExpanded ? 1.0 : 0.0,
+                child: IgnorePointer(
+                  ignoring: !_isExpanded,
+                  child: OverflowBox(
+                    maxWidth: 280,
+                    minWidth: 280,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildActionIcon(
+                          icon: Icons.lyrics_rounded,
+                          isActive: lyricsActive,
+                          c: c,
+                          onTap: widget.onLyricsTap,
+                        ),
+                        _buildActionIcon(
+                          icon: Icons.queue_music_rounded,
+                          isActive: queueActive,
+                          c: c,
+                          onTap: widget.onQueueTap,
+                        ),
+                        _buildActionIcon(
+                          icon: Icons.speed_rounded,
+                          isActive: speedActive,
+                          c: c,
+                          onTap: () => _showSpeedSheet(context, widget.player),
+                        ),
+                        _buildActionIcon(
+                          icon: Icons.bedtime_rounded,
+                          isActive: timerActive,
+                          c: c,
+                          onTap: () => _showSleepTimerSheet(context, widget.player),
+                        ),
+                        GestureDetector(
+                          onTap: () => setState(() => _isExpanded = false),
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white12,
+                            ),
+                            child: const Icon(Icons.close_rounded, size: 16, color: Colors.white70),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionIcon({
+    required IconData icon,
+    required bool isActive,
+    required AppColorsData c,
+    required VoidCallback onTap,
+  }) {
+    return Transform.scale(
+      scale: _isExpanded ? 1.0 : 0.8,
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isActive ? c.primary.withOpacity(0.2) : Colors.transparent,
+          ),
+          child: Icon(
+            icon,
+            size: 20,
+            color: isActive ? c.primary : Colors.white70,
+          ),
+        ),
+      ),
+    );
+  }
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// Các widget không thay đổi so với original — copy nguyên
+// ════════════════════════════════════════════════════════════════════════════
+
+// Deleted _SpeedAndTimerRow
 
 class _SpeedSheet extends StatelessWidget {
   const _SpeedSheet();

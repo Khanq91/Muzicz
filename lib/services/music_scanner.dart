@@ -53,6 +53,14 @@ class MusicScanner {
     final hasPermission = await requestPermission();
     if (!hasPermission) return [];
 
+    if (Platform.isAndroid) {
+      try {
+        await _audioQuery.scanMedia('/storage/emulated/0');
+      } catch (_) {
+
+      }
+    }
+
     final raw = await _audioQuery.querySongs(
       sortType: SongSortType.DATE_ADDED,
       orderType: OrderType.DESC_OR_GREATER,
@@ -60,12 +68,14 @@ class MusicScanner {
       ignoreCase: true,
     );
 
-    // ✅ BUG FIX: Bỏ filter `isMusic == true` — MediaStore không đảm bảo
     // set flag này cho tất cả audio files hợp lệ (nhạc tải về, copy thủ công,
     // file từ yt-dlp, v.v.). Thay bằng kiểm tra extension + duration.
     final audioExtensions = {
       'mp3', 'flac', 'm4a', 'aac', 'ogg', 'opus',
       'wav', 'wma', 'ape', 'alac', 'aiff', 'mid',
+      'webm',
+      'mkv',
+      '3gp',
     };
 
     final filtered = raw.where((s) {

@@ -45,7 +45,7 @@ class LyricsResult {
 
 class LyricsService {
   static const _baseUrl = 'https://lrclib.net/api';
-  static const _timeout = Duration(seconds: 5);
+  static const _timeout = Duration(seconds: 30);
 
   // ── Cache dir lazy init ────────────────────────────────────────────────────
 
