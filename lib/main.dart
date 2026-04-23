@@ -10,6 +10,7 @@ import 'providers/player_provider.dart';
 import 'screens/splash_screen.dart';
 import 'services/audio_handler.dart';
 import 'theme/app_theme.dart';
+import 'providers/lyrics_provider.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 
 Future<void> main() async {
@@ -61,6 +62,7 @@ class MuzicApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => MusicProvider()),
         ChangeNotifierProvider(create: (_) => PlayerProvider(audioHandler)),
+        ChangeNotifierProvider(create: (_) => LyricsProvider()),
       ],
       child: MaterialApp(
         title: 'Muzicz Audio',
