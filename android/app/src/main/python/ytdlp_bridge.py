@@ -4,9 +4,9 @@ import yt_dlp
 import json
 import os
 
-# ─── Global progress state (Kotlin sẽ poll thay vì nhận callback) ───────────
+# ─── Global progress state ───────────────────────────────────────────────────
 _progress = {
-    "status": "idle",       # idle | downloading | finished | error
+    "status": "idle",
     "percent": 0.0,
     "speed": "",
     "eta": "",
@@ -15,11 +15,9 @@ _progress = {
 }
 
 def get_progress():
-    """Kotlin gọi hàm này để poll tiến trình download"""
     return json.dumps(_progress)
 
 def reset_progress():
-    """Gọi trước mỗi lần download mới"""
     global _progress
     _progress = {
         "status": "idle",
@@ -33,28 +31,22 @@ def reset_progress():
 
 # ─── JSON helper ─────────────────────────────────────────────────────────────
 def _safe_json(obj):
-    """
-    Lọc info dict của yt-dlp trước khi dumps.
-    yt-dlp trả về nhiều kiểu không serializable: bytes, None lồng nhau, v.v.
-    """
     if isinstance(obj, dict):
         return {k: _safe_json(v) for k, v in obj.items()}
     if isinstance(obj, list):
         return [_safe_json(i) for i in obj]
     if isinstance(obj, (str, int, float, bool)) or obj is None:
         return obj
-    # bytes, object lạ → chuyển thành string
     return str(obj)
 
 
 # ─── Analyze ─────────────────────────────────────────────────────────────────
 def analyze(url: str) -> str:
-    # ── Bước 1: Flat scan — chỉ lấy metadata cấp playlist, KHÔNG fetch từng video ──
     flat_opts = {
         "quiet":        True,
         "no_warnings":  True,
         "ignoreerrors": True,
-        "extract_flat": "in_playlist",  # ← nhanh: chỉ lấy id/title/duration
+        "extract_flat": "in_playlist",
     }
     try:
         with yt_dlp.YoutubeDL(flat_opts) as ydl:
@@ -68,7 +60,6 @@ def analyze(url: str) -> str:
             is_playlist   = info.get("_type") == "playlist" or bool(all_entries)
 
             if is_playlist:
-                # Playlist → trả về ngay, KHÔNG cần bước 2
                 result = {
                     "success":        True,
                     "_type":          "playlist",
@@ -80,14 +71,12 @@ def analyze(url: str) -> str:
                 }
                 return json.dumps(_safe_json(result))
 
-        # ── Bước 2: Video đơn → fetch lại với full extraction để lấy formats ──
-        # (TikTok, Instagram... cần extract_flat=False để có formats)
         video_opts = {
             "quiet":        True,
             "no_warnings":  True,
             "ignoreerrors": True,
             "extract_flat": False,
-            "noplaylist":   True,  # Chặn yt-dlp không expand playlist nếu URL nhập nhằng
+            "noplaylist":   True,
         }
         with yt_dlp.YoutubeDL(video_opts) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -125,13 +114,9 @@ def analyze(url: str) -> str:
     except Exception as e:
         return json.dumps({"error": str(e)})
 
+
 # ─── Download ─────────────────────────────────────────────────────────────────
 def _make_progress_hook():
-    """
-    Tạo hook nội bộ — cập nhật _progress global.
-    Kotlin sẽ poll get_progress() thay vì nhận callback trực tiếp.
-    (Chaquopy không hỗ trợ truyền lambda Kotlin → Python callable)
-    """
     def hook(d):
         global _progress
         status = d.get("status", "")
@@ -151,93 +136,137 @@ def _make_progress_hook():
             }
 
         elif status == "finished":
-            _progress["status"]  = "finished"
-            _progress["percent"] = 100.0
+            filename = d.get("filename", "")
+            print(f"[YTDLP_BRIDGE] hook: finished → filename={filename}")
+            _progress["status"]   = "finished"
+            _progress["percent"]  = 100.0
+            _progress["filename"] = filename
 
         elif status == "error":
             _progress["status"] = "error"
             _progress["error"]  = str(d.get("error", "Unknown error"))
+            print(f"[YTDLP_BRIDGE] hook: error → {_progress['error']}")
 
     return hook
 
 
 def download(url: str, format_id: str, output_path: str = "") -> str:
+    print(f"[YTDLP_BRIDGE] download() called")
+    print(f"[YTDLP_BRIDGE]   url       = {url}")
+    print(f"[YTDLP_BRIDGE]   format_id = {format_id}")
+    print(f"[YTDLP_BRIDGE]   output_path = {output_path}")
+
     reset_progress()
 
     if not output_path:
         output_path = os.environ["HOME"]
+        print(f"[YTDLP_BRIDGE]   output_path fallback to HOME = {output_path}")
+
+    # Đảm bảo thư mục tồn tại
+    os.makedirs(output_path, exist_ok=True)
+    print(f"[YTDLP_BRIDGE]   output_path exists: {os.path.isdir(output_path)}")
 
     actual_format = format_id
+    is_extract_audio = format_id in ("__extract_m4a__", "__extract_mp3__", "__extract_audio__")
 
-    if format_id in ("__extract_m4a__", "__extract_mp3__", "__extract_audio__"):
+    if is_extract_audio:
         actual_format = "bestvideo+bestaudio/best"
+        print(f"[YTDLP_BRIDGE]   extract_audio mode → actual_format = {actual_format}")
 
-    # ✅ Đếm video bị skip trong download
+    outtmpl = os.path.join(output_path, "%(title)s.%(ext)s")
+    print(f"[YTDLP_BRIDGE]   outtmpl = {outtmpl}")
+
     skipped_videos = []
-
-    def _error_hook(d):
-        """yt-dlp gọi hook này khi gặp lỗi từng video trong playlist"""
-        if d.get("status") == "error":
-            skipped_videos.append({
-                "id":    d.get("info_dict", {}).get("id", "unknown"),
-                "title": d.get("info_dict", {}).get("title", "unknown"),
-                "error": str(d.get("error", "")),
-            })
 
     ydl_opts = {
         "format":              actual_format,
-        "outtmpl":             os.path.join(output_path, "%(title)s.%(ext)s"),
-        "quiet":               True,
-        "no_warnings":         True,
+        "outtmpl":             outtmpl,
+        "quiet":               False,   # ← bật để thấy log yt-dlp trong console
+        "no_warnings":         False,   # ← bật để thấy warnings
         "merge_output_format": "mp4",
         "progress_hooks":      [_make_progress_hook()],
         "postprocessor_hooks": [],
         "ignoreerrors":        True,
-        "noplaylist":          False,
+        "noplaylist":          is_extract_audio,
+        # verbose log
+        "verbose":             True,
     }
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            # Patch để bắt lỗi từng video
             original_report_error = ydl.report_error
             def patched_report_error(message, *args, **kwargs):
+                print(f"[YTDLP_BRIDGE]   report_error: {message}")
                 skipped_videos.append({"error": str(message)})
-                # Không gọi original để tránh raise exception
             ydl.report_error = patched_report_error
 
+            print(f"[YTDLP_BRIDGE] Starting extract_info (download=True)...")
             info = ydl.extract_info(url, download=True)
+
             if info is None:
+                print(f"[YTDLP_BRIDGE] extract_info returned None!")
                 return json.dumps({"success": False, "error": "Không tải được"})
+
+            print(f"[YTDLP_BRIDGE] extract_info done. _type={info.get('_type')}, title={info.get('title')}")
 
             if info.get("_type") == "playlist":
                 entries = [e for e in (info.get("entries") or []) if e]
+                print(f"[YTDLP_BRIDGE] Playlist: {len(entries)} downloaded, {len(skipped_videos)} skipped")
                 return json.dumps({
-                    "success":       True,
-                    "title":         info.get("title", ""),
-                    "downloaded":    len(entries),           # ✅ số tải thành công
-                    "skipped":       len(skipped_videos),    # ✅ số bị bỏ qua
-                    "skipped_list":  skipped_videos,         # ✅ chi tiết từng video
-                    "path":          output_path,
+                    "success":      True,
+                    "title":        info.get("title", ""),
+                    "downloaded":   len(entries),
+                    "skipped":      len(skipped_videos),
+                    "skipped_list": skipped_videos,
+                    "path":         output_path,
                 })
 
-            filename = ydl.prepare_filename(info)
-            return json.dumps({
+            # Single video
+            raw_filename = ydl.prepare_filename(info)
+            print(f"[YTDLP_BRIDGE] prepare_filename → {raw_filename}")
+
+            # Fix: prepare_filename() không account cho merge_output_format
+            # File thực tế luôn là .mp4 sau khi merge
+            merge_fmt = ydl_opts.get("merge_output_format", "")
+            if merge_fmt:
+                base, old_ext = os.path.splitext(raw_filename)
+                filename = base + "." + merge_fmt
+                print(f"[YTDLP_BRIDGE] After merge_output_format fix: {old_ext} → .{merge_fmt}")
+                print(f"[YTDLP_BRIDGE] Final filename = {filename}")
+            else:
+                filename = raw_filename
+
+            # Kiểm tra file có thực sự tồn tại không
+            file_exists = os.path.isfile(filename)
+            print(f"[YTDLP_BRIDGE] File exists on disk: {file_exists} → {filename}")
+
+            if not file_exists:
+                # Thử tìm file gần đúng trong thư mục (yt-dlp đôi khi thêm ký tự đặc biệt)
+                try:
+                    files_in_dir = os.listdir(output_path)
+                    print(f"[YTDLP_BRIDGE] Files in output dir: {files_in_dir}")
+                except Exception as e:
+                    print(f"[YTDLP_BRIDGE] Cannot list dir: {e}")
+
+            result = {
                 "success": True,
                 "path":    filename,
                 "title":   info.get("title", ""),
                 "skipped": 0,
-            })
+            }
+            print(f"[YTDLP_BRIDGE] Returning success: {result}")
+            return json.dumps(result)
 
     except Exception as e:
+        print(f"[YTDLP_BRIDGE] Exception: {e}")
+        import traceback
+        traceback.print_exc()
         _progress["status"] = "error"
         _progress["error"]  = str(e)
         return json.dumps({"success": False, "error": str(e)})
 
+
 def get_playlist_entries(url: str) -> str:
-    """
-    Fetch danh sách từng video trong playlist.
-    Dùng extract_flat để nhanh, không fetch format từng video.
-    """
     ydl_opts = {
         "quiet": True,
         "no_warnings": True,
@@ -257,7 +286,7 @@ def get_playlist_entries(url: str) -> str:
                 entries.append({
                     "id":        e.get("id", ""),
                     "title":     e.get("title") or e.get("id", ""),
-                    "thumbnail": e.get("thumbnail") or e.get("thumbnails", [{}])[-1].get("url") if e.get("thumbnails") else None,
+                    "thumbnail": e.get("thumbnail") or (e.get("thumbnails", [{}])[-1].get("url") if e.get("thumbnails") else None),
                     "duration":  e.get("duration"),
                     "url":       e.get("url") or e.get("webpage_url") or f"https://www.youtube.com/watch?v={e.get('id', '')}",
                     "uploader":  e.get("uploader") or e.get("channel", ""),

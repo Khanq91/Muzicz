@@ -1,6 +1,7 @@
 // lib/screens/format/format_screen.dart
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -10,14 +11,13 @@ import '../../models/format_option.dart';
 import '../../models/playlist_entry.dart';
 import '../../models/video_info.dart';
 import '../../providers/download_provider.dart';
+import '../../services/downloader_storage_service.dart';
 import '../../widgets/app_shell.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/gradient_background.dart';
 import '../../widgets/primary_button.dart';
 
 // ── Synthetic format cho tách audio (TikTok / Instagram muxed video) ─────────
-// Khi không có audio-only format, user có thể chọn "Tách Audio từ video"
-// App sẽ tải video chất lượng tốt nhất rồi extract audio track ra M4A
 
 const _kExtractAudioFormatId = '__extract_audio__';
 const _kMuxedVideoFormatId = '__muxed_video__';
@@ -140,7 +140,12 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
   _PlaylistPreset? _selectedPreset;
   bool _isAudioTab = true;
 
+  String? _pendingOutputPath;
+
   bool get _isPlaylist => widget.videoInfo.type == VideoType.playlist;
+
+  String get _currentPath =>
+      _pendingOutputPath ?? DownloaderStorageService.instance.downloadPath;
 
   @override
   void initState() {
@@ -156,8 +161,6 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
     if (_isPlaylist) {
       _selectedPreset = _videoPresets[1];
     } else {
-      // Nếu có audio-only format → chọn tốt nhất
-      // Nếu không (TikTok/Instagram) → chọn extract format
       _selectedFormat = widget.videoInfo.bestAudioFormat ?? _kExtractAudioFormat;
     }
 
@@ -210,11 +213,45 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
   FormatOption? get _bestVideoFormat =>
       _videoFormats.isNotEmpty ? _videoFormats.first : null;
 
-  // True nếu source chỉ có muxed video, không có audio-only
   bool get _isMuxedOnly =>
       _audioFormats.isEmpty && _videoFormats.isNotEmpty;
 
-  void _startDownload() {
+  Future<void> _showPathPickerSheet() async {
+    final base = await DownloaderStorageService.instance.getExternalBasePath();
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => _FormatFolderSheet(
+        basePath: base,
+        currentPath: _currentPath,
+        onSelect: (path) {
+          setState(() => _pendingOutputPath = path);
+        },
+        onCustomPick: () async {
+          await DownloaderStorageService.instance.requestStoragePermission();
+          final picked = await FilePicker.platform.getDirectoryPath(
+            dialogTitle: 'Chọn thư mục lưu',
+            initialDirectory: _currentPath,
+          );
+          if (picked != null && mounted) {
+            setState(() => _pendingOutputPath = picked);
+          }
+        },
+      ),
+    );
+  }
+
+  Future<void> _startDownload() async {
+    // Lưu path vào SharedPreferences đúng lúc user confirm download
+    if (_pendingOutputPath != null) {
+      await DownloaderStorageService.instance.setAndSavePath(_pendingOutputPath!);
+    }
+
     final notifier = ref.read(downloadProvider.notifier);
 
     if (_isPlaylist) {
@@ -231,15 +268,15 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
         for (final entry in entries) {
           notifier.enqueue(
             info: VideoInfo(
-              id:          entry.id,
-              title:       entry.title,
-              thumbnail:   entry.thumbnail,
-              duration:    entry.duration,
-              platform:    widget.videoInfo.platform,
-              type:        VideoType.video,
-              formats:     [],
-              url:         entry.url,
-              uploader:    entry.uploader,
+              id:           entry.id,
+              title:        entry.title,
+              thumbnail:    entry.thumbnail,
+              duration:     entry.duration,
+              platform:     widget.videoInfo.platform,
+              type:         VideoType.video,
+              formats:      [],
+              url:          entry.url,
+              uploader:     entry.uploader,
               skippedCount: null,
             ),
             format: format,
@@ -292,7 +329,7 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
                   padding: const EdgeInsets.symmetric(
                       horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color:  const Color(0xFFFF9500).withOpacity(0.1),
+                    color: const Color(0xFFFF9500).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                         color: const Color(0xFFFF9500).withOpacity(0.3)),
@@ -342,47 +379,59 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
                     : [
                   // ── Audio tab ──
                   ListView(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                    padding:
+                    const EdgeInsets.fromLTRB(20, 0, 20, 100),
                     children: _isMuxedOnly
-                    // TikTok/Instagram: không có audio-only → hiện Extract option
                         ? [
                       _ExtractAudioTile(
-                        selectedFormatId: _selectedFormat?.formatId,
-                        onSelectAudio: () => setState(
-                                () => _selectedFormat = _kExtractAudioFormat),
-                        onSelectVideo: () => setState(
-                                () => _selectedFormat = _kMuxedVideoFormat),
+                        selectedFormatId:
+                        _selectedFormat?.formatId,
+                        onSelectAudio: () => setState(() =>
+                        _selectedFormat =
+                            _kExtractAudioFormat),
+                        onSelectVideo: () => setState(() =>
+                        _selectedFormat = _kMuxedVideoFormat),
                       ),
                     ]
                         : _audioFormats.isEmpty
-                        ? [const _EmptyLabel(
-                        label: 'Không có định dạng audio')]
+                        ? [
+                      const _EmptyLabel(
+                          label:
+                          'Không có định dạng audio')
+                    ]
                         : _audioFormats
-                        .map((f) => _FormatTile(
-                      format:     f,
-                      isSelected: _selectedFormat
-                          ?.formatId ==
-                          f.formatId,
-                      onTap: () => setState(
-                              () => _selectedFormat = f),
-                    ))
+                        .map(
+                          (f) => _FormatTile(
+                        format: f,
+                        isSelected:
+                        _selectedFormat?.formatId ==
+                            f.formatId,
+                        onTap: () => setState(
+                                () => _selectedFormat = f),
+                      ),
+                    )
                         .toList(),
                   ),
                   // ── Video tab ──
                   ListView(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                    padding:
+                    const EdgeInsets.fromLTRB(20, 0, 20, 100),
                     children: _videoFormats.isEmpty
-                        ? [const _EmptyLabel(
-                        label: 'Không có định dạng video')]
+                        ? [
+                      const _EmptyLabel(
+                          label: 'Không có định dạng video')
+                    ]
                         : _videoFormats
-                        .map((f) => _FormatTile(
-                      format:     f,
-                      isSelected:
-                      _selectedFormat?.formatId ==
-                          f.formatId,
-                      onTap: () =>
-                          setState(() => _selectedFormat = f),
-                    ))
+                        .map(
+                          (f) => _FormatTile(
+                        format: f,
+                        isSelected:
+                        _selectedFormat?.formatId ==
+                            f.formatId,
+                        onTap: () =>
+                            setState(() => _selectedFormat = f),
+                      ),
+                    )
                         .toList(),
                   ),
                 ],
@@ -394,6 +443,8 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
               selectedPreset: _selectedPreset,
               isPlaylist:     _isPlaylist,
               playlistCount:  widget.videoInfo.playlistCount,
+              currentPath:    _currentPath,
+              onPickFolder:   _showPathPickerSheet,
               onDownload:     _canDownload ? _startDownload : null,
             ),
           ],
@@ -403,9 +454,236 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
   }
 }
 
+// ── Folder Option model (private, dùng trong sheet) ────────
+
+class _FolderOption {
+  final IconData icon;
+  final String label;
+  final String sublabel;
+  final Color color;
+  final String path;
+
+  const _FolderOption({
+    required this.icon,
+    required this.label,
+    required this.sublabel,
+    required this.color,
+    required this.path,
+  });
+}
+
+// ── Format Folder Sheet ────────────────────────────────────
+
+class _FormatFolderSheet extends StatelessWidget {
+  final String basePath;
+  final String currentPath;
+  final void Function(String) onSelect;
+  final VoidCallback onCustomPick;
+
+  const _FormatFolderSheet({
+    required this.basePath,
+    required this.currentPath,
+    required this.onSelect,
+    required this.onCustomPick,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final options = [
+      _FolderOption(
+        icon: Icons.music_note_rounded,
+        label: 'Music',
+        sublabel: 'Music/',
+        color: AppColors.primary,
+        path: '$basePath/Music',
+      ),
+      _FolderOption(
+        icon: Icons.download_rounded,
+        label: 'MuziczModule',
+        sublabel: 'Download/MuziczModule/',
+        color: const Color(0xFF34C759),
+        path: '$basePath/Download/MuziczModule',
+      ),
+      _FolderOption(
+        icon: Icons.video_library_rounded,
+        label: 'Videos',
+        sublabel: 'Movies/',
+        color: const Color(0xFFFF9F0A),
+        path: '$basePath/Movies',
+      ),
+    ];
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle bar
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.divider,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            const Text(
+              'Lưu vào thư mục',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Chọn nơi lưu file sau khi tải',
+              style: TextStyle(color: AppColors.textTertiary, fontSize: 12),
+            ),
+            const SizedBox(height: 16),
+
+            // Quick options
+            ...options.map((opt) {
+              final isSelected = currentPath == opt.path;
+              return GestureDetector(
+                onTap: () {
+                  Navigator.pop(context);
+                  onSelect(opt.path);
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? opt.color.withOpacity(0.1)
+                        : AppColors.surfaceElevated,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected
+                          ? opt.color.withOpacity(0.4)
+                          : AppColors.border,
+                      width: isSelected ? 1.2 : 0.8,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: opt.color.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child:
+                        Icon(opt.icon, color: opt.color, size: 18),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              opt.label,
+                              style: TextStyle(
+                                color: isSelected
+                                    ? AppColors.textPrimary
+                                    : AppColors.textSecondary,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              opt.sublabel,
+                              style: const TextStyle(
+                                color: AppColors.textTertiary,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (isSelected)
+                        const Icon(Icons.check_circle_rounded,
+                            color: AppColors.primary, size: 18),
+                    ],
+                  ),
+                ),
+              );
+            }),
+
+            // Custom pick option
+            GestureDetector(
+              onTap: () {
+                Navigator.pop(context);
+                onCustomPick();
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceElevated,
+                  borderRadius: BorderRadius.circular(12),
+                  border:
+                  Border.all(color: AppColors.border, width: 0.8),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: AppColors.textTertiary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.folder_open_rounded,
+                          color: AppColors.textSecondary, size: 18),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Chọn đường dẫn',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            'Duyệt thư mục tùy chỉnh',
+                            style: TextStyle(
+                              color: AppColors.textTertiary,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right_rounded,
+                        color: AppColors.textTertiary, size: 18),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ── Extract Audio Tile ─────────────────────────────────────
-// Hiện khi source là muxed-only (TikTok, Instagram, v.v.)
-// ── Option tile dùng chung ─────────────────────────────────
 
 class _MuxedOptionTile extends StatelessWidget {
   final IconData icon;
@@ -428,7 +706,8 @@ class _MuxedOptionTile extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        padding:
+        const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primary.withOpacity(0.12)
@@ -452,15 +731,19 @@ class _MuxedOptionTile extends StatelessWidget {
                     : AppColors.surfaceElevated,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, size: 20,
-                  color: isSelected ? AppColors.primary : AppColors.textTertiary),
+              child: Icon(icon,
+                  size: 20,
+                  color: isSelected
+                      ? AppColors.primary
+                      : AppColors.textTertiary),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
+                  Text(
+                    title,
                     style: TextStyle(
                       color: isSelected
                           ? AppColors.textPrimary
@@ -483,13 +766,16 @@ class _MuxedOptionTile extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isSelected ? AppColors.primary : AppColors.textTertiary,
+                  color: isSelected
+                      ? AppColors.primary
+                      : AppColors.textTertiary,
                   width: isSelected ? 0 : 1.5,
                 ),
                 gradient: isSelected ? AppColors.primaryGradient : null,
               ),
               child: isSelected
-                  ? const Icon(Icons.check_rounded, color: Colors.white, size: 13)
+                  ? const Icon(Icons.check_rounded,
+                  color: Colors.white, size: 13)
                   : null,
             ),
           ],
@@ -515,10 +801,10 @@ class _ExtractAudioTile extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Banner thông báo
         Container(
           margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding:
+          const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: AppColors.primary.withOpacity(0.06),
             borderRadius: BorderRadius.circular(10),
@@ -528,7 +814,8 @@ class _ExtractAudioTile extends StatelessWidget {
           child: Row(
             children: [
               Icon(Icons.info_outline_rounded,
-                  size: 14, color: AppColors.primary.withOpacity(0.8)),
+                  size: 14,
+                  color: AppColors.primary.withOpacity(0.8)),
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
@@ -543,26 +830,14 @@ class _ExtractAudioTile extends StatelessWidget {
             ],
           ),
         ),
-
-        // Tile: Chỉ Audio M4A
         _MuxedOptionTile(
           icon: Icons.audio_file_rounded,
           title: 'Chỉ Audio (M4A)',
-          subtitle: 'Tải video → tách lấy âm thanh · không mất chất lượng',
+          subtitle:
+          'Tải video → tách lấy âm thanh · không mất chất lượng',
           isSelected: selectedFormatId == _kExtractAudioFormatId,
           onTap: onSelectAudio,
         ),
-
-        const SizedBox(height: 8),
-
-        // Tile: Giữ Video MP4
-        // _MuxedOptionTile(
-        //   icon: Icons.video_file_rounded,
-        //   title: 'Video (MP4)',
-        //   subtitle: 'Giữ nguyên file video có kèm âm thanh',
-        //   isSelected: selectedFormatId == _kMuxedVideoFormatId,
-        //   onTap: onSelectVideo,
-        // ),
       ],
     );
   }
@@ -614,7 +889,8 @@ class _PresetTile extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        padding:
+        const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primary.withOpacity(0.12)
@@ -641,7 +917,9 @@ class _PresetTile extends StatelessWidget {
               child: Icon(
                 preset.icon,
                 size: 20,
-                color: isSelected ? AppColors.primary : AppColors.textTertiary,
+                color: isSelected
+                    ? AppColors.primary
+                    : AppColors.textTertiary,
               ),
             ),
             const SizedBox(width: 12),
@@ -701,6 +979,8 @@ class _BottomDownloadBar extends StatelessWidget {
   final _PlaylistPreset? selectedPreset;
   final bool isPlaylist;
   final int? playlistCount;
+  final String currentPath;
+  final VoidCallback onPickFolder;
   final VoidCallback? onDownload;
 
   const _BottomDownloadBar({
@@ -708,6 +988,8 @@ class _BottomDownloadBar extends StatelessWidget {
     required this.selectedPreset,
     required this.isPlaylist,
     required this.playlistCount,
+    required this.currentPath,
+    required this.onPickFolder,
     required this.onDownload,
   });
 
@@ -717,9 +999,11 @@ class _BottomDownloadBar extends StatelessWidget {
     }
     if (!isPlaylist && selectedFormat != null) {
       return switch (selectedFormat!.formatId) {
-        '__extract_audio__' => 'Tải video → tách audio M4A (file MP4 sẽ bị xóa)',
-        '__muxed_video__'   => 'Giữ nguyên video MP4',
-        _                   => '${selectedFormat!.displayLabel} · ${selectedFormat!.formattedFilesize}',
+        '__extract_audio__' =>
+        'Tải video → tách audio M4A (file MP4 sẽ bị xóa)',
+        '__muxed_video__' => 'Giữ nguyên video MP4',
+        _ =>
+        '${selectedFormat!.displayLabel} · ${selectedFormat!.formattedFilesize}',
       };
     }
     return '';
@@ -729,7 +1013,9 @@ class _BottomDownloadBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.fromLTRB(
-        20, 12, 20,
+        20,
+        12,
+        20,
         MediaQuery.of(context).padding.bottom + 16,
       ),
       decoration: BoxDecoration(
@@ -740,6 +1026,42 @@ class _BottomDownloadBar extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Folder path row
+          GestureDetector(
+            onTap: onPickFolder,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceElevated,
+                borderRadius: BorderRadius.circular(10),
+                border:
+                Border.all(color: AppColors.border, width: 0.6),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.folder_rounded,
+                      size: 14, color: AppColors.primary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      currentPath,
+                      style: const TextStyle(
+                        color: AppColors.textTertiary,
+                        fontSize: 11,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const Icon(Icons.edit_rounded,
+                      size: 13, color: AppColors.textTertiary),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+
           if (_infoText.isNotEmpty) ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -747,15 +1069,19 @@ class _BottomDownloadBar extends StatelessWidget {
                 const Icon(Icons.info_outline_rounded,
                     size: 13, color: AppColors.textTertiary),
                 const SizedBox(width: 5),
-                Text(
-                  _infoText,
-                  style: const TextStyle(
-                      color: AppColors.textTertiary, fontSize: 12),
+                Flexible(
+                  child: Text(
+                    _infoText,
+                    style: const TextStyle(
+                        color: AppColors.textTertiary, fontSize: 12),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 10),
           ],
+
           PrimaryButton(
             label: isPlaylist ? 'Tải playlist' : 'Bắt đầu tải',
             icon: Icons.download_rounded,
@@ -921,7 +1247,8 @@ class _FormatTile extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding:
+        const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primary.withOpacity(0.12)
@@ -982,8 +1309,8 @@ class _FormatTile extends StatelessWidget {
               ),
             ),
             Container(
-              padding:
-              const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppColors.primary.withOpacity(0.2)
