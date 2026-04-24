@@ -50,6 +50,7 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
   Future<void> _initServices() async {
     try {
       await DownloaderStorageService.instance.init();
+      await DownloaderStorageService.instance.requestStoragePermission();
       if (mounted) setState(() => _serviceReady = true);
     } catch (e) {
       if (mounted) setState(() => _initError = 'Khởi động thất bại: $e');

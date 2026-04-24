@@ -228,25 +228,39 @@ def download(url: str, format_id: str, output_path: str = "") -> str:
             # Fix: prepare_filename() không account cho merge_output_format
             # File thực tế luôn là .mp4 sau khi merge
             merge_fmt = ydl_opts.get("merge_output_format", "")
+            filename = raw_filename
+
             if merge_fmt:
                 base, old_ext = os.path.splitext(raw_filename)
-                filename = base + "." + merge_fmt
-                print(f"[YTDLP_BRIDGE] After merge_output_format fix: {old_ext} → .{merge_fmt}")
-                print(f"[YTDLP_BRIDGE] Final filename = {filename}")
-            else:
-                filename = raw_filename
+                merged_filename = base + "." + merge_fmt
+                if os.path.isfile(merged_filename):
+                    filename = merged_filename
+
+            # Fallback sang progress hook
+            if not os.path.isfile(filename) and _progress.get("filename") and os.path.isfile(_progress["filename"]):
+                filename = _progress["filename"]
+
+            # Fallback lấy file từ info nếu yt-dlp trả về
+            if not os.path.isfile(filename) and "requested_downloads" in info:
+                for req in info["requested_downloads"]:
+                    if req.get("filepath") and os.path.isfile(req["filepath"]):
+                        filename = req["filepath"]
+                        break
 
             # Kiểm tra file có thực sự tồn tại không
             file_exists = os.path.isfile(filename)
             print(f"[YTDLP_BRIDGE] File exists on disk: {file_exists} → {filename}")
 
             if not file_exists:
-                # Thử tìm file gần đúng trong thư mục (yt-dlp đôi khi thêm ký tự đặc biệt)
                 try:
                     files_in_dir = os.listdir(output_path)
                     print(f"[YTDLP_BRIDGE] Files in output dir: {files_in_dir}")
                 except Exception as e:
                     print(f"[YTDLP_BRIDGE] Cannot list dir: {e}")
+                return json.dumps({
+                    "success": False,
+                    "error": f"File không tồn tại sau khi tải: có thể do thiếu quyền ghi vào {output_path}"
+                })
 
             result = {
                 "success": True,

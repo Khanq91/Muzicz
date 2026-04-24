@@ -49,36 +49,43 @@ class SummaryScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // ── Icon + title ─────────────────────────────
-                _SummaryHeader(
-                  successCount: dlState.successCount,
-                  errorCount: dlState.errorCount,
-                ),
-                const SizedBox(height: 32),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // ── Icon + title ─────────────────────────────
+                        _SummaryHeader(
+                          successCount: dlState.successCount,
+                          errorCount: dlState.errorCount,
+                        ),
+                        const SizedBox(height: 32),
 
-                // ── Stats ────────────────────────────────────
-                _StatsGrid(state: dlState),
-                const SizedBox(height: 24),
+                        // ── Stats ────────────────────────────────────
+                        _StatsGrid(state: dlState),
+                        const SizedBox(height: 24),
 
-                // ── Failed list ──────────────────────────────
-                if (dlState.errorCount > 0) ...[
-                  _FailedList(
-                    tasks: dlState.tasks
-                        .where((t) => t.status == DownloadStatus.error)
-                        .toList(),
-                    onRetryAll: () {
-                      for (final t in dlState.tasks
-                          .where((t) => t.status == DownloadStatus.error)) {
-                        ref.read(downloadProvider.notifier).retry(t.id);
-                      }
-                      Navigator.pushReplacementNamed(
-                          context, AppRoutes.download);
-                    },
+                        // ── Failed list ──────────────────────────────
+                        if (dlState.errorCount > 0) ...[
+                          _FailedList(
+                            tasks: dlState.tasks
+                                .where((t) => t.status == DownloadStatus.error)
+                                .toList(),
+                            onRetryAll: () {
+                              for (final t in dlState.tasks
+                                  .where((t) => t.status == DownloadStatus.error)) {
+                                ref.read(downloadProvider.notifier).retry(t.id);
+                              }
+                              Navigator.pushReplacementNamed(
+                                  context, AppRoutes.download);
+                            },
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 20),
-                ],
-
-                const Spacer(),
+                ),
 
                 // ── Actions ──────────────────────────────────
                 PrimaryButton(

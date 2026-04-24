@@ -13,13 +13,9 @@ class DownloaderStorageService {
   DownloaderStorageService._();
   static final DownloaderStorageService instance = DownloaderStorageService._();
 
-  // ✅ Channel phải khớp với MainActivity
   static const _channel = MethodChannel('ytdlp_channel');
 
   String? _downloadPath;
-
-  // ❌ Bỏ hoàn toàn _ytdlpPath — project dùng Chaquopy, không có libytdlp.so
-  // yt-dlp chạy qua Python module, không phải native binary
 
   String get downloadPath {
     assert(_downloadPath != null, 'Gọi init() trước');
