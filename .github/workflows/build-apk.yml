@@ -1,0 +1,85 @@
+name: Build Flutter APK
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: flutter-build
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.0
+          cache: true
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: ${{ runner.os }}-pub-
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run tests
+        run: flutter test --no-pub
+
+      - name: Get app version
+        id: version
+        shell: bash
+        run: |
+          VERSION="$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | cut -d'+' -f1)"
+          BUILD_TIME="$(date -u +'%Y%m%d_%H%M')"
+          echo "name=muziczz_v${VERSION}_${BUILD_TIME}" >> "$GITHUB_OUTPUT"
+
+      - name: Build APK
+        run: flutter build apk --release --no-pub
+
+      - name: Rename APK
+        shell: bash
+        run: |
+          mv build/app/outputs/flutter-apk/app-release.apk \
+            "build/app/outputs/flutter-apk/${{ steps.version.outputs.name }}.apk"
+
+      - name: Remove previous APK assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          if gh release view latest > /dev/null 2>&1; then
+            while IFS= read -r asset; do
+              case "$asset" in
+                *.apk) gh release delete-asset latest "$asset" --yes ;;
+              esac
+            done < <(gh release view latest --json assets --jq '.assets[].name')
+          fi
+
+      - name: Upload APK to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest Build
+          files: build/app/outputs/flutter-apk/${{ steps.version.outputs.name }}.apk
+          make_latest: true
