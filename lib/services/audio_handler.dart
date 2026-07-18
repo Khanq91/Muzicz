@@ -5,7 +5,28 @@ import 'package:audio_service/audio_service.dart';
 
 typedef VoidCallback = void Function();
 
-class MuzicAudioHandler {
+abstract class PlayerAudioGateway {
+  Future<void> loadSongs(List<SongItem> songs, {int initialIndex = 0});
+  Future<void> reorderTo(List<SongItem> newOrder);
+  Future<void> moveSong(int oldIndex, int newIndex);
+  Future<void> removeSongAt(int index);
+  Future<void> addSongToQueue(SongItem song);
+  Future<void> play();
+  Future<void> pause();
+  Future<void> stop();
+  Future<void> seek(Duration position);
+  Future<void> seekToIndex(int index);
+  Future<void> setLoopMode(LoopMode mode);
+  Future<void> setSpeed(double speed);
+  Future<void> setShuffleModeEnabled(bool enabled);
+
+  Stream<bool> get playingStream;
+  Stream<int?> get currentIndexStream;
+  Stream<ProcessingState> get processingStateStream;
+  Stream<PositionData> get positionDataStream;
+}
+
+class MuzicAudioHandler implements PlayerAudioGateway {
   final _player   = AudioPlayer();
   final _playlist = ConcatenatingAudioSource(children: []);
   List<SongItem> _currentSongs = [];
@@ -20,6 +41,7 @@ class MuzicAudioHandler {
     } catch (_) {}
   }
 
+  @override
   Future<void> loadSongs(List<SongItem> songs, {int initialIndex = 0}) async {
     _currentSongs = List.from(songs);
     await _playlist.clear();
@@ -43,6 +65,7 @@ class MuzicAudioHandler {
 
   /// Reorder ConcatenatingAudioSource to match [newOrder] using move() operations.
   /// Does NOT interrupt currently playing audio — no clear/rebuild.
+  @override
   Future<void> reorderTo(List<SongItem> newOrder) async {
     if (newOrder.length != _currentSongs.length) return;
 
@@ -63,6 +86,26 @@ class MuzicAudioHandler {
     _currentSongs = List.from(newOrder);
   }
 
+  @override
+  Future<void> moveSong(int oldIndex, int newIndex) async {
+    if (oldIndex < 0 || oldIndex >= _currentSongs.length) return;
+    if (newIndex < 0 || newIndex >= _currentSongs.length) return;
+    if (oldIndex == newIndex) return;
+
+    await _playlist.move(oldIndex, newIndex);
+    final song = _currentSongs.removeAt(oldIndex);
+    _currentSongs.insert(newIndex, song);
+  }
+
+  @override
+  Future<void> removeSongAt(int index) async {
+    if (index < 0 || index >= _currentSongs.length) return;
+
+    await _playlist.removeAt(index);
+    _currentSongs.removeAt(index);
+  }
+
+  @override
   Future<void> addSongToQueue(SongItem song) async {
     _currentSongs.add(song);
     await _playlist.add(AudioSource.uri(
@@ -80,30 +123,42 @@ class MuzicAudioHandler {
     ));
   }
 
+  @override
   Future<void> play()                  => _player.play();
+  @override
   Future<void> pause()                 => _player.pause();
+  @override
   Future<void> stop()                  => _player.stop();
+  @override
   Future<void> seek(Duration position) => _player.seek(position);
   Future<void> seekToNext()            => _player.seekToNext();
   Future<void> seekToPrevious()        => _player.seekToPrevious();
 
+  @override
   Future<void> seekToIndex(int index) async {
     await _player.seek(Duration.zero, index: index);
   }
 
+  @override
   Future<void> setLoopMode(LoopMode mode) => _player.setLoopMode(mode);
 
   // ── Playback speed (0.5x → 2.0x) ─────────────────────────────────────────
+  @override
   Future<void> setSpeed(double speed) => _player.setSpeed(speed);
 
+  @override
   Future<void> setShuffleModeEnabled(bool enabled) async {
     await _player.setShuffleModeEnabled(false);
   }
 
+  @override
   Stream<bool>             get playingStream          => _player.playingStream;
+  @override
   Stream<int?>             get currentIndexStream     => _player.currentIndexStream;
+  @override
   Stream<ProcessingState>  get processingStateStream  => _player.processingStateStream;
 
+  @override
   Stream<PositionData> get positionDataStream =>
       Rx.combineLatest3<Duration, Duration, Duration?, PositionData>(
         _player.positionStream,

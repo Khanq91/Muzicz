@@ -68,3 +68,13 @@
 - Lần format riêng `ytdlp_service.dart` tạo mechanical diff và một lint do file vốn lệch formatter; đã loại toàn bộ formatting noise, chỉ giữ thay đổi protocol. Final formatter check vẫn được kỳ vọng fail theo baseline các file chưa format.
 - Debug APK build pass sau 144,5 giây. Build vẫn cảnh báo Gradle 8.10.2, AGP 8.7.0, Kotlin 2.0.0 sắp hết hỗ trợ và Kotlin incremental cache khác root `C:`/`D:`; fallback build thành công, không nâng toolchain trong issue này.
 - Chưa chạy app trên Android device: chưa xác nhận progress card thực tế, hai native download song song, polling rate hoặc ảnh hưởng performance. Không tuyên bố downloader đã nhanh hơn; thay đổi chỉ loại bỏ nguồn cross-wire progress trong protocol.
+
+## [Phase 0] - 2026-07-18 23:22
+- `scripts/analyze_codex.bat` được yêu cầu vẫn không tồn tại; dùng script repo thực tế `scripts/flutter_analyze.bat` và đọc `audit/flutter_analyze.txt`.
+- Analyzer trong sandbox không tạo output và phải dừng; chạy ngoài sandbox theo workaround đã ghi trước đó thành công. Không kill tiến trình IDE hoặc sửa Flutter SDK/cache.
+- Regression PLAY-01 trước fix đỏ đúng dự kiến: provider queue thành `[1, 3]`/`[3, 1, 2]` nhưng fake engine vẫn `[1, 2, 3]`; đây là bằng chứng state lệch, không phải lỗi test environment.
+
+## [Phase 3] - 2026-07-18 23:22
+- Analyzer đầu sau khi thêm gateway báo 15 `annotate_overrides`; thêm annotation vào implementation thay vì disable lint, analyzer cuối sạch 0 error/warning/info.
+- Format-check tạm tăng từ 26 lên 27 file do test mới; format riêng `test/providers/player_provider_test.dart` đưa kết quả cuối về baseline 26/68 file. Không format hàng loạt hai file production vốn đã lệch chuẩn.
+- Chưa chạy app/device thật nên chưa xác nhận semantics runtime của just_audio khi remove bài đang phát, background playback, notification/headset controls hoặc event timing thực; unit fake chỉ chứng minh orchestration/index contract trong Dart.

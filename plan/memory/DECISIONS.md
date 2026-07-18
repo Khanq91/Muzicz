@@ -60,3 +60,12 @@
 - Xóa progress entry trong `_clear_task_tracking` cùng cancel/file state để không giữ dữ liệu task đã kết thúc; response download vẫn là source-of-truth cho trạng thái terminal nên không cần giữ progress sau completion.
 - Giữ `maxConcurrentDownloads = 1` dù protocol đã task-scoped: automated test chứng minh contract và mapping độc lập nhưng chưa chứng minh hai Chaquopy download song song an toàn/runtime tốt trên thiết bị thật.
 - Không thay public `DownloadGateway`, package hoặc UI; task identity chỉ được bổ sung trong MethodChannel/Python protocol nội bộ.
+
+## [Phase 0] - 2026-07-18 23:22
+- Tạo `PlayerAudioGateway` ngay tại biên `PlayerProvider` → audio engine để fake queue/index trong unit test; không abstract thêm UI, service khác hoặc đổi state management vì PLAY-01 chỉ cần seam này.
+
+## [Phase 3] - 2026-07-18 23:22
+- Chọn engine-first transaction cho remove/reorder: validate index, chờ `ConcatenatingAudioSource` thành công rồi mới commit `_playQueue`, `_currentPlayIndex` và `_currentSong`; nếu engine ném lỗi, provider giữ nguyên state thay vì tạo lệch queue.
+- Dùng move/remove trực tiếp trên `ConcatenatingAudioSource` thay vì clear/reload playlist để không chủ động ngắt bài đang phát; cập nhật mirror `_currentSongs` chỉ sau khi operation engine thành công.
+- Tái sử dụng `_isReordering` để bỏ qua index stream và mutation queue thứ hai trong cửa sổ async ngắn; tradeoff là thao tác người dùng lặp cực nhanh có thể bị bỏ qua, nhưng tránh hai mutation dùng index cũ chạy chồng nhau.
+- Clear history index sau remove/reorder vì các index cũ không còn ổn định; phần thiết kế history theo track ID/central track-change vẫn để issue Phase 3 riêng.

@@ -89,3 +89,15 @@
 - [x] Truyền `taskId` qua Dart → Kotlin → Python; thay `_progress` global bằng map task-scoped có lock và cleanup khi task kết thúc.
 - [x] Targeted service test pass 3/3, full suite pass 9/9, analyzer 0 issue, Python compile check pass và debug APK build pass.
 - [ ] Concurrency production tiếp tục giữ ở 1; chưa đo hai native download đồng thời, polling rate, traffic hoặc progress card trên Android device. Bước tiếp theo: device validation Phase 2 trước khi cân nhắc mở lại concurrency, hoặc quay về Phase 0 tạo harness cho PLAY-01 theo thứ tự kế hoạch.
+
+## [Phase 0] - 2026-07-18 23:22
+- [x] Đọc lại toàn bộ `player_provider.dart`, `audio_handler.dart`, queue UI, model và test hiện có; baseline analyzer 0 issue, full suite pass 9/9, format-check giữ lỗi có sẵn 26/67 file.
+- [x] Thêm `PlayerAudioGateway` làm fake seam tối thiểu và regression harness A/B/C cho PLAY-01; trước fix hai test đỏ vì provider đã remove/reorder nhưng engine vẫn giữ `[1, 2, 3]`.
+- [ ] Phase 0 đã có harness PLAY-01 nhưng vẫn thiếu LIFE-01, STATE-01 và profile/device baseline; chưa chạy playback trên thiết bị thật.
+
+## [Phase 3] - 2026-07-18 23:22
+- [x] Hoàn tất PLAY-01: thêm engine API remove/move, chuyển queue mutation thành async và chỉ commit provider state sau khi engine thành công.
+- [x] Đồng bộ current index/current song khi remove hoặc move bài đang phát; clear history index cũ và chặn queue mutation chồng trong lúc engine đang cập nhật.
+- [x] Thêm 6 regression test cho remove, reorder, failure atomicity và current-song behavior; targeted pass 6/6, full suite pass 15/15, analyzer 0 issue.
+- [x] Tăng app version từ `1.0.0+1` lên `1.0.0+2`; format-check cuối trở về baseline 26/68 file sau khi format riêng test mới.
+- [ ] Chưa xác nhận manual background playback/headset/notification hoặc queue sheet trên Android device. Bước tiếp theo: device-check A/B/C remove/reorder/skip, rồi xử lý timer/subscription/history của Phase 3 như issue độc lập.

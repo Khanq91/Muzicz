@@ -8,7 +8,7 @@ import '../services/audio_handler.dart';
 enum RepeatMode { none, one, shuffleLoop }
 
 class PlayerProvider extends ChangeNotifier {
-  final MuzicAudioHandler _handler;
+  final PlayerAudioGateway _handler;
 
   PlayerProvider(this._handler) {
     _listenToHandler();
@@ -348,27 +348,66 @@ class PlayerProvider extends ChangeNotifier {
 
   // ── Queue management ──────────────────────────────────────────────────────
 
-  void removeFromQueue(int index) {
+  Future<void> removeFromQueue(int index) async {
     if (index < 0 || index >= _playQueue.length) return;
+    if (_isReordering) return;
+
     final removedId = _playQueue[index].id;
-    _playQueue.removeAt(index);
-    _originalQueue.removeWhere((s) => s.id == removedId);
-    if (index < _currentPlayIndex) _currentPlayIndex--;
-    notifyListeners();
+    _isReordering = true;
+    try {
+      await _handler.removeSongAt(index);
+
+      _playQueue.removeAt(index);
+      _originalQueue.removeWhere((s) => s.id == removedId);
+
+      if (_playQueue.isEmpty) {
+        _currentPlayIndex = 0;
+        _currentSong = null;
+      } else {
+        if (index < _currentPlayIndex) {
+          _currentPlayIndex--;
+        } else if (_currentPlayIndex >= _playQueue.length) {
+          _currentPlayIndex = _playQueue.length - 1;
+        }
+        _currentSong = _playQueue[_currentPlayIndex];
+      }
+
+      _historyStack.clear();
+      notifyListeners();
+    } finally {
+      _isReordering = false;
+    }
   }
 
-  void reorderQueue(int oldIndex, int newIndex) {
+  Future<void> reorderQueue(int oldIndex, int newIndex) async {
+    if (oldIndex < 0 || oldIndex >= _playQueue.length) return;
+    if (newIndex < 0 || newIndex > _playQueue.length) return;
     if (oldIndex < newIndex) newIndex--;
-    final item = _playQueue.removeAt(oldIndex);
-    _playQueue.insert(newIndex, item);
-    if (oldIndex == _currentPlayIndex) {
-      _currentPlayIndex = newIndex;
-    } else if (oldIndex < _currentPlayIndex && newIndex >= _currentPlayIndex) {
-      _currentPlayIndex--;
-    } else if (oldIndex > _currentPlayIndex && newIndex <= _currentPlayIndex) {
-      _currentPlayIndex++;
+    if (newIndex < 0 || newIndex >= _playQueue.length) return;
+    if (oldIndex == newIndex || _isReordering) return;
+
+    _isReordering = true;
+    try {
+      await _handler.moveSong(oldIndex, newIndex);
+
+      final item = _playQueue.removeAt(oldIndex);
+      _playQueue.insert(newIndex, item);
+      if (oldIndex == _currentPlayIndex) {
+        _currentPlayIndex = newIndex;
+      } else if (oldIndex < _currentPlayIndex &&
+          newIndex >= _currentPlayIndex) {
+        _currentPlayIndex--;
+      } else if (oldIndex > _currentPlayIndex &&
+          newIndex <= _currentPlayIndex) {
+        _currentPlayIndex++;
+      }
+
+      _currentSong = _playQueue[_currentPlayIndex];
+      _historyStack.clear();
+      notifyListeners();
+    } finally {
+      _isReordering = false;
     }
-    notifyListeners();
   }
 
   // ── Streams ───────────────────────────────────────────────────────────────
