@@ -2,7 +2,10 @@
 
 import yt_dlp
 import json
+import glob
 import os
+import threading
+from yt_dlp.utils import DownloadCancelled
 
 # ─── Global progress state ───────────────────────────────────────────────────
 _progress = {
@@ -13,6 +16,60 @@ _progress = {
     "filename": "",
     "error": "",
 }
+
+_cancel_events = {}
+_task_files = {}
+_task_lock = threading.Lock()
+
+
+def _cancel_event_for(task_id: str):
+    with _task_lock:
+        event = _cancel_events.get(task_id)
+        if event is None:
+            event = threading.Event()
+            _cancel_events[task_id] = event
+        _task_files.setdefault(task_id, set())
+        return event
+
+
+def cancel_download(task_id: str) -> bool:
+    if not task_id:
+        return False
+    _cancel_event_for(task_id).set()
+    return True
+
+
+def _record_task_file(task_id: str, filename: str):
+    if not filename:
+        return
+    with _task_lock:
+        _task_files.setdefault(task_id, set()).add(filename)
+
+
+def _cleanup_partial_files(task_id: str):
+    with _task_lock:
+        filenames = tuple(_task_files.get(task_id, ()))
+
+    candidates = set()
+    for filename in filenames:
+        if filename.endswith((".part", ".ytdl")):
+            candidates.add(filename)
+        candidates.add(f"{filename}.part")
+        candidates.add(f"{filename}.ytdl")
+        candidates.update(glob.glob(f"{glob.escape(filename)}.part*"))
+
+    for candidate in candidates:
+        try:
+            if os.path.isfile(candidate):
+                os.remove(candidate)
+        except OSError:
+            pass
+
+
+def _clear_task_tracking(task_id: str):
+    with _task_lock:
+        _cancel_events.pop(task_id, None)
+        _task_files.pop(task_id, None)
 
 def get_progress():
     return json.dumps(_progress)
@@ -116,10 +173,15 @@ def analyze(url: str) -> str:
 
 
 # ─── Download ─────────────────────────────────────────────────────────────────
-def _make_progress_hook():
+def _make_progress_hook(task_id: str, cancel_event):
     def hook(d):
         global _progress
+        if cancel_event.is_set():
+            raise DownloadCancelled("Download cancelled by user")
+
         status = d.get("status", "")
+        filename = d.get("filename", "")
+        _record_task_file(task_id, filename)
 
         if status == "downloading":
             downloaded = d.get("downloaded_bytes", 0) or 0
@@ -131,7 +193,7 @@ def _make_progress_hook():
                 "percent":  percent,
                 "speed":    d.get("_speed_str", "").strip(),
                 "eta":      d.get("_eta_str", "").strip(),
-                "filename": d.get("filename", ""),
+                "filename": filename,
                 "error":    "",
             }
 
@@ -150,13 +212,26 @@ def _make_progress_hook():
     return hook
 
 
-def download(url: str, format_id: str, output_path: str = "") -> str:
+def _make_postprocessor_hook(task_id: str, cancel_event):
+    def hook(d):
+        _record_task_file(
+            task_id,
+            d.get("filepath", "") or (d.get("info_dict") or {}).get("filepath", ""),
+        )
+        if cancel_event.is_set():
+            raise DownloadCancelled("Download cancelled by user")
+
+    return hook
+
+
+def download(task_id: str, url: str, format_id: str, output_path: str = "") -> str:
     print(f"[YTDLP_BRIDGE] download() called")
     print(f"[YTDLP_BRIDGE]   url       = {url}")
     print(f"[YTDLP_BRIDGE]   format_id = {format_id}")
     print(f"[YTDLP_BRIDGE]   output_path = {output_path}")
 
     reset_progress()
+    cancel_event = _cancel_event_for(task_id)
 
     if not output_path:
         output_path = os.environ["HOME"]
@@ -184,8 +259,8 @@ def download(url: str, format_id: str, output_path: str = "") -> str:
         "quiet":               False,   # ← bật để thấy log yt-dlp trong console
         "no_warnings":         False,   # ← bật để thấy warnings
         "merge_output_format": "mp4",
-        "progress_hooks":      [_make_progress_hook()],
-        "postprocessor_hooks": [],
+        "progress_hooks":      [_make_progress_hook(task_id, cancel_event)],
+        "postprocessor_hooks": [_make_postprocessor_hook(task_id, cancel_event)],
         "ignoreerrors":        True,
         "noplaylist":          is_extract_audio,
         # verbose log
@@ -193,6 +268,9 @@ def download(url: str, format_id: str, output_path: str = "") -> str:
     }
 
     try:
+        if cancel_event.is_set():
+            raise DownloadCancelled("Download cancelled by user")
+
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             original_report_error = ydl.report_error
             def patched_report_error(message, *args, **kwargs):
@@ -202,6 +280,9 @@ def download(url: str, format_id: str, output_path: str = "") -> str:
 
             print(f"[YTDLP_BRIDGE] Starting extract_info (download=True)...")
             info = ydl.extract_info(url, download=True)
+
+            if cancel_event.is_set():
+                raise DownloadCancelled("Download cancelled by user")
 
             if info is None:
                 print(f"[YTDLP_BRIDGE] extract_info returned None!")
@@ -271,13 +352,23 @@ def download(url: str, format_id: str, output_path: str = "") -> str:
             print(f"[YTDLP_BRIDGE] Returning success: {result}")
             return json.dumps(result)
 
+    except DownloadCancelled:
+        _progress["status"] = "cancelled"
+        return json.dumps({"success": False, "cancelled": True})
     except Exception as e:
+        if cancel_event.is_set():
+            _progress["status"] = "cancelled"
+            return json.dumps({"success": False, "cancelled": True})
         print(f"[YTDLP_BRIDGE] Exception: {e}")
         import traceback
         traceback.print_exc()
         _progress["status"] = "error"
         _progress["error"]  = str(e)
         return json.dumps({"success": False, "error": str(e)})
+    finally:
+        if cancel_event.is_set():
+            _cleanup_partial_files(task_id)
+        _clear_task_tracking(task_id)
 
 
 def get_playlist_entries(url: str) -> str:

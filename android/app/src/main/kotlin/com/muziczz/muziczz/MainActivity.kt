@@ -16,6 +16,7 @@ import com.chaquo.python.android.AndroidPlatform
 import kotlinx.coroutines.*
 import java.io.File
 import java.nio.ByteBuffer
+import java.util.concurrent.ConcurrentHashMap
 
 //import io.flutter.embedding.android.FlutterFragmentActivity
 import com.ryanheise.audioservice.AudioServiceFragmentActivity
@@ -27,6 +28,7 @@ class MainActivity : AudioServiceFragmentActivity() {
     // ── Channel dùng chung cho ytdlp feature ──────────────────────────────────
     private val YTDLP_CHANNEL = "ytdlp_channel"
     private val activityScope  = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val activeDownloadJobs = ConcurrentHashMap<String, Job>()
 
     override fun onDestroy() {
         super.onDestroy()
@@ -101,6 +103,7 @@ class MainActivity : AudioServiceFragmentActivity() {
 
                     // ── yt-dlp: download ──────────────────────────────────────
                     "download" -> {
+                        val taskId   = call.argument<String>("taskId")   ?: ""
                         val url      = call.argument<String>("url")      ?: ""
                         val formatId = call.argument<String>("formatId") ?: "best"
                         val outDir   = call.argument<String>("outputDir")
@@ -108,14 +111,60 @@ class MainActivity : AudioServiceFragmentActivity() {
                                 Environment.DIRECTORY_DOWNLOADS
                             ).absolutePath
 
-                        activityScope.launch {
+                        if (taskId.isEmpty()) {
+                            result.error("DOWNLOAD_ERROR", "Missing taskId", null)
+                            return@setMethodCallHandler
+                        }
+
+                        val job = activityScope.launch(start = CoroutineStart.LAZY) {
                             try {
-                                val res = module.callAttr("download", url, formatId, outDir)
+                                val res = module.callAttr(
+                                    "download",
+                                    taskId,
+                                    url,
+                                    formatId,
+                                    outDir
+                                )
                                     .toString()
                                 withContext(Dispatchers.Main) { result.success(res) }
                             } catch (e: Exception) {
                                 withContext(Dispatchers.Main) {
                                     result.error("DOWNLOAD_ERROR", e.message, null)
+                                }
+                            } finally {
+                                activeDownloadJobs.remove(taskId)
+                            }
+                        }
+                        activeDownloadJobs[taskId] = job
+                        job.start()
+                    }
+
+                    // ── yt-dlp: cooperative cancellation ──────────────────────
+                    "cancelDownload" -> {
+                        val taskId = call.argument<String>("taskId") ?: ""
+                        val job = activeDownloadJobs[taskId]
+
+                        if (taskId.isEmpty() || job == null) {
+                            result.success("{\"accepted\":false,\"stopped\":false}")
+                            return@setMethodCallHandler
+                        }
+
+                        activityScope.launch {
+                            try {
+                                val accepted = module.callAttr("cancel_download", taskId)
+                                    .toString() == "True"
+                                val stopped = accepted && withTimeoutOrNull(15_000) {
+                                    job.join()
+                                    true
+                                } == true
+                                withContext(Dispatchers.Main) {
+                                    result.success(
+                                        "{\"accepted\":$accepted,\"stopped\":$stopped}"
+                                    )
+                                }
+                            } catch (e: Exception) {
+                                withContext(Dispatchers.Main) {
+                                    result.error("CANCEL_ERROR", e.message, null)
                                 }
                             }
                         }

@@ -60,6 +60,8 @@ class ExtractAudioResult {
 abstract interface class DownloadGateway {
   Stream<DownloadTask> download(DownloadTask task, {String? outputDir});
 
+  Future<bool> cancel(String taskId);
+
   Future<ExtractAudioResult> extractAudioNative({required String inputPath});
 }
 
@@ -200,6 +202,7 @@ class YtdlpService implements DownloadGateway {
 
     // Gửi lệnh download (blocking đến khi hoàn thành)
     _channel.invokeMethod<String>('download', {
+      'taskId':   task.id,
       'url':      task.url,
       'formatId': task.formatId,
       'outputDir': dir,  // Bug fix: 'outputPath' → 'outputDir'
@@ -219,7 +222,13 @@ class YtdlpService implements DownloadGateway {
 
       final data = json.decode(jsonStr) as Map<String, dynamic>;
 
-      if (data['success'] == false || data.containsKey('error')) {
+      if (data['cancelled'] == true) {
+        safeAdd(currentTask.copyWith(
+          status: DownloadStatus.cancelled,
+          speed:  '',
+          eta:    '',
+        ));
+      } else if (data['success'] == false || data.containsKey('error')) {
         safeAdd(currentTask.copyWith(
           status:       DownloadStatus.error,
           errorMessage: _parseError(data['error'] as String? ?? 'Download thất bại'),
@@ -253,6 +262,22 @@ class YtdlpService implements DownloadGateway {
     });
 
     return controller.stream;
+  }
+
+  @override
+  Future<bool> cancel(String taskId) async {
+    try {
+      final jsonStr = await _channel.invokeMethod<String>(
+        'cancelDownload',
+        {'taskId': taskId},
+      ).timeout(const Duration(seconds: 20));
+      if (jsonStr == null) return false;
+
+      final data = json.decode(jsonStr) as Map<String, dynamic>;
+      return data['accepted'] == true && data['stopped'] == true;
+    } catch (_) {
+      return false;
+    }
   }
 
   // ── Extract audio (Phương án 2: Android native MediaExtractor) ──────────────

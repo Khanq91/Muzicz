@@ -85,6 +85,81 @@ void main() {
     expect(container.read(downloadProvider).activeTasks, hasLength(1));
     expect(container.read(downloadProvider).queuedTasks, isEmpty);
   });
+
+  test(
+    'cancel waits for native acknowledgement before advancing queue',
+    () async {
+      final gateway = _RecordingDownloadGateway();
+      final container = ProviderContainer(
+        overrides: [
+          downloadGatewayProvider.overrideWithValue(gateway),
+          downloadOutputDirectoryProvider.overrideWithValue('/downloads'),
+        ],
+      );
+      addTearDown(() {
+        container.dispose();
+        gateway.dispose();
+      });
+
+      await container
+          .read(downloadProvider.notifier)
+          .enqueueBatch(infos: [_video('one'), _video('two')], format: _format);
+
+      final firstTaskId = gateway.startedTaskIds.single;
+      final cancelFuture = container
+          .read(downloadProvider.notifier)
+          .cancel(firstTaskId);
+
+      expect(gateway.cancelledTaskIds, [firstTaskId]);
+      expect(
+        container.read(downloadProvider).tasks.first.status,
+        DownloadStatus.preparing,
+      );
+      expect(gateway.startedTaskIds, hasLength(1));
+
+      await gateway.acknowledgeCancel(firstTaskId);
+      await cancelFuture;
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        container.read(downloadProvider).tasks.first.status,
+        DownloadStatus.cancelled,
+      );
+      expect(gateway.startedTaskIds, hasLength(2));
+    },
+  );
+
+  test('failed native cancel keeps task active and queue blocked', () async {
+    final gateway = _RecordingDownloadGateway();
+    final container = ProviderContainer(
+      overrides: [
+        downloadGatewayProvider.overrideWithValue(gateway),
+        downloadOutputDirectoryProvider.overrideWithValue('/downloads'),
+      ],
+    );
+    addTearDown(() {
+      container.dispose();
+      gateway.dispose();
+    });
+
+    await container
+        .read(downloadProvider.notifier)
+        .enqueueBatch(infos: [_video('one'), _video('two')], format: _format);
+
+    final firstTaskId = gateway.startedTaskIds.single;
+    final cancelFuture = container
+        .read(downloadProvider.notifier)
+        .cancel(firstTaskId);
+    gateway.rejectCancel(firstTaskId);
+
+    expect(await cancelFuture, isFalse);
+    expect(
+      container.read(downloadProvider).tasks.first.status,
+      DownloadStatus.preparing,
+    );
+    expect(container.read(downloadProvider).queuedTasks, hasLength(1));
+    expect(gateway.startedTaskIds, hasLength(1));
+  });
 }
 
 const _format = FormatOption(
@@ -106,9 +181,11 @@ VideoInfo _video(String id) => VideoInfo(
 
 class _RecordingDownloadGateway implements DownloadGateway {
   final List<String> startedTaskIds = [];
+  final List<String> cancelledTaskIds = [];
   final List<StreamController<DownloadTask>> _controllers = [];
   final Map<String, DownloadTask> _tasks = {};
   final Map<String, StreamController<DownloadTask>> _controllersByTask = {};
+  final Map<String, Completer<bool>> _cancelCompleters = {};
 
   @override
   Stream<DownloadTask> download(DownloadTask task, {String? outputDir}) {
@@ -125,6 +202,26 @@ class _RecordingDownloadGateway implements DownloadGateway {
     required String inputPath,
   }) async => const ExtractAudioResult(success: true);
 
+  @override
+  Future<bool> cancel(String taskId) {
+    cancelledTaskIds.add(taskId);
+    final completer = Completer<bool>();
+    _cancelCompleters[taskId] = completer;
+    return completer.future;
+  }
+
+  Future<void> acknowledgeCancel(String taskId) async {
+    final task = _tasks[taskId]!;
+    final controller = _controllersByTask[taskId]!;
+    controller.add(task.copyWith(status: DownloadStatus.cancelled));
+    await controller.close();
+    _cancelCompleters.remove(taskId)!.complete(true);
+  }
+
+  void rejectCancel(String taskId) {
+    _cancelCompleters.remove(taskId)!.complete(false);
+  }
+
   Future<void> complete(String taskId) async {
     final task = _tasks[taskId]!;
     final controller = _controllersByTask[taskId]!;
@@ -140,6 +237,9 @@ class _RecordingDownloadGateway implements DownloadGateway {
 }
 
 class _ThrowingDownloadGateway implements DownloadGateway {
+  @override
+  Future<bool> cancel(String taskId) async => false;
+
   @override
   Stream<DownloadTask> download(DownloadTask task, {String? outputDir}) {
     throw StateError('start failed');

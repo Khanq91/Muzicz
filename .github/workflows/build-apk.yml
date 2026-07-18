@@ -27,6 +27,11 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Setup Python for Chaquopy
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:

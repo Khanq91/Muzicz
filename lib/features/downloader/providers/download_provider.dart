@@ -62,6 +62,7 @@ class DownloadNotifier extends Notifier<DownloadState> {
 
   /// Map taskId → StreamSubscription (để cancel)
   final Map<String, StreamSubscription<DownloadTask>> _subs = {};
+  final Map<String, Future<bool>> _cancellations = {};
   // final Map<String, FakeProgress> _fakeMap = {};
 
   @override
@@ -124,25 +125,26 @@ class DownloadNotifier extends Notifier<DownloadState> {
     _processQueue();
   }
 
-  /// Hủy một task đang chạy hoặc đang xếp hàng
-  void cancel(String taskId) {
+  /// Hủy task queued ngay hoặc chờ native xác nhận task active đã dừng.
+  Future<bool> cancel(String taskId) {
     final task = _findTask(taskId);
-    if (task == null || !task.canCancel) return;
-    //Hủy FAKE PROCESS
-    // _fakeMap[taskId]?.dispose();
-    // _fakeMap.remove(taskId);
+    if (task == null || !task.canCancel) return Future.value(false);
 
-    // Kill process nếu đang chạy
-    task.process?.kill(ProcessSignal.sigterm);
+    if (task.status == DownloadStatus.queued) {
+      _updateTask(taskId, (t) => t.copyWith(status: DownloadStatus.cancelled));
+      _processQueue();
+      return Future.value(true);
+    }
 
-    // Hủy subscription
-    _subs[taskId]?.cancel();
-    _subs.remove(taskId);
+    return _cancellations.putIfAbsent(taskId, () => _cancelActive(taskId));
+  }
 
-    _updateTask(taskId, (t) => t.copyWith(status: DownloadStatus.cancelled));
-
-    // Xử lý queue tiếp
-    _processQueue();
+  Future<bool> _cancelActive(String taskId) async {
+    try {
+      return await ref.read(downloadGatewayProvider).cancel(taskId);
+    } finally {
+      _cancellations.remove(taskId);
+    }
   }
 
   /// Retry task lỗi

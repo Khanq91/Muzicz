@@ -64,3 +64,21 @@
 - [x] Hoàn tất containment DL-02: đặt `maxConcurrentDownloads = 1`; task tiếp theo chỉ start sau event finished của task hiện tại.
 - [x] Cập nhật DL-01 regression để vẫn chứng minh mỗi task start đúng một lần trong queue tuần tự; targeted test pass 3/3, full suite pass 4/4, analyzer 0 issue.
 - [ ] Chưa triển khai progress/cancellation task-scoped; throughput bị giới hạn có chủ đích. Bước tiếp theo: tạo harness DL-03 trong Phase 0 trước khi thiết kế cancellation xuyên native ở Phase 2.
+
+## [Phase 6] - 2026-07-18 22:52
+- [x] Chẩn đoán CI release fail mới: runner Ubuntu không có build-host Python 3.13 mà Chaquopy runtime 3.13 yêu cầu; lỗi ABI trước đó không còn xuất hiện.
+- [x] Thêm `actions/setup-python@v6` với Python 3.13 trước bước Flutter build; giữ nguyên Chaquopy/Python/package và Gradle toolchain.
+- [x] `flutter build apk --release --no-pub` local pass, tạo APK 77,0 MB; analyzer sạch và full test pass 8/8.
+- [ ] Chưa rerun workflow trên Ubuntu; bước tiếp theo là push/rerun CI để xác nhận `installReleasePythonRequirements` dùng interpreter do `setup-python` cung cấp.
+
+## [Phase 0] - 2026-07-18 22:52
+- [x] Thêm regression harness DL-03; test trước sửa fail vì `DownloadNotifier.cancel` trả `void` và không có native acknowledgement để chờ.
+- [x] Bổ sung MethodChannel contract test cho task ID và điều kiện ACK `accepted && stopped`.
+- [ ] Chưa có Android device measurement cho traffic và tăng trưởng partial file sau cancel.
+
+## [Phase 2] - 2026-07-18 22:52
+- [x] Triển khai cooperative cancellation theo task ID qua Dart → Kotlin → Python; Kotlin giữ download `Job`, Python dùng cancellation event trong progress/postprocessor hook.
+- [x] Task active chỉ chuyển `cancelled` từ response của download sau khi native dừng; cancel thất bại/timeout giữ task active và không cho queue chạy tiếp.
+- [x] Cleanup chỉ nhắm file tạm `.part`, `.ytdl` và fragment cùng basename đã quan sát; không xóa output hoàn chỉnh hoặc quét cả thư mục.
+- [x] Targeted test pass 5/5, MethodChannel test pass 2/2, full suite pass 8/8, analyzer 0 issue và release APK build pass.
+- [ ] Phase 2 còn task-scoped progress; cần device test cancel khi download/merge và xác nhận traffic/file growth dừng trong timeout trước khi tuyên bố runtime hoàn tất.

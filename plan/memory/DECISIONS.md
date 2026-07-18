@@ -44,3 +44,13 @@
 - Chọn containment `maxConcurrentDownloads = 1` vì protocol hiện không truyền task ID và Python chỉ có một progress state; giảm throughput là tradeoff có chủ đích để ngăn progress cross-wire mà không đổi ba layer trong cùng issue.
 - Giữ full task-scoped progress/cancellation cho Phase 2; không thêm task ID nửa vời ở Dart khi Kotlin/Python chưa cùng hỗ trợ.
 - Dùng fake gateway có completion điều khiển được để test cả giới hạn concurrency lẫn việc queue tự start task kế tiếp, thay vì chỉ assert một constant.
+
+## [Phase 6] - 2026-07-18 22:52
+- Setup Python 3.13 rõ ràng trong GitHub Actions thay vì hạ runtime Python hoặc thêm fallback mơ hồ; Chaquopy yêu cầu build-host Python cùng major/minor với app và local runtime 3.13 đã build thành công.
+- Không nâng Gradle/AGP/Kotlin trong fix này; các cảnh báo deprecation không gây failure `installReleasePythonRequirements` và cần migration riêng.
+
+## [Phase 2] - 2026-07-18 22:52
+- Dùng response stream của native download làm source-of-truth cho trạng thái terminal; API cancel chỉ yêu cầu dừng và chờ ACK, không tự sửa UI state trước native.
+- Dedupe cancel lặp theo task ID và giữ concurrency = 1; nếu native không dừng trong 15 giây hoặc Dart không nhận ACK trong 20 giây, task vẫn active để tránh khởi động task kế tiếp khi operation cũ còn chạy.
+- Chọn cooperative flag trong yt-dlp progress/postprocessor hook thay vì chỉ cancel Kotlin coroutine, vì cancel coroutine không ngắt lời gọi Python blocking.
+- Cleanup giới hạn theo filename đã được hook ghi nhận và chỉ xóa artifact tạm; chấp nhận có thể còn artifact không được hook quan sát để tránh xóa nhầm file hoàn chỉnh của user.

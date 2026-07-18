@@ -49,3 +49,15 @@
 - `dart format --output=none --set-exit-if-changed .` vẫn exit 1 với 26 file baseline sẽ đổi; giữ diff constant chỉ ở dòng containment và không format hàng loạt ngoài phạm vi.
 - Chưa chạy app/device thật, chưa quan sát hai download có tốc độ khác nhau và chưa đo throughput trước/sau. Chỉ xác nhận containment bằng fake gateway; không tuyên bố downloader đã được tối ưu runtime.
 - Full test pass 4/4 và analyzer run cuối tại `audit/flutter_analyze.txt` exit 0 với 0 error/warning/info.
+
+## [Phase 6] - 2026-07-18 22:52
+- CI Ubuntu fail tại `:app:installReleasePythonRequirements` với `Couldn't find Python 3.13`; workflow cũ chỉ setup Java và Flutter. Local Windows pass vì máy có Python 3.13 nên không tái hiện cùng môi trường.
+- Release build local sau sửa pass nhưng chưa chứng minh workflow Linux xanh; cần push/rerun GitHub Actions. Cảnh báo Gradle 8.10.2, AGP 8.7.0, Kotlin/Built-in Kotlin vẫn còn và không được che bằng skip-validation.
+
+## [Phase 0] - 2026-07-18 22:52
+- DL-03 regression trước sửa fail lúc compile: `cancelFuture` có type `void`, xác nhận notifier không cung cấp ACK contract.
+
+## [Phase 2] - 2026-07-18 22:52
+- `dart format --output=none --set-exit-if-changed .` cuối vẫn exit 1 với đúng 26 file baseline; file MethodChannel test mới đã được format riêng, không tăng số file lệch chuẩn.
+- Cancellation trong giai đoạn yt-dlp/ffmpeg post-process phụ thuộc thời điểm postprocessor hook trả quyền điều khiển; nếu không dừng trong 15 giây, native trả `stopped=false` và UI giữ task active thay vì báo hủy sai.
+- Chưa chạy Android device/network profiler, chưa xác nhận partial-file cleanup và traffic dừng ngoài runtime thật. Task-scoped progress vẫn chưa triển khai; concurrency tiếp tục bị giới hạn ở 1.
