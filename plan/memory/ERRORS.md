@@ -21,3 +21,22 @@
 ## [Phase 5] - 2026-07-18 21:08
 - Không phát sinh conflict khi tạo report/memory. Thay đổi tracked `git` ở trạng thái deleted đã có trước lượt audit và vẫn được giữ nguyên, không khôi phục hay chỉnh sửa.
 - `audit/flutter_analyze.txt` bị replace là hành vi được yêu cầu của `scripts/flutter_analyze.bat`; run cuối có 0 error, 0 warning, 0 info.
+
+## [Phase 0] - 2026-07-18 21:54
+- `scripts/analyze_codex.bat` được user dẫn không tồn tại; repo thực tế có `scripts/flutter_analyze.bat`, nên dùng script này và đọc `audit/flutter_analyze.txt`.
+- Analyzer baseline trong sandbox timeout 120 giây do Flutter SDK/cache; chạy lại ngoài sandbox theo workaround audit trước thành công, 0 issue. Không kill process hoặc sửa SDK ngoài repo.
+- Regression test trước fix fail đúng dự kiến: expected 2 start nhưng ghi nhận 3 ID, task đầu xuất hiện hai lần. Đây là bằng chứng tự động của DL-01, không phải lỗi môi trường.
+
+## [Phase 1] - 2026-07-18 21:54
+- Analyzer lần đầu sau sửa báo `use_build_context_synchronously` tại navigation vì batch enqueue có `await`; thêm `if (!mounted) return` ngay trước `Navigator`, run kế tiếp sạch.
+- `dart format --output=none --set-exit-if-changed .` exit 1 và báo 26 file sẽ đổi; lệnh không ghi source. Không chạy formatter hàng loạt vì baseline đã lệch và yêu cầu cấm trộn mechanical diff với functional change.
+- Chưa chạy app/device thật, playlist 20 item hoặc đếm native log; chỉ xác nhận nguyên nhân và số lần gateway start bằng fake. Không tuyên bố throughput/runtime đã được tối ưu.
+- Giữ nguyên thay đổi có sẵn ngoài phạm vi: `audit/01-setup-performance-audit.md` đang deleted và `plan/02-report-from-01-performance-audit.md` đang untracked; không khôi phục, xóa hoặc stage.
+
+## [Phase 6] - 2026-07-18 22:09
+- CI failure gốc: `Variant 'debug': Python 3.13 is not available for ABI 'armeabi-v7a'`; dòng `evaluationDependsOn(":app")` chỉ là nơi Gradle báo lỗi cấu hình, không phải root cause.
+- Release build local exit 0 sau 342,6 giây và tạo `build/app/outputs/flutter-apk/app-release.apk`; SHA-256 `EB59A8B31AAA8373135DD3C9DECD6CC1E9393E4CA333820295507835B75A02C2`.
+- Kotlin daemon local báo lỗi incremental cache do source pub cache ở ổ `C:` và project ở ổ `D:`; Gradle fallback vẫn hoàn tất APK. Nếu tái diễn/chặn build, tránh xóa rộng và ưu tiên clean cache build cục bộ hoặc tắt incremental trong bước chẩn đoán riêng.
+- Build vẫn cảnh báo Flutter sắp bỏ Gradle 8.10.2, AGP 8.7.0 và Kotlin hiện dụng; ngoài ra app/plugin cần migration Built-in Kotlin. Không dùng flag skip validation để che cảnh báo.
+- Formatter cuối vẫn exit 1 với 26 Dart file baseline sẽ đổi; chạy `--output=none` nên không ghi source và không format hàng loạt trong fix Gradle này.
+- APK được xác minh local trên Windows, chưa xác nhận workflow Ubuntu/GitHub Actions đã xanh cho đến khi rerun CI.

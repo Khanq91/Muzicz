@@ -270,9 +270,9 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
 
       final entries = widget.selectedEntries;
       if (entries != null && entries.isNotEmpty) {
-        for (final entry in entries) {
-          notifier.enqueue(
-            info: VideoInfo(
+        await notifier.enqueueBatch(
+          infos: entries.map(
+            (entry) => VideoInfo(
               id: entry.id,
               title: entry.title,
               thumbnail: entry.thumbnail,
@@ -284,20 +284,24 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
               uploader: entry.uploader,
               skippedCount: null,
             ),
-            format: format,
-          );
-        }
+          ),
+          format: format,
+        );
       } else {
-        notifier.enqueuePlaylist(
+        await notifier.enqueuePlaylist(
           playlistInfo: widget.videoInfo,
           format: format,
         );
       }
     } else {
       if (_selectedFormat == null) return;
-      notifier.enqueue(info: widget.videoInfo, format: _selectedFormat!);
+      await notifier.enqueue(
+        info: widget.videoInfo,
+        format: _selectedFormat!,
+      );
     }
 
+    if (!mounted) return;
     Navigator.pushNamedAndRemoveUntil(
       context,
       AppRoutes.download,

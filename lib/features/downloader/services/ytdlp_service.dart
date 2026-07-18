@@ -57,7 +57,13 @@ class ExtractAudioResult {
 
 // ── Service ────────────────────────────────────────────────
 
-class YtdlpService {
+abstract interface class DownloadGateway {
+  Stream<DownloadTask> download(DownloadTask task, {String? outputDir});
+
+  Future<ExtractAudioResult> extractAudioNative({required String inputPath});
+}
+
+class YtdlpService implements DownloadGateway {
   YtdlpService._();
   static final YtdlpService instance = YtdlpService._();
 
@@ -133,6 +139,7 @@ class YtdlpService {
   // Bug fix: key name changed từ 'outputPath' → 'outputDir' để match Kotlin
   // Bug fix 4: poll getProgress() thực sự thay vì chỉ dùng FakeProgress
 
+  @override
   Stream<DownloadTask> download(
       DownloadTask task, {
         String? outputDir,
@@ -252,6 +259,7 @@ class YtdlpService {
   // Copy audio track trực tiếp, không re-encode → nhanh, lossless
   // Kết quả: file .m4a cùng thư mục với input
 
+  @override
   Future<ExtractAudioResult> extractAudioNative({
     required String inputPath,
   }) async {

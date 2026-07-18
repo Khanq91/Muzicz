@@ -12,6 +12,14 @@ import '../models/video_info.dart';
 import '../services/downloader_storage_service.dart';
 import '../services/ytdlp_service.dart';
 
+final downloadGatewayProvider = Provider<DownloadGateway>(
+  (ref) => YtdlpService.instance,
+);
+
+final downloadOutputDirectoryProvider = Provider<String>(
+  (ref) => DownloaderStorageService.instance.downloadPath,
+);
+
 // ── State ──────────────────────────────────────────────────
 
 class DownloadState {
@@ -74,17 +82,20 @@ class DownloadNotifier extends Notifier<DownloadState> {
     required VideoInfo info,
     required FormatOption format,
   }) async {
-    final task = DownloadTask(
-      id: _uuid.v4(),
-      title: info.title,
-      url: info.url,
-      formatId: format.formatId,
-      ext: format.ext,
-      thumbnail: info.thumbnail,
-      status: DownloadStatus.queued,
-    );
+    _addTask(_createTask(info: info, format: format));
+    _processQueue();
+  }
 
-    _addTask(task);
+  /// Thêm nhiều video và chỉ process queue sau khi toàn bộ task đã được tạo.
+  Future<void> enqueueBatch({
+    required Iterable<VideoInfo> infos,
+    required FormatOption format,
+  }) async {
+    final tasks = [
+      ...state.tasks,
+      for (final info in infos) _createTask(info: info, format: format),
+    ];
+    state = state.copyWith(tasks: tasks);
     _processQueue();
   }
 
@@ -180,6 +191,20 @@ class DownloadNotifier extends Notifier<DownloadState> {
   }
 
   void _startDownload(DownloadTask task) {
+    if (_subs.containsKey(task.id)) return;
+
+    final currentTask = _findTask(task.id);
+    if (currentTask == null || currentTask.status != DownloadStatus.queued) {
+      return;
+    }
+
+    // Reserve đồng bộ trước khi mở stream để lần process queue kế tiếp
+    // không thể chọn lại cùng task trong lúc chờ event bất đồng bộ đầu tiên.
+    _updateTask(
+      task.id,
+      (current) => current.copyWith(status: DownloadStatus.preparing),
+    );
+
     // START: FAKE PROCESS ---------------------------------------------
     // final fake = FakeProgress();
     // fake.start((progress) {
@@ -191,10 +216,23 @@ class DownloadNotifier extends Notifier<DownloadState> {
     // _fakeMap[task.id] = fake;
     // END: FAKE PROCESS  ---------------------------------------------
 
-    final stream = YtdlpService.instance.download(
-      task,
-      outputDir: DownloaderStorageService.instance.downloadPath,
-    );
+    late final Stream<DownloadTask> stream;
+    try {
+      stream = ref.read(downloadGatewayProvider).download(
+        task,
+        outputDir: ref.read(downloadOutputDirectoryProvider),
+      );
+    } catch (error) {
+      _updateTask(
+        task.id,
+        (current) => current.copyWith(
+          status: DownloadStatus.error,
+          errorMessage: 'Không thể bắt đầu tải: $error',
+        ),
+      );
+      _processQueue();
+      return;
+    }
 
     final sub = stream.listen(
       (updatedTask) async {
@@ -304,7 +342,9 @@ class DownloadNotifier extends Notifier<DownloadState> {
       ),
     );
 
-    final result = await YtdlpService.instance.extractAudioNative(
+    final result = await ref
+        .read(downloadGatewayProvider)
+        .extractAudioNative(
       inputPath: task.outputPath!,
     );
 
@@ -397,6 +437,21 @@ class DownloadNotifier extends Notifier<DownloadState> {
   // }
 
   // ── Task CRUD helpers ──────────────────────────────────
+
+  DownloadTask _createTask({
+    required VideoInfo info,
+    required FormatOption format,
+  }) {
+    return DownloadTask(
+      id: _uuid.v4(),
+      title: info.title,
+      url: info.url,
+      formatId: format.formatId,
+      ext: format.ext,
+      thumbnail: info.thumbnail,
+      status: DownloadStatus.queued,
+    );
+  }
 
   void _addTask(DownloadTask task) {
     state = state.copyWith(tasks: [...state.tasks, task]);

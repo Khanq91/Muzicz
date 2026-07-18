@@ -25,3 +25,17 @@
 ## [Phase 5] - 2026-07-18 21:08
 - Xếp correctness và release safety trước micro-optimization: duplicate download, global progress, cancel giả, queue lệch và debug signing nằm trước các chỉnh sửa `const`, builder hoặc image cache.
 - Giữ lượt này audit-only theo điểm dừng của plan: chỉ thay report/memory/analyze log, không tự triển khai quick win hay refactor source khi user chưa duyệt thứ tự.
+
+## [Phase 0] - 2026-07-18 21:54
+- Chỉ tạo seam tại biên I/O cần fake: `DownloadGateway` và provider output directory. Không abstract toàn bộ downloader/storage vì DL-01 chỉ cần quan sát số lần start và không cần thay kiến trúc feature.
+- Theo xác nhận của user, ghép regression harness DL-01 với fix Phase 1 trong cùng session để chứng minh test đỏ trước sửa và giữ suite xanh khi kết thúc.
+
+## [Phase 1] - 2026-07-18 21:54
+- Reserve task trong state trước khi tạo/listen stream, thay vì chờ event `preparing`; state đồng bộ là source-of-truth khiến lần `_processQueue` kế tiếp không chọn lại task cũ.
+- Giữ thêm guard `_subs.containsKey` và kiểm tra trạng thái `queued` như defense-in-depth; nếu gateway ném đồng bộ, chuyển task sang `error` rồi tiếp tục queue để tránh kẹt `preparing`.
+- Thêm `enqueueBatch` cho selected playlist để tạo toàn bộ task rồi process một lần; giữ `enqueue`/`enqueuePlaylist` cũ để không phá public API hoặc behavior caller khác.
+
+## [Phase 6] - 2026-07-18 22:09
+- Giữ Python 3.13 và ABI intent hiện có (`arm64-v8a`, `x86_64`), dùng `clear()` + `addAll()` theo migration của Flutter 3.35+; không hạ Python để giữ `armeabi-v7a` vì cấu hình repo đã chủ động loại ABI này.
+- Không nâng Gradle 8.10.2, AGP 8.7.0 hoặc Kotlin trong cùng fix build; đây là migration dependency có matrix/rủi ro riêng và các phiên bản hiện tại vẫn build thành công.
+- Loại hai flag `android.builtInKotlin=false`/`android.newDsl=false` mà Flutter migrator tự thêm khi build local để không trộn mutation generated ngoài phạm vi vào diff.

@@ -37,3 +37,20 @@
 - [x] Tạo `audit/01-setup-performance-audit.md` gồm 36 finding, Top 10 theo công thức của plan, Phase 0–6, quick wins, việc không nên làm và manual validation.
 - [x] Kiểm tra cuối: đủ các trường bắt buộc cho từng finding; Git chỉ có report/memory/analyze log của lượt này ngoài thay đổi ` D git` có sẵn từ trước.
 - [x] Trạng thái hiện tại: Phase 1–5 của audit hoàn tất và dừng trước khi refactor source theo yêu cầu plan; bước tiếp theo là user duyệt ưu tiên rồi mới triển khai Phase 0/1.
+
+## [Phase 0] - 2026-07-18 21:54
+- [x] Đọc lại audit, toàn bộ code/test liên quan DL-01 và ghi baseline: analyzer 0 issue; test cũ pass 1/1.
+- [x] Thêm seam tối thiểu `DownloadGateway` cùng Riverpod override cho gateway/output directory; không thay package hoặc public protocol native.
+- [x] Thêm regression test tái hiện DL-01: hai lần enqueue liên tiếp tạo 3 download start và lặp task ID đầu trước khi sửa.
+- [ ] Phase 0 còn dang dở: chưa có harness cho DL-02/03, PLAY-01, LIFE-01, STATE-01; chưa có profile baseline trên thiết bị thật.
+
+## [Phase 1] - 2026-07-18 21:54
+- [x] Hoàn tất DL-01: reserve task sang `preparing` đồng bộ, guard subscription/trạng thái, bắt lỗi start đồng bộ và enqueue selected playlist theo batch trước khi process queue.
+- [x] Regression test sau sửa pass 2/2; toàn suite pass 3/3; `scripts/flutter_analyze.bat` exit 0 với 0 error/warning/info.
+- [ ] Chưa xác nhận manual playlist 20 item/native call trên thiết bị; bước tiếp theo là quay lại Phase 0 tạo harness cho DL-02 rồi triển khai containment concurrency = 1 của Phase 1 trong một issue riêng.
+
+## [Phase 6] - 2026-07-18 22:09
+- [x] Chẩn đoán CI release build: Flutter 3.44 tự thêm `armeabi-v7a`, còn cấu hình `abiFilters +=` chỉ bổ sung chứ không xóa ABI; Chaquopy Python 3.13 không hỗ trợ ABI 32-bit này.
+- [x] Sửa `defaultConfig.ndk` bằng `abiFilters.clear()` rồi chỉ thêm `arm64-v8a` và `x86_64`; không đổi Python/package hoặc nâng Gradle toolchain.
+- [x] `flutter build apk --release --no-pub` exit 0, tạo APK 80.706.719 byte; kiểm tra archive chỉ có `arm64-v8a`, `x86_64`. Analyzer 0 issue và test pass 3/3.
+- [ ] Chưa rerun GitHub Actions trên Linux; bước tiếp theo là push/rerun workflow và xử lý nâng Gradle/AGP/Kotlin ở issue độc lập trước khi Flutter bỏ hỗ trợ phiên bản hiện tại.
