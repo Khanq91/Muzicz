@@ -69,3 +69,8 @@
 - Dùng move/remove trực tiếp trên `ConcatenatingAudioSource` thay vì clear/reload playlist để không chủ động ngắt bài đang phát; cập nhật mirror `_currentSongs` chỉ sau khi operation engine thành công.
 - Tái sử dụng `_isReordering` để bỏ qua index stream và mutation queue thứ hai trong cửa sổ async ngắn; tradeoff là thao tác người dùng lặp cực nhanh có thể bị bỏ qua, nhưng tránh hai mutation dùng index cũ chạy chồng nhau.
 - Clear history index sau remove/reorder vì các index cũ không còn ổn định; phần thiết kế history theo track ID/central track-change vẫn để issue Phase 3 riêng.
+
+## [Phase 3] - 2026-07-19 00:08
+- Giữ ownership `MuzicAudioHandler` ở app root vì audio/background playback phải sống lâu hơn `PlayerProvider`; provider chỉ cancel các subscription và timer do chính nó tạo, không dispose audio engine.
+- Dùng một `_applyCurrentIndex` cho cả seek chủ động và event auto-next; cờ `_isChangingTrack` chặn event đồng bộ trong lúc seek, còn kiểm tra song ID loại event đến muộn, nhờ đó mỗi transition chỉ thêm history một lần.
+- Giữ history theo index trong issue này để không mở rộng schema/public API; queue remove/reorder đã clear history nên index còn hợp lệ giữa các mutation queue.

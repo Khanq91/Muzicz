@@ -78,3 +78,9 @@
 - Analyzer đầu sau khi thêm gateway báo 15 `annotate_overrides`; thêm annotation vào implementation thay vì disable lint, analyzer cuối sạch 0 error/warning/info.
 - Format-check tạm tăng từ 26 lên 27 file do test mới; format riêng `test/providers/player_provider_test.dart` đưa kết quả cuối về baseline 26/68 file. Không format hàng loạt hai file production vốn đã lệch chuẩn.
 - Chưa chạy app/device thật nên chưa xác nhận semantics runtime của just_audio khi remove bài đang phát, background playback, notification/headset controls hoặc event timing thực; unit fake chỉ chứng minh orchestration/index contract trong Dart.
+
+## [Phase 3] - 2026-07-19 00:08
+- Baseline Flutter chạy song song trong sandbox làm hai wrapper tranh SDK/cache và để lại tiến trình Dart con; đã dừng đúng PID do lượt này tạo. Lần chạy tiếp vẫn kẹt vì Dart telemetry cần ghi ngoài workspace; workaround là chạy Flutter ngoài sandbox và chạy Dart trực tiếp với `--suppress-analytics`.
+- Targeted timer test lần đầu fail vì Flutter test kiểm tra pending timer trước `tearDown`; thêm cleanup timer ngay trong test fixture, sau đó targeted pass 10/10. Đây không phải lỗi production.
+- `dart format --output=none --set-exit-if-changed .` cuối vẫn exit 1 với baseline 26/68 file; không format hàng loạt. Analyzer log cuối tại `audit/flutter_analyze.txt` exit 0, 0 error/warning/info; full test pass 19/19.
+- Chưa chạy Android device/DevTools nên chưa xác nhận retaining path, callback sau dispose trong runtime thật, background playback hoặc notification/headset controls; automated test chỉ xác nhận Dart lifecycle và orchestration.

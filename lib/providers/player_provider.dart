@@ -38,6 +38,7 @@ class PlayerProvider extends ChangeNotifier {
   final List<int> _historyStack = [];
 
   bool _isReordering = false;
+  bool _isChangingTrack = false;
 
   // ── Playback speed ─────────────────────────────────────────────────────────
 
@@ -53,6 +54,7 @@ class PlayerProvider extends ChangeNotifier {
   // ── Sleep timer ────────────────────────────────────────────────────────────
 
   Timer? _sleepTimer;
+  Timer? _countdownTimer;
   DateTime? _sleepEndTime;
 
   /// null = không bật; Duration.zero = đã hết
@@ -66,21 +68,20 @@ class PlayerProvider extends ChangeNotifier {
 
   void setSleepTimer(Duration duration) {
     _sleepTimer?.cancel();
+    _countdownTimer?.cancel();
     _sleepEndTime = DateTime.now().add(duration);
 
     _sleepTimer = Timer(duration, () {
-      _handler.pause();
+      unawaited(_handler.pause());
       _sleepEndTime = null;
       _sleepTimer = null;
+      _countdownTimer?.cancel();
+      _countdownTimer = null;
       notifyListeners();
     });
 
     // Tick mỗi giây để UI cập nhật countdown
-    Timer.periodic(const Duration(seconds: 1), (t) {
-      if (_sleepEndTime == null) {
-        t.cancel();
-        return;
-      }
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       notifyListeners();
     });
 
@@ -89,33 +90,34 @@ class PlayerProvider extends ChangeNotifier {
 
   void cancelSleepTimer() {
     _sleepTimer?.cancel();
+    _countdownTimer?.cancel();
     _sleepTimer = null;
+    _countdownTimer = null;
     _sleepEndTime = null;
     notifyListeners();
   }
 
   // ── Listen to audio handler ────────────────────────────────────────────────
 
+  late final StreamSubscription<bool> _playingSubscription;
+  late final StreamSubscription<int?> _currentIndexSubscription;
+  late final StreamSubscription<ProcessingState> _processingStateSubscription;
+
   void _listenToHandler() {
-    _handler.playingStream.listen((playing) {
+    _playingSubscription = _handler.playingStream.listen((playing) {
       _isPlaying = playing;
       notifyListeners();
     });
 
-    _handler.currentIndexStream.listen((index) {
-      if (_isReordering) return;
+    _currentIndexSubscription = _handler.currentIndexStream.listen((index) {
+      if (_isReordering || _isChangingTrack) return;
 
-      if (index != null && index < _playQueue.length) {
-        if (_playQueue[index].id != (_currentSong?.id ?? -1)) {
-          _historyStack.add(_currentPlayIndex);
-          _currentPlayIndex = index;
-          _currentSong = _playQueue[index];
-          notifyListeners();
-        }
-      }
+      if (index != null) _applyCurrentIndex(index);
     });
 
-    _handler.processingStateStream.listen((state) {
+    _processingStateSubscription = _handler.processingStateStream.listen((
+      state,
+    ) {
       if (state == ProcessingState.completed) {
         _onPlaylistEnded();
       }
@@ -213,32 +215,22 @@ class PlayerProvider extends ChangeNotifier {
   Future<void> skipToNext() async {
     if (_playQueue.isEmpty) return;
 
-    _historyStack.add(_currentPlayIndex);
-
     final nextIndex = _currentPlayIndex + 1;
 
-    if (nextIndex >= _playQueue.length) {
-      _historyStack.removeLast();
-      return;
-    }
+    if (nextIndex >= _playQueue.length) return;
 
-    await _handler.seekToIndex(nextIndex);
-    _currentPlayIndex = nextIndex;
-    _currentSong = _playQueue[_currentPlayIndex];
+    await _seekToIndex(nextIndex);
     await _handler.play();
-    notifyListeners();
   }
 
   Future<void> skipToPrevious() async {
     if (_playQueue.isEmpty) return;
 
     if (_historyStack.isNotEmpty) {
-      final prevIndex = _historyStack.removeLast();
-      _currentPlayIndex = prevIndex;
-      _currentSong = _playQueue[_currentPlayIndex];
-      await _handler.seekToIndex(_currentPlayIndex);
+      final prevIndex = _historyStack.last;
+      await _seekToIndex(prevIndex, recordHistory: false);
+      _historyStack.removeLast();
       await _handler.play();
-      notifyListeners();
     } else {
       await _handler.seek(Duration.zero);
     }
@@ -246,12 +238,8 @@ class PlayerProvider extends ChangeNotifier {
 
   Future<void> skipToIndex(int index) async {
     if (index < 0 || index >= _playQueue.length) return;
-    _historyStack.add(_currentPlayIndex);
-    _currentPlayIndex = index;
-    _currentSong = _playQueue[index];
-    await _handler.seekToIndex(index);
+    await _seekToIndex(index);
     await _handler.play();
-    notifyListeners();
   }
 
   // ── Shuffle ───────────────────────────────────────────────────────────────
@@ -442,9 +430,38 @@ class PlayerProvider extends ChangeNotifier {
     await _handler.loadSongs(_playQueue, initialIndex: startIndex);
   }
 
+  Future<void> _seekToIndex(int index, {bool recordHistory = true}) async {
+    _isChangingTrack = true;
+    try {
+      await _handler.seekToIndex(index);
+      _applyCurrentIndex(index, recordHistory: recordHistory);
+    } finally {
+      _isChangingTrack = false;
+    }
+  }
+
+  void _applyCurrentIndex(int index, {bool recordHistory = true}) {
+    if (index < 0 || index >= _playQueue.length) return;
+    if (_playQueue[index].id == _currentSong?.id) return;
+
+    if (recordHistory && _currentSong != null) {
+      _historyStack.add(_currentPlayIndex);
+    }
+    _currentPlayIndex = index;
+    _currentSong = _playQueue[index];
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     _sleepTimer?.cancel();
+    _countdownTimer?.cancel();
+    _sleepTimer = null;
+    _countdownTimer = null;
+    _sleepEndTime = null;
+    unawaited(_playingSubscription.cancel());
+    unawaited(_currentIndexSubscription.cancel());
+    unawaited(_processingStateSubscription.cancel());
     super.dispose();
   }
 }

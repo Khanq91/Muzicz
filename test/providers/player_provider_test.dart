@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:muziczz/models/song_item.dart';
@@ -13,8 +15,9 @@ void main() {
     provider = PlayerProvider(gateway);
   });
 
-  tearDown(() {
+  tearDown(() async {
     provider.dispose();
+    await gateway.dispose();
   });
 
   test(
@@ -94,6 +97,61 @@ void main() {
     expect(provider.currentSong?.id, 2);
     expect(gateway.currentSong?.id, 2);
   });
+
+  testWidgets('resetting sleep timer keeps a single countdown ticker', (
+    tester,
+  ) async {
+    var notifications = 0;
+    provider.addListener(() => notifications++);
+
+    provider.setSleepTimer(const Duration(minutes: 1));
+    await tester.pump(const Duration(seconds: 1));
+    provider.setSleepTimer(const Duration(minutes: 2));
+    notifications = 0;
+
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(notifications, 1);
+    provider.cancelSleepTimer();
+  });
+
+  test('disposing provider cancels every audio stream subscription', () async {
+    final ownedGateway = _FakePlayerAudioGateway();
+    final ownedProvider = PlayerProvider(ownedGateway);
+
+    ownedProvider.dispose();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(ownedGateway.cancelledSubscriptions, 3);
+    await ownedGateway.dispose();
+  });
+
+  test(
+    'manual next records one history entry regardless of stream timing',
+    () async {
+      gateway.emitIndexOnSeek = true;
+      await provider.playSongs([_song(1), _song(2), _song(3)]);
+
+      await provider.skipToNext();
+      await provider.skipToPrevious();
+      await provider.skipToPrevious();
+
+      expect(gateway.seekToIndexCalls, [1, 0]);
+      expect(gateway.seekCalls, [Duration.zero]);
+    },
+  );
+
+  test('automatic index changes record each track transition once', () async {
+    await provider.playSongs([_song(1), _song(2), _song(3)]);
+
+    gateway.emitCurrentIndex(1);
+    gateway.emitCurrentIndex(1);
+    await provider.skipToPrevious();
+    await provider.skipToPrevious();
+
+    expect(gateway.seekToIndexCalls, [0]);
+    expect(gateway.seekCalls, [Duration.zero]);
+  });
 }
 
 SongItem _song(int id) => SongItem(
@@ -109,9 +167,38 @@ SongItem _song(int id) => SongItem(
 
 class _FakePlayerAudioGateway implements PlayerAudioGateway {
   final List<SongItem> queue = [];
+  final List<int> seekToIndexCalls = [];
+  final List<Duration> seekCalls = [];
+  final _playingController = StreamController<bool>.broadcast();
+  final _currentIndexController = StreamController<int?>.broadcast();
+  final _processingStateController =
+      StreamController<ProcessingState>.broadcast();
   int? currentIndex;
   bool failMove = false;
   bool failRemove = false;
+  bool emitIndexOnSeek = false;
+  int cancelledSubscriptions = 0;
+
+  _FakePlayerAudioGateway() {
+    _playingController.onCancel = _recordCancellation;
+    _currentIndexController.onCancel = _recordCancellation;
+    _processingStateController.onCancel = _recordCancellation;
+  }
+
+  void _recordCancellation() => cancelledSubscriptions++;
+
+  void emitCurrentIndex(int index) {
+    currentIndex = index;
+    _currentIndexController.add(index);
+  }
+
+  Future<void> dispose() async {
+    await Future.wait([
+      _playingController.close(),
+      _currentIndexController.close(),
+      _processingStateController.close(),
+    ]);
+  }
 
   SongItem? get currentSong =>
       currentIndex == null || queue.isEmpty ? null : queue[currentIndex!];
@@ -170,10 +257,14 @@ class _FakePlayerAudioGateway implements PlayerAudioGateway {
   Future<void> play() async {}
 
   @override
-  Future<void> seek(Duration position) async {}
+  Future<void> seek(Duration position) async => seekCalls.add(position);
 
   @override
-  Future<void> seekToIndex(int index) async => currentIndex = index;
+  Future<void> seekToIndex(int index) async {
+    seekToIndexCalls.add(index);
+    currentIndex = index;
+    if (emitIndexOnSeek) _currentIndexController.add(index);
+  }
 
   @override
   Future<void> setLoopMode(LoopMode mode) async {}
@@ -188,10 +279,10 @@ class _FakePlayerAudioGateway implements PlayerAudioGateway {
   Future<void> stop() async {}
 
   @override
-  Stream<int?> get currentIndexStream => const Stream<int?>.empty();
+  Stream<int?> get currentIndexStream => _currentIndexController.stream;
 
   @override
-  Stream<bool> get playingStream => const Stream<bool>.empty();
+  Stream<bool> get playingStream => _playingController.stream;
 
   @override
   Stream<PositionData> get positionDataStream =>
@@ -199,5 +290,5 @@ class _FakePlayerAudioGateway implements PlayerAudioGateway {
 
   @override
   Stream<ProcessingState> get processingStateStream =>
-      const Stream<ProcessingState>.empty();
+      _processingStateController.stream;
 }

@@ -101,3 +101,10 @@
 - [x] Thêm 6 regression test cho remove, reorder, failure atomicity và current-song behavior; targeted pass 6/6, full suite pass 15/15, analyzer 0 issue.
 - [x] Tăng app version từ `1.0.0+1` lên `1.0.0+2`; format-check cuối trở về baseline 26/68 file sau khi format riêng test mới.
 - [ ] Chưa xác nhận manual background playback/headset/notification hoặc queue sheet trên Android device. Bước tiếp theo: device-check A/B/C remove/reorder/skip, rồi xử lý timer/subscription/history của Phase 3 như issue độc lập.
+
+## [Phase 3] - 2026-07-19 00:08
+- [x] Đọc lại finding PERF-01, toàn bộ `PlayerProvider`, audio gateway/composition và test playback; xác nhận periodic timer không có handle, ba stream subscription không được cancel và history có hai writer cạnh tranh.
+- [x] Giữ/cancel riêng one-shot timer và countdown timer; lưu/cancel ba audio subscription khi dispose; tập trung cập nhật current track/history qua một helper chống ghi trùng giữa lệnh seek và `currentIndexStream`.
+- [x] Thêm 4 regression test cho reset countdown, dispose subscription, manual seek và auto-next history; targeted pass 10/10, full suite pass 19/19, analyzer 0 issue.
+- [x] Tăng app version từ `1.0.0+2` lên `1.0.0+3`; format-check cuối vẫn fail đúng baseline 26/68 file và không format hàng loạt ngoài phạm vi.
+- [ ] Chưa đo retaining path/timer callback bằng DevTools hoặc kiểm tra background playback/headset/notification trên thiết bị thật. Bước tiếp theo: manual validation toàn Phase 3, sau đó quay về Phase 0 tạo harness LIFE-01 hoặc STATE-01 theo kế hoạch.
