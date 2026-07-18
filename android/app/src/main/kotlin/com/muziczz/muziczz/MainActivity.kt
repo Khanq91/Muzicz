@@ -29,6 +29,12 @@ class MainActivity : AudioServiceFragmentActivity() {
     private val YTDLP_CHANNEL = "ytdlp_channel"
     private val activityScope  = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val activeDownloadJobs = ConcurrentHashMap<String, Job>()
+    private val ytdlpModule by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+        if (!Python.isStarted()) {
+            Python.start(AndroidPlatform(applicationContext))
+        }
+        Python.getInstance().getModule("ytdlp_bridge")
+    }
 
     override fun onDestroy() {
         super.onDestroy()
@@ -37,14 +43,6 @@ class MainActivity : AudioServiceFragmentActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-
-        // Khởi tạo Chaquopy một lần duy nhất
-        if (!Python.isStarted()) {
-            Python.start(AndroidPlatform(this))
-        }
-
-        val py     = Python.getInstance()
-        val module = py.getModule("ytdlp_bridge")
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, YTDLP_CHANNEL)
             .setMethodCallHandler { call, result ->
@@ -91,7 +89,7 @@ class MainActivity : AudioServiceFragmentActivity() {
                         val url = call.argument<String>("url") ?: ""
                         activityScope.launch {
                             try {
-                                val res = module.callAttr("analyze", url).toString()
+                                val res = ytdlpModule.callAttr("analyze", url).toString()
                                 withContext(Dispatchers.Main) { result.success(res) }
                             } catch (e: Exception) {
                                 withContext(Dispatchers.Main) {
@@ -118,7 +116,7 @@ class MainActivity : AudioServiceFragmentActivity() {
 
                         val job = activityScope.launch(start = CoroutineStart.LAZY) {
                             try {
-                                val res = module.callAttr(
+                                val res = ytdlpModule.callAttr(
                                     "download",
                                     taskId,
                                     url,
@@ -151,7 +149,7 @@ class MainActivity : AudioServiceFragmentActivity() {
 
                         activityScope.launch {
                             try {
-                                val accepted = module.callAttr("cancel_download", taskId)
+                                val accepted = ytdlpModule.callAttr("cancel_download", taskId)
                                     .toString() == "True"
                                 val stopped = accepted && withTimeoutOrNull(15_000) {
                                     job.join()
@@ -179,7 +177,7 @@ class MainActivity : AudioServiceFragmentActivity() {
                         }
                         activityScope.launch {
                             try {
-                                val res = module.callAttr("get_progress", taskId).toString()
+                                val res = ytdlpModule.callAttr("get_progress", taskId).toString()
                                 withContext(Dispatchers.Main) { result.success(res) }
                             } catch (e: Exception) {
                                 withContext(Dispatchers.Main) {
@@ -193,7 +191,7 @@ class MainActivity : AudioServiceFragmentActivity() {
                         val url = call.argument<String>("url") ?: ""
                         activityScope.launch {
                             try {
-                                val res = module.callAttr("get_playlist_entries", url).toString()
+                                val res = ytdlpModule.callAttr("get_playlist_entries", url).toString()
                                 withContext(Dispatchers.Main) { result.success(res) }
                             } catch (e: Exception) {
                                 withContext(Dispatchers.Main) {

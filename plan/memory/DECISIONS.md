@@ -84,3 +84,8 @@
 - Dùng `AnalyzeGateway` rất nhỏ tại biên MethodChannel để test orchestration mà không thay package, public native protocol hoặc state management hiện tại.
 - Mỗi lần URL/reset/analyze tăng revision; chỉ response có revision hiện hành được commit. Cách này không hủy native request nhưng ngăn response đến muộn làm sai UI với chi phí và phạm vi nhỏ.
 - Xóa result/error ngay khi chuỗi URL thực sự thay đổi và dùng sentinel cho field nullable trong `copyWith`; tradeoff là card cũ biến mất khi user sửa typo, đổi lại UI không bao giờ ghép URL mới với metadata cũ.
+
+## [Phase 4] - 2026-07-19 00:47
+- Dùng Kotlin `lazy(LazyThreadSafetyMode.SYNCHRONIZED)` cho `ytdlp_bridge` thay vì khởi tạo trong `configureFlutterEngine`; downloader call đầu tiên chịu init cost, các call đồng thời dùng chung một initializer và module được cache sau khi thành công.
+- Giữ lazy property trong `MainActivity` thay vì thêm service/package mới vì lifecycle hiện tại đã gắn MethodChannel với activity; exception khởi tạo tiếp tục được map qua error code hiện có của từng method.
+- Giữ regression test ở mức architectural invariant vì repo chưa có Android unit-test harness; test chứng minh cold-start setup không tham chiếu Python, nhưng không thay thế Macrobenchmark/runtime validation.

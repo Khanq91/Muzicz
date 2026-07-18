@@ -101,3 +101,9 @@
 - Formatter targeted ban đầu làm lộ mechanical diff lớn trong `ytdlp_service.dart` vốn lệch baseline; đã loại toàn bộ formatting noise và chỉ giữ seam/annotation thuộc issue.
 - Chưa chạy Android device/network thật nên chưa xác nhận UX khi request native A vẫn tiếp tục chạy nền sau khi URL đổi; revision guard chỉ đảm bảo response cũ không được commit vào UI.
 - Final format-check exit 1 với 24/69 file baseline sẽ đổi; analyzer cuối tại `audit/flutter_analyze.txt` sạch và full suite pass 25/25.
+
+## [Phase 4] - 2026-07-19 00:47
+- Analyzer baseline trong sandbox tiếp tục treo do Flutter SDK/cache ngoài workspace; dừng đúng wrapper của session và chạy ngoài sandbox thành công với 0 issue. `scripts/analyze_codex.bat` vẫn không tồn tại nên dùng `scripts/flutter_analyze.bat`.
+- Debug APK build pass; vẫn còn cảnh báo sẵn có về Gradle 8.10.2, AGP 8.7.0, Kotlin 2.0.0 và migration Built-in Kotlin. Không nâng toolchain trong START-02.
+- Final `dart format --output=none --set-exit-if-changed .` exit 1 với 24/70 file baseline sẽ đổi; test mới đã được format riêng, không format hàng loạt ngoài phạm vi. Analyzer cuối sạch và full suite pass 26/26.
+- Chưa chạy app/Macrobenchmark/Perfetto trên Android device; thay đổi chỉ loại Python init khỏi cold-start code path theo structural test, chưa chứng minh số mili-giây cải thiện hoặc first-use downloader runtime.

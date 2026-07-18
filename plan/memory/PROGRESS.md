@@ -128,3 +128,10 @@
 - [x] Targeted test sau sửa pass 3/3; full suite pass 25/25; analyzer cuối 0 issue; tăng app version từ `1.0.0+4` lên `1.0.0+5`.
 - [x] Final format-check không ghi file exit 1 với baseline 24/69 file sẽ đổi; không format hàng loạt ngoài phạm vi.
 - [ ] Chưa manual analyze A/B với mạng thật. Bước tiếp theo: chuyển sang Phase 4 theo kế hoạch, bắt đầu bằng measurement START-01/START-02 trong issue riêng.
+
+## [Phase 4] - 2026-07-19 00:47
+- [x] Đọc lại finding/kế hoạch START-02, toàn bộ `MainActivity.kt`, Python bridge, Android build config và test hiện có; baseline analyzer 0 issue, full suite pass 25/25.
+- [x] Thêm regression test bảo vệ cold-start path; test đỏ trước sửa vì `configureFlutterEngine` gọi `Python.start/getModule` và xanh sau sửa.
+- [x] Hoàn tất START-02 về mặt code: chuyển Chaquopy/module sang lazy init đồng bộ ở downloader call đầu tiên; debug APK build pass và tăng app version từ `1.0.0+5` lên `1.0.0+6`.
+- [x] Kiểm chứng cuối: targeted test pass 1/1, full suite pass 26/26, analyzer 0 issue; format-check giữ baseline 24/70 file sẽ đổi và không ghi source.
+- [ ] Chưa có Macrobenchmark/Perfetto hoặc device test cold start/downloader-first-use, nên chưa định lượng latency. Bước tiếp theo: đo START-02 trên Android device hoặc xử lý START-01 parallel/minimum splash như issue Phase 4 độc lập.

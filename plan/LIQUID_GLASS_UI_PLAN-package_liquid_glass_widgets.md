@@ -99,7 +99,7 @@ Nguyên tắc chính: user chọn theme/quality trong Settings, app lưu cấu h
 ### Setup
 - Dependency:
   ```yaml
-  liquid_glass_widgets: ^0.19.1
+  liquid_glass_widgets: ^0.19.1 (dùng Latest version nếu có version cao hơn)
   ```
 - `main()`:
   ```dart
