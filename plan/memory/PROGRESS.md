@@ -108,3 +108,15 @@
 - [x] Thêm 4 regression test cho reset countdown, dispose subscription, manual seek và auto-next history; targeted pass 10/10, full suite pass 19/19, analyzer 0 issue.
 - [x] Tăng app version từ `1.0.0+2` lên `1.0.0+3`; format-check cuối vẫn fail đúng baseline 26/68 file và không format hàng loạt ngoài phạm vi.
 - [ ] Chưa đo retaining path/timer callback bằng DevTools hoặc kiểm tra background playback/headset/notification trên thiết bị thật. Bước tiếp theo: manual validation toàn Phase 3, sau đó quay về Phase 0 tạo harness LIFE-01 hoặc STATE-01 theo kế hoạch.
+
+## [Phase 0] - 2026-07-19 00:27
+- [x] Đọc lại toàn bộ root composition, downloader bridge/router, network provider/service và test hiện có; baseline analyzer 0 issue và full suite pass 19/19.
+- [x] Thêm regression harness LIFE-01 cho ownership service theo Riverpod container, recreate service sau dispose và contract giữ `RouteSettings.name` của downloader.
+- [ ] Phase 0 vẫn thiếu harness STATE-01 và profile/device baseline; chưa có automated widget test cho toàn bộ back stack thật.
+
+## [Phase 1] - 2026-07-19 00:27
+- [x] Hoàn tất LIFE-01: xóa nested `ProviderScope`/`MaterialApp`, mở `/dl/analyze` qua navigator gốc và giữ tên route cho `pushNamedAndRemoveUntil`.
+- [x] Thay singleton `NetworkService.instance` bằng instance do `networkServiceProvider` sở hữu; init idempotent, dispose idempotent và chờ cancel subscription trước khi đóng controller.
+- [x] Targeted LIFE-01 test pass 3/3, full suite pass 22/22, analyzer 0 issue; tăng app version từ `1.0.0+3` lên `1.0.0+4`.
+- [x] Final format-check không ghi file vẫn exit 1 do baseline 25/68 file; giảm một file so với session trước và không format hàng loạt.
+- [ ] Chưa manual open/close downloader + airplane-mode loop hoặc thoát khi download đang chạy trên Android device. Bước tiếp theo: xác nhận manual LIFE-01, sau đó tạo harness STATE-01 như issue độc lập.

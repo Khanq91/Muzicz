@@ -37,39 +37,41 @@ class AppRouter {
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case AppRoutes.analyze:
-        return _slide(const AnalyzeScreen());
+        return _slide(const AnalyzeScreen(), settings);
 
       case AppRoutes.playlistPicker:
         final info = settings.arguments as VideoInfo;
-        return _slide(PlaylistPickerScreen(playlistInfo: info));
+        return _slide(PlaylistPickerScreen(playlistInfo: info), settings);
 
       case AppRoutes.format:
         final args = settings.arguments;
         // Hỗ trợ cả 2 dạng arguments để không break code cũ
         if (args is FormatScreenArgs) {
-          return _slide(FormatScreen(
-            videoInfo: args.videoInfo,
-            selectedEntries: args.selectedEntries,
-          ));
+          return _slide(
+            FormatScreen(
+              videoInfo: args.videoInfo,
+              selectedEntries: args.selectedEntries,
+            ),
+            settings,
+          );
         }
         // Legacy: truyền thẳng VideoInfo (video đơn từ analyze_screen)
-        return _slide(FormatScreen(
-          videoInfo: args as VideoInfo,
-        ));
+        return _slide(FormatScreen(videoInfo: args as VideoInfo), settings);
 
       case AppRoutes.download:
-        return _slide(const DownloadScreen());
+        return _slide(const DownloadScreen(), settings);
 
       case AppRoutes.summary:
-        return _slide(const SummaryScreen());
+        return _slide(const SummaryScreen(), settings);
 
       default:
-        return _slide(const AnalyzeScreen());
+        return _slide(const AnalyzeScreen(), settings);
     }
   }
 
-  static PageRouteBuilder _slide(Widget page) {
+  static PageRouteBuilder _slide(Widget page, RouteSettings settings) {
     return PageRouteBuilder(
+      settings: settings,
       pageBuilder: (_, __, ___) => page,
       transitionsBuilder: (_, animation, __, child) {
         final curved = CurvedAnimation(

@@ -7,7 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../screens/onboarding_screen.dart';
 import '../../../theme/app_colors.dart';
-import 'analyze_screen_bridge.dart';
+import '../core/app_router.dart';
 
 class DownloaderGatewayScreen extends StatefulWidget {
   const DownloaderGatewayScreen({super.key});
@@ -58,22 +58,7 @@ class _DownloaderGatewayScreenState extends State<DownloaderGatewayScreen>
   }
 
   void _goToDownloader() {
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        pageBuilder: (_, anim, __) => const AnalyzeScreenBridge(),
-        transitionDuration: const Duration(milliseconds: 350),
-        transitionsBuilder:
-            (_, anim, __, child) => SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(1.0, 0.0),
-                end: Offset.zero,
-              ).animate(
-                CurvedAnimation(parent: anim, curve: Curves.easeOutCubic),
-              ),
-              child: child,
-            ),
-      ),
-    );
+    Navigator.of(context).pushNamed(AppRoutes.analyze);
   }
 
   void _goToRescan() {

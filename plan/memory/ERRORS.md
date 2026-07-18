@@ -84,3 +84,13 @@
 - Targeted timer test lần đầu fail vì Flutter test kiểm tra pending timer trước `tearDown`; thêm cleanup timer ngay trong test fixture, sau đó targeted pass 10/10. Đây không phải lỗi production.
 - `dart format --output=none --set-exit-if-changed .` cuối vẫn exit 1 với baseline 26/68 file; không format hàng loạt. Analyzer log cuối tại `audit/flutter_analyze.txt` exit 0, 0 error/warning/info; full test pass 19/19.
 - Chưa chạy Android device/DevTools nên chưa xác nhận retaining path, callback sau dispose trong runtime thật, background playback hoặc notification/headset controls; automated test chỉ xác nhận Dart lifecycle và orchestration.
+
+## [Phase 0] - 2026-07-19 00:27
+- `scripts/analyze_codex.bat` vẫn không tồn tại; dùng script thực của repo `scripts/flutter_analyze.bat` và đọc `audit/flutter_analyze.txt` theo quy ước các session trước.
+- Analyzer baseline trong sandbox chờ SDK/cache quá 50 giây và được dừng; chạy lại ngoài sandbox hoàn tất với 0 issue. Lần xin quyền `flutter test` đầu timeout ở approval review, retry một lần thành công 19/19.
+
+## [Phase 1] - 2026-07-19 00:27
+- Khi chuyển sang navigator gốc, phát hiện `AppRouter` không gắn `RouteSettings` cho `PageRouteBuilder`; nếu chỉ xóa nested app thì predicate `route.settings.name == AppRoutes.analyze` có thể không giữ được back stack. Workaround đúng contract là truyền settings và test route name.
+- Lần format targeted trong sandbox timeout do SDK/telemetry; chạy `dart --suppress-analytics format` ngoài sandbox cho đúng 5 file trong issue. Không format hàng loạt repo.
+- Final `dart format --output=none --set-exit-if-changed .` exit 1 với 25/68 file baseline sẽ đổi; lệnh không ghi file. Analyzer cuối 0 issue và full suite pass 22/22.
+- Automated test chỉ xác nhận ownership/recreate và route contract trong Dart; chưa chạy open/close/airplane-mode loop, back stack thật hoặc download đang chạy trên Android device, nên chưa tuyên bố runtime flow đã được xác nhận hoàn toàn.

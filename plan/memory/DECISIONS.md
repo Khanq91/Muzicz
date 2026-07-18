@@ -74,3 +74,8 @@
 - Giữ ownership `MuzicAudioHandler` ở app root vì audio/background playback phải sống lâu hơn `PlayerProvider`; provider chỉ cancel các subscription và timer do chính nó tạo, không dispose audio engine.
 - Dùng một `_applyCurrentIndex` cho cả seek chủ động và event auto-next; cờ `_isChangingTrack` chặn event đồng bộ trong lúc seek, còn kiểm tra song ID loại event đến muộn, nhờ đó mỗi transition chỉ thêm history một lần.
 - Giữ history theo index trong issue này để không mở rộng schema/public API; queue remove/reorder đã clear history nên index còn hợp lệ giữa các mutation queue.
+
+## [Phase 1] - 2026-07-19 00:27
+- Dùng `ProviderScope` duy nhất ở app root thay vì giữ container theo route; downloader state và network provider vì thế sống theo app lifecycle, không bị orphan khi pop feature.
+- Cho `networkServiceProvider` tạo và dispose một `NetworkService` mới theo container thay vì cố làm singleton đã đóng có thể tái sử dụng; seam callback chỉ ở biên Connectivity để test, không thay state management hay package.
+- Mở downloader bằng named route trên navigator gốc và truyền `RouteSettings` vào `PageRouteBuilder`; đây giữ predicate back-stack hiện tại trong khi loại nested `MaterialApp`.
