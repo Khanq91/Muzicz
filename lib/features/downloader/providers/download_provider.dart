@@ -11,7 +11,6 @@ import '../models/format_option.dart';
 import '../models/video_info.dart';
 import '../services/downloader_storage_service.dart';
 import '../services/ytdlp_service.dart';
-import '../utils/fake_progress.dart';
 
 // ── State ──────────────────────────────────────────────────
 
@@ -42,8 +41,7 @@ class DownloadState {
 
   /// True khi không còn task nào active/queued
   bool get allFinished =>
-      tasks.isNotEmpty &&
-      tasks.every((t) => t.status.isFinished);
+      tasks.isNotEmpty && tasks.every((t) => t.status.isFinished);
 
   DownloadState copyWith({List<DownloadTask>? tasks}) =>
       DownloadState(tasks: tasks ?? this.tasks);
@@ -59,7 +57,15 @@ class DownloadNotifier extends Notifier<DownloadState> {
   // final Map<String, FakeProgress> _fakeMap = {};
 
   @override
-  DownloadState build() => const DownloadState();
+  DownloadState build() {
+    ref.onDispose(() {
+      for (final sub in _subs.values) {
+        sub.cancel();
+      }
+      _subs.clear();
+    });
+    return const DownloadState();
+  }
 
   // ── Public API ─────────────────────────────────────────
 
@@ -94,7 +100,8 @@ class DownloadNotifier extends Notifier<DownloadState> {
 
     final task = DownloadTask(
       id: _uuid.v4(),
-      title: '${playlistInfo.title} (${playlistInfo.playlistCount ?? "?"} video)',
+      title:
+          '${playlistInfo.title} (${playlistInfo.playlistCount ?? "?"} video)',
       url: playlistInfo.url,
       formatId: format.formatId,
       ext: format.ext,
@@ -155,9 +162,7 @@ class DownloadNotifier extends Notifier<DownloadState> {
 
   /// Xóa tất cả task đã xong
   void clearFinished() {
-    final current = state.tasks
-        .where((t) => !t.status.isFinished)
-        .toList();
+    final current = state.tasks.where((t) => !t.status.isFinished).toList();
     state = state.copyWith(tasks: current);
   }
 
@@ -205,11 +210,14 @@ class DownloadNotifier extends Notifier<DownloadState> {
           // ✅ Kiểm tra có cần extract audio không
           if (_needsExtract(updatedTask) && updatedTask.outputPath != null) {
             // Hiện fake progress trong lúc extract
-            _updateTask(task.id, (t) => t.copyWith(
-              status: DownloadStatus.preparing,
-              speed: 'Đang tách audio...',
-              progress: 0.95,
-            ));
+            _updateTask(
+              task.id,
+              (t) => t.copyWith(
+                status: DownloadStatus.preparing,
+                speed: 'Đang tách audio...',
+                progress: 0.95,
+              ),
+            );
             await _extractAudio(updatedTask);
           } else {
             // _fakeMap[task.id]?.complete((p) {
@@ -251,7 +259,6 @@ class DownloadNotifier extends Notifier<DownloadState> {
         // _fakeMap.remove(task.id);
         // END: FAKE PROCESS ---------------------------------------------
 
-
         _updateTask(
           task.id,
           (t) => t.copyWith(
@@ -269,8 +276,8 @@ class DownloadNotifier extends Notifier<DownloadState> {
 
   bool _needsExtract(DownloadTask task) =>
       task.formatId == '__extract_audio__' ||
-          task.formatId == '__extract_m4a__'   ||
-          task.formatId == '__extract_mp3__';
+      task.formatId == '__extract_m4a__' ||
+      task.formatId == '__extract_mp3__';
 
   // Future<void> _extractAudio(DownloadTask task) async {
   //   final result = await YtdlpService.instance.extractAudioNative(
@@ -288,11 +295,14 @@ class DownloadNotifier extends Notifier<DownloadState> {
   // }
 
   Future<void> _extractAudio(DownloadTask task) async {
-    _updateTask(task.id, (t) => t.copyWith(
-      status:   DownloadStatus.preparing,
-      speed:    'Đang tách audio...',
-      progress: 0.95,
-    ));
+    _updateTask(
+      task.id,
+      (t) => t.copyWith(
+        status: DownloadStatus.preparing,
+        speed: 'Đang tách audio...',
+        progress: 0.95,
+      ),
+    );
 
     final result = await YtdlpService.instance.extractAudioNative(
       inputPath: task.outputPath!,
@@ -308,14 +318,17 @@ class DownloadNotifier extends Notifier<DownloadState> {
       }
     }
 
-    _updateTask(task.id, (t) => t.copyWith(
-      status:       result.success ? DownloadStatus.done : DownloadStatus.error,
-      outputPath:   result.outputPath ?? t.outputPath,
-      errorMessage: result.error,
-      speed:        '',
-      progress:     result.success ? 1.0 : t.progress,
-      completedAt:  result.success ? DateTime.now() : null,
-    ));
+    _updateTask(
+      task.id,
+      (t) => t.copyWith(
+        status: result.success ? DownloadStatus.done : DownloadStatus.error,
+        outputPath: result.outputPath ?? t.outputPath,
+        errorMessage: result.error,
+        speed: '',
+        progress: result.success ? 1.0 : t.progress,
+        completedAt: result.success ? DateTime.now() : null,
+      ),
+    );
   }
 
   // Trong _startDownload(), sau khi stream báo done
@@ -383,7 +396,6 @@ class DownloadNotifier extends Notifier<DownloadState> {
   //   ));
   // }
 
-
   // ── Task CRUD helpers ──────────────────────────────────
 
   void _addTask(DownloadTask task) {
@@ -391,16 +403,18 @@ class DownloadNotifier extends Notifier<DownloadState> {
   }
 
   void _replaceTask(DownloadTask updated) {
-    final tasks = state.tasks.map((t) {
-      return t.id == updated.id ? updated : t;
-    }).toList();
+    final tasks =
+        state.tasks.map((t) {
+          return t.id == updated.id ? updated : t;
+        }).toList();
     state = state.copyWith(tasks: tasks);
   }
 
   void _updateTask(String id, DownloadTask Function(DownloadTask) updater) {
-    final tasks = state.tasks.map((t) {
-      return t.id == id ? updater(t) : t;
-    }).toList();
+    final tasks =
+        state.tasks.map((t) {
+          return t.id == id ? updater(t) : t;
+        }).toList();
     state = state.copyWith(tasks: tasks);
   }
 
@@ -411,27 +425,21 @@ class DownloadNotifier extends Notifier<DownloadState> {
       return null;
     }
   }
-
-  @override
-  void dispose() {
-    for (final sub in _subs.values) {
-      sub.cancel();
-    }
-    _subs.clear();
-  }
 }
 
 // ── Providers ──────────────────────────────────────────────
 
-final downloadProvider =
-    NotifierProvider<DownloadNotifier, DownloadState>(DownloadNotifier.new);
+final downloadProvider = NotifierProvider<DownloadNotifier, DownloadState>(
+  DownloadNotifier.new,
+);
 
 /// Shorthand: lấy 1 task theo id (dùng trong item widget)
 final downloadTaskProvider = Provider.family<DownloadTask?, String>((ref, id) {
-  return ref.watch(downloadProvider).tasks.cast<DownloadTask?>().firstWhere(
-    (t) => t?.id == id,
-    orElse: () => null,
-  );
+  return ref
+      .watch(downloadProvider)
+      .tasks
+      .cast<DownloadTask?>()
+      .firstWhere((t) => t?.id == id, orElse: () => null);
 });
 
 /// Đếm task đang active (dùng cho badge trên Download tab)

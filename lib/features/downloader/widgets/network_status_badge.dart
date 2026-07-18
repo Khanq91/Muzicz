@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/constants/app_constants.dart';
 import '../providers/network_provider.dart';
 import '../services/network_service.dart';
 
@@ -28,10 +27,7 @@ class _NetworkStatusBadgeState extends ConsumerState<NetworkStatusBadge>
       vsync: this,
       duration: const Duration(milliseconds: 350),
     );
-    _fadeAnim = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    );
+    _fadeAnim = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
     _controller.forward();
   }
 
@@ -75,18 +71,19 @@ class _BadgePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isOnline
-        ? const Color(0xFF34C759) // xanh lá hệ thống iOS
-        : const Color(0xFFFF3B30); // đỏ
+    final color =
+        isOnline
+            ? const Color(0xFF34C759) // xanh lá hệ thống iOS
+            : const Color(0xFFFF3B30); // đỏ
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.4), width: 0.8),
+        border: Border.all(color: color.withValues(alpha: 0.4), width: 0.8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -101,7 +98,7 @@ class _BadgePill extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: color.withOpacity(0.5),
+                  color: color.withValues(alpha: 0.5),
                   blurRadius: 4,
                   spreadRadius: 1,
                 ),

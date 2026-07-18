@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:provider/provider.dart';
 import '../providers/music_provider.dart';
-import '../theme/app_colors.dart';
 import 'home_screen.dart';
 
 const _randomTexts = [
@@ -73,12 +72,14 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       duration: const Duration(milliseconds: 600),
     );
 
-    _pulseScale = Tween(begin: 1.0, end: 1.12).animate(
-      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
-    );
-    _pulseOpacity = Tween(begin: 0.5, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
-    );
+    _pulseScale = Tween(
+      begin: 1.0,
+      end: 1.12,
+    ).animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
+    _pulseOpacity = Tween(
+      begin: 0.5,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _startScan());
   }
@@ -118,10 +119,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       PageRouteBuilder(
         pageBuilder: (_, anim, __) => const HomeScreen(),
         transitionDuration: const Duration(milliseconds: 500),
-        transitionsBuilder: (_, anim, __, child) => FadeTransition(
-          opacity: anim,
-          child: child,
-        ),
+        transitionsBuilder:
+            (_, anim, __, child) => FadeTransition(opacity: anim, child: child),
       ),
     );
   }
@@ -150,10 +149,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 scale: _pulseScale,
                 child: AnimatedBuilder(
                   animation: _pulseOpacity,
-                  builder: (_, child) => Opacity(
-                    opacity: _pulseOpacity.value,
-                    child: child,
-                  ),
+                  builder:
+                      (_, child) =>
+                          Opacity(opacity: _pulseOpacity.value, child: child),
                   child: Container(
                     width: 100,
                     height: 100,
@@ -161,8 +159,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       shape: BoxShape.circle,
                       gradient: RadialGradient(
                         colors: [
-                          c.primary.withOpacity(0.3),
-                          c.primary.withOpacity(0.05),
+                          c.primary.withValues(alpha: 0.3),
+                          c.primary.withValues(alpha: 0.05),
                         ],
                       ),
                     ),
@@ -192,13 +190,14 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               // Random text
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 400),
-                child: _scanDone
-                    ? _ResultWidget(
-                        songCount: _songCount,
-                        artistCount: _artistCount,
-                        animation: _resultCtrl,
-                      )
-                    : _ScanningText(randomText: _randomText),
+                child:
+                    _scanDone
+                        ? _ResultWidget(
+                          songCount: _songCount,
+                          artistCount: _artistCount,
+                          animation: _resultCtrl,
+                        )
+                        : _ScanningText(randomText: _randomText),
               ),
               const Spacer(flex: 2),
               // Progress bar
@@ -269,30 +268,28 @@ class _ResultWidget extends StatelessWidget {
     final slide1 = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: animation,
-      curve: const Interval(0.0, 0.6, curve: Curves.easeOutCubic),
-    ));
+    ).animate(
+      CurvedAnimation(
+        parent: animation,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOutCubic),
+      ),
+    );
 
     final slide2 = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: animation,
-      curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic),
-    ));
-
-    final fade1 = Tween<double>(begin: 0, end: 1).animate(
+    ).animate(
       CurvedAnimation(
         parent: animation,
-        curve: const Interval(0.0, 0.6),
+        curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic),
       ),
     );
+
+    final fade1 = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: animation, curve: const Interval(0.0, 0.6)),
+    );
     final fade2 = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(
-        parent: animation,
-        curve: const Interval(0.2, 0.8),
-      ),
+      CurvedAnimation(parent: animation, curve: const Interval(0.2, 0.8)),
     );
     final c = context.appColors;
     return Column(
@@ -370,32 +367,33 @@ class _AnimatedProgressBar extends StatelessWidget {
           animation: controller,
           builder: (_, __) {
             return LayoutBuilder(
-              builder: (_, constraints) => Container(
-                height: 4,
-                decoration: BoxDecoration(
-                  color: c.divider,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Container(
+              builder:
+                  (_, constraints) => Container(
                     height: 4,
-                    width: constraints.maxWidth * controller.value,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [c.primary, c.secondary],
-                      ),
+                      color: c.divider,
                       borderRadius: BorderRadius.circular(2),
-                      boxShadow: [
-                        BoxShadow(
-                          color: c.primary.withOpacity(0.4),
-                          blurRadius: 6,
+                    ),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        height: 4,
+                        width: constraints.maxWidth * controller.value,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [c.primary, c.secondary],
+                          ),
+                          borderRadius: BorderRadius.circular(2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: c.primary.withValues(alpha: 0.4),
+                              blurRadius: 6,
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ),
             );
           },
         ),

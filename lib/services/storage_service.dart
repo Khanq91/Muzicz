@@ -1,16 +1,17 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/playlist_item.dart';
 
 class StorageService {
-  static const _keyFirstRun      = 'first_run';
-  static const _keyScannedOnce   = 'scanned_once';
+  static const _keyFirstRun = 'first_run';
+  static const _keyScannedOnce = 'scanned_once';
   static const _keyRecentlyPlayed = 'recently_played';
-  static const _keyPlayCount     = 'play_count';
-  static const _keyFavorites     = 'favorites';
-  static const _keyPlaylists     = 'playlists';
+  static const _keyPlayCount = 'play_count';
+  static const _keyFavorites = 'favorites';
+  static const _keyPlaylists = 'playlists';
   static const _keyMetaOverrides = 'meta_overrides'; // Map<id, {title, artist}>
-  static const _keyHiddenSongs   = 'hidden_songs';   // Set<int>
+  static const _keyHiddenSongs = 'hidden_songs'; // Set<int>
 
   late SharedPreferences _prefs;
 
@@ -83,7 +84,11 @@ class StorageService {
   Future<void> setBulkFavoriteStatus(List<int> songIds, bool addToFav) async {
     final favs = favoriteIds;
     for (final id in songIds) {
-      if (addToFav) favs.add(id); else favs.remove(id);
+      if (addToFav) {
+        favs.add(id);
+      } else {
+        favs.remove(id);
+      }
     }
     await _prefs.setString(_keyFavorites, jsonEncode(favs.toList()));
   }
@@ -109,13 +114,12 @@ class StorageService {
   /// Ghi toàn bộ danh sách playlist vào SharedPreferences.
   Future<void> savePlaylists(List<PlaylistItem> playlists) async {
     try {
-      final encoded =
-      jsonEncode(playlists.map((p) => p.toJson()).toList());
+      final encoded = jsonEncode(playlists.map((p) => p.toJson()).toList());
       await _prefs.setString(_keyPlaylists, encoded);
     } catch (e) {
       // Serialization error — log nhưng không crash
       assert(() {
-        print('[StorageService] savePlaylists error: $e');
+        debugPrint('[StorageService] savePlaylists error: $e');
         return true;
       }());
     }
@@ -126,10 +130,9 @@ class StorageService {
     final raw = _prefs.getString(_keyMetaOverrides);
     if (raw == null) return {};
     final map = jsonDecode(raw) as Map<String, dynamic>;
-    return map.map((k, v) => MapEntry(
-      int.parse(k),
-      Map<String, String>.from(v as Map),
-    ));
+    return map.map(
+      (k, v) => MapEntry(int.parse(k), Map<String, String>.from(v as Map)),
+    );
   }
 
   Future<void> saveMetaOverride(int songId, String title, String artist) async {
@@ -150,21 +153,25 @@ class StorageService {
     );
   }
 
-// ── Hidden songs ──────────────────────────────────────────────────────────
+  // ── Hidden songs ──────────────────────────────────────────────────────────
 
   Map<int, Map<String, String>> get hiddenSongs {
     final raw = _prefs.getString(_keyHiddenSongs);
     if (raw == null) return {};
     final map = jsonDecode(raw) as Map<String, dynamic>;
-    return map.map((k, v) => MapEntry(
-      int.parse(k),
-      Map<String, String>.from(v as Map),
-    ));
+    return map.map(
+      (k, v) => MapEntry(int.parse(k), Map<String, String>.from(v as Map)),
+    );
   }
 
   Set<int> get hiddenSongIds => hiddenSongs.keys.toSet();
 
-  Future<void> hideSong(int songId, String title, String artist, String data) async {
+  Future<void> hideSong(
+    int songId,
+    String title,
+    String artist,
+    String data,
+  ) async {
     final map = hiddenSongs;
     map[songId] = {'title': title, 'artist': artist, 'data': data};
     await _prefs.setString(

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'app_colors.dart';       // backward compat (dark static values)
-import 'app_colors_data.dart';  // dynamic theme extension
+import 'app_colors_data.dart'; // dynamic theme extension
 
 // ════════════════════════════════════════════════════════════════════════════
 // AppTheme — factory tạo ThemeData từ bất kỳ AppColorsData nào
@@ -13,8 +12,10 @@ class AppTheme {
   /// Gọi từ ThemeProvider.themeData — build ThemeData cho theme bất kỳ
   static ThemeData buildTheme(AppColorsData c) {
     final isDark = c.isDark;
-    final base = isDark ? ThemeData.dark(useMaterial3: true)
-        : ThemeData.light(useMaterial3: true);
+    final base =
+        isDark
+            ? ThemeData.dark(useMaterial3: true)
+            : ThemeData.light(useMaterial3: true);
     final outfitText = GoogleFonts.outfitTextTheme(base.textTheme);
 
     return base.copyWith(
@@ -88,7 +89,7 @@ class AppTheme {
         iconTheme: IconThemeData(color: c.textPrimary),
       ),
 
-      tabBarTheme: TabBarTheme(
+      tabBarTheme: TabBarThemeData(
         labelColor: c.primary,
         unselectedLabelColor: c.textTertiary,
         indicator: UnderlineTabIndicator(
@@ -108,31 +109,24 @@ class AppTheme {
         activeTrackColor: c.primary,
         inactiveTrackColor: c.divider,
         thumbColor: isDark ? Colors.white : c.primary,
-        overlayColor: c.primary.withOpacity(0.15),
+        overlayColor: c.primary.withValues(alpha: 0.15),
         trackHeight: 3,
         thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
       ),
 
       iconTheme: IconThemeData(color: c.textSecondary),
 
-      dividerTheme: DividerThemeData(
-        color: c.divider,
-        thickness: 0.5,
-      ),
+      dividerTheme: DividerThemeData(color: c.divider, thickness: 0.5),
 
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: c.card,
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
 
       popupMenuTheme: PopupMenuThemeData(
         color: c.card,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
 
       bottomSheetTheme: BottomSheetThemeData(
@@ -150,7 +144,7 @@ class AppTheme {
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return c.primary.withOpacity(0.35);
+            return c.primary.withValues(alpha: 0.35);
           }
           return c.surfaceElevated;
         }),

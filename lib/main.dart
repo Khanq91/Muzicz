@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart' hide ChangeNotifierProvider;
+import 'package:flutter_riverpod/flutter_riverpod.dart'
+    hide ChangeNotifierProvider;
 import 'package:muziczz/providers/theme_provider.dart';
 import 'package:muziczz/widgets/theme_switch_wrapper.dart';
 import 'package:provider/provider.dart';
@@ -9,7 +10,6 @@ import 'providers/music_provider.dart';
 import 'providers/player_provider.dart';
 import 'screens/splash_screen.dart';
 import 'services/audio_handler.dart';
-import 'theme/app_theme.dart';
 import 'providers/lyrics_provider.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 
@@ -28,12 +28,14 @@ Future<void> main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light,
-    systemNavigationBarColor: Colors.transparent,
-    systemNavigationBarDividerColor: Colors.transparent,
-  ));
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarDividerColor: Colors.transparent,
+    ),
+  );
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
@@ -48,7 +50,6 @@ Future<void> main() async {
     ),
   );
 }
-
 
 class MuzicApp extends StatelessWidget {
   const MuzicApp({super.key, required this.audioHandler});
@@ -81,9 +82,9 @@ class MuzicApp extends StatelessWidget {
         builder: (context, child) {
           return MediaQuery(
             data: MediaQuery.of(context).copyWith(
-              textScaler: TextScaler.linear(
-                MediaQuery.of(context).textScaleFactor.clamp(0.85, 1.15),
-              ),
+              textScaler: MediaQuery.textScalerOf(
+                context,
+              ).clamp(minScaleFactor: 0.85, maxScaleFactor: 1.15),
             ),
             // child: child!,
             child: ThemeSwitchWrapper(child: child!),

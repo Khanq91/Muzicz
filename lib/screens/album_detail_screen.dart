@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import '../models/song_item.dart';
 import '../providers/music_provider.dart';
 import '../providers/player_provider.dart';
-import '../theme/app_colors.dart';
 import '../widgets/music_list_tile.dart';
 import 'now_playing_screen.dart';
 
@@ -40,8 +39,11 @@ class AlbumDetailScreen extends StatelessWidget {
             pinned: true,
             backgroundColor: c.background,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                  size: 20, color: Colors.white),
+              icon: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                size: 20,
+                color: Colors.white,
+              ),
               onPressed: () => Navigator.pop(context),
             ),
             flexibleSpace: FlexibleSpaceBar(
@@ -92,7 +94,7 @@ class AlbumDetailScreen extends StatelessWidget {
             ),
           ),
 
-// Thêm SliverToBoxAdapter mới ngay sau
+          // Thêm SliverToBoxAdapter mới ngay sau
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
@@ -117,35 +119,51 @@ class AlbumDetailScreen extends StatelessWidget {
                       final c = context.appColors;
                       showDialog(
                         context: context,
-                        builder: (_) => AlertDialog(
-                          backgroundColor: c.card,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
-                          title: Row(
-                            children: [
-                              Icon(Icons.all_inclusive_rounded, color: c.primary, size: 20),
-                              const SizedBox(width: 8),
-                              Text('Shuffle Loop',
-                                  style: GoogleFonts.outfit(
+                        builder:
+                            (_) => AlertDialog(
+                              backgroundColor: c.card,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              title: Row(
+                                children: [
+                                  Icon(
+                                    Icons.all_inclusive_rounded,
+                                    color: c.primary,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Shuffle Loop',
+                                    style: GoogleFonts.outfit(
                                       color: c.textPrimary,
                                       fontWeight: FontWeight.w600,
-                                      fontSize: 16)),
-                            ],
-                          ),
-                          content: Text(
-                            'Phát ngẫu nhiên toàn bộ danh sách. Khi hết, tự động xáo bài và phát lại từ đầu — không trùng lặp theo chu kì.',
-                            style: GoogleFonts.outfit(
-                                color: c.textSecondary, fontSize: 14, height: 1.6),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: Text('OK',
-                                  style: GoogleFonts.outfit(
-                                      color: c.primary, fontWeight: FontWeight.w600)),
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              content: Text(
+                                'Phát ngẫu nhiên toàn bộ danh sách. Khi hết, tự động xáo bài và phát lại từ đầu — không trùng lặp theo chu kì.',
+                                style: GoogleFonts.outfit(
+                                  color: c.textSecondary,
+                                  fontSize: 14,
+                                  height: 1.6,
+                                ),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: Text(
+                                    'OK',
+                                    style: GoogleFonts.outfit(
+                                      color: c.primary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
                       );
                     },
                     child: Builder(
@@ -159,8 +177,11 @@ class AlbumDetailScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: c.border, width: 0.5),
                           ),
-                          child: Icon(Icons.info_outline_rounded,
-                              color: c.textTertiary, size: 20),
+                          child: Icon(
+                            Icons.info_outline_rounded,
+                            color: c.textTertiary,
+                            size: 20,
+                          ),
                         );
                       },
                     ),
@@ -186,21 +207,18 @@ class AlbumDetailScreen extends StatelessWidget {
 
           // ── Song list ─────────────────────────────────────────
           SliverList(
-            delegate: SliverChildBuilderDelegate(
-                  (_, i) {
-                final song = songs[i];
-                return MusicListTile(
-                  song: song,
-                  isActive: player.currentSong?.id == song.id,
-                  onTap: () {
-                    player.playSongs(songs, specificSong: song);
-                    music.onSongPlayed(song.id);
-                    Navigator.of(context).push(_playerRoute());
-                  },
-                );
-              },
-              childCount: songs.length,
-            ),
+            delegate: SliverChildBuilderDelegate((_, i) {
+              final song = songs[i];
+              return MusicListTile(
+                song: song,
+                isActive: player.currentSong?.id == song.id,
+                onTap: () {
+                  player.playSongs(songs, specificSong: song);
+                  music.onSongPlayed(song.id);
+                  Navigator.of(context).push(_playerRoute());
+                },
+              );
+            }, childCount: songs.length),
           ),
 
           const SliverToBoxAdapter(child: SizedBox(height: 40)),
@@ -231,9 +249,7 @@ class _AlbumHeader extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         // Background gradient
-        Container(
-          decoration: BoxDecoration(gradient: c.backgroundGradient),
-        ),
+        Container(decoration: BoxDecoration(gradient: c.backgroundGradient)),
         // Album art full-bleed (blurred)
         QueryArtworkWidget(
           id: albumId,
@@ -248,15 +264,15 @@ class _AlbumHeader extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  c.primary.withOpacity(0.4),
-                  c.secondary.withOpacity(0.4),
+                  c.primary.withValues(alpha: 0.4),
+                  c.secondary.withValues(alpha: 0.4),
                 ],
               ),
             ),
           ),
         ),
         // Dark overlay
-        Container(color: Colors.black.withOpacity(0.50)),
+        Container(color: Colors.black.withValues(alpha: 0.50)),
         // Center album art (sharp)
         Positioned(
           top: 52,
@@ -270,7 +286,7 @@ class _AlbumHeader extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.5),
+                    color: Colors.black.withValues(alpha: 0.5),
                     blurRadius: 24,
                     offset: const Offset(0, 8),
                   ),
@@ -285,11 +301,12 @@ class _AlbumHeader extends StatelessWidget {
                   artworkBorder: BorderRadius.zero,
                   keepOldArtwork: true,
                   nullArtworkWidget: Container(
-                    decoration: BoxDecoration(
-                      gradient: c.primaryGradient,
+                    decoration: BoxDecoration(gradient: c.primaryGradient),
+                    child: const Icon(
+                      Icons.album_rounded,
+                      color: Colors.white54,
+                      size: 48,
                     ),
-                    child: const Icon(Icons.album_rounded,
-                        color: Colors.white54, size: 48),
                   ),
                 ),
               ),
@@ -356,21 +373,20 @@ class _ActionButton extends StatelessWidget {
       child: Container(
         height: 46,
         decoration: BoxDecoration(
-          gradient: primary
-              ? LinearGradient(
-              colors: [c.primary, c.secondary])
-              : null,
+          gradient:
+              primary ? LinearGradient(colors: [c.primary, c.secondary]) : null,
           color: primary ? null : c.surfaceElevated,
           borderRadius: BorderRadius.circular(12),
-          border:
-          primary ? null : Border.all(color: c.border, width: 0.5),
+          border: primary ? null : Border.all(color: c.border, width: 0.5),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon,
-                color: primary ? Colors.white : c.textSecondary,
-                size: 20),
+            Icon(
+              icon,
+              color: primary ? Colors.white : c.textSecondary,
+              size: 20,
+            ),
             const SizedBox(width: 6),
             Text(
               label,
@@ -390,9 +406,12 @@ class _ActionButton extends StatelessWidget {
 PageRouteBuilder _playerRoute() => PageRouteBuilder(
   pageBuilder: (_, anim, __) => const NowPlayingScreen(),
   transitionDuration: const Duration(milliseconds: 400),
-  transitionsBuilder: (_, anim, __, child) => SlideTransition(
-    position: Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
-        .animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
-    child: child,
-  ),
+  transitionsBuilder:
+      (_, anim, __, child) => SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 1),
+          end: Offset.zero,
+        ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
+        child: child,
+      ),
 );

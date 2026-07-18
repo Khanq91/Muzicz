@@ -30,43 +30,42 @@ class PrimaryIconButton extends StatelessWidget {
           width: size,
           height: size,
           decoration: BoxDecoration(
-            gradient: enabled
-                ? AppColors.primaryGradient
-                : const LinearGradient(
-              colors: [Color(0xFF444444), Color(0xFF333333)],
-            ),
+            gradient:
+                enabled
+                    ? AppColors.primaryGradient
+                    : const LinearGradient(
+                      colors: [Color(0xFF444444), Color(0xFF333333)],
+                    ),
             borderRadius: BorderRadius.circular(12),
-            boxShadow: enabled
-                ? [
-              BoxShadow(
-                color: AppColors.primary.withOpacity(0.35),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ]
-                : null,
+            boxShadow:
+                enabled
+                    ? [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.35),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                    : null,
           ),
           child: Material(
             color: Colors.transparent,
             child: InkWell(
               onTap: enabled ? onPressed : null,
               borderRadius: BorderRadius.circular(12),
-              splashColor: Colors.white.withOpacity(0.1),
+              splashColor: Colors.white.withValues(alpha: 0.1),
               child: Center(
-                child: isLoading
-                    ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-                    : Icon(
-                  icon,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                child:
+                    isLoading
+                        ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                        : Icon(icon, color: Colors.white, size: 20),
               ),
             ),
           ),

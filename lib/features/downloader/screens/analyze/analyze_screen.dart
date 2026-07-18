@@ -9,8 +9,6 @@ import '../../core/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/video_info.dart';
 import '../../providers/analyze_provider.dart';
-import '../../providers/network_provider.dart';
-import '../../services/network_service.dart';
 import '../../services/downloader_storage_service.dart';
 import '../../widgets/app_shell.dart';
 import '../../widgets/glass_card.dart';
@@ -106,25 +104,27 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) => _FolderPickerSheet(
-        basePath: base,
-        currentPath: DownloaderStorageService.instance.downloadPath,
-        onSelect: (path) async {
-          await DownloaderStorageService.instance.setAndSavePath(path);
-          if (mounted) {
-            setState(() {});
-            _showSnack('Đã chọn: $path');
-          }
-        },
-        onCustomPick: () async {
-          final path = await DownloaderStorageService.instance
-              .pickDownloadDirectory();
-          if (path != null && mounted) {
-            setState(() {});
-            _showSnack('Đã chọn: $path');
-          }
-        },
-      ),
+      builder:
+          (ctx) => _FolderPickerSheet(
+            basePath: base,
+            currentPath: DownloaderStorageService.instance.downloadPath,
+            onSelect: (path) async {
+              await DownloaderStorageService.instance.setAndSavePath(path);
+              if (mounted) {
+                setState(() {});
+                _showSnack('Đã chọn: $path');
+              }
+            },
+            onCustomPick: () async {
+              final path =
+                  await DownloaderStorageService.instance
+                      .pickDownloadDirectory();
+              if (path != null && mounted) {
+                setState(() {});
+                _showSnack('Đã chọn: $path');
+              }
+            },
+          ),
     );
   }
 
@@ -144,8 +144,9 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
                 Row(
                   children: [
                     GestureDetector(
-                      onTap: () =>
-                          Navigator.of(context, rootNavigator: true).pop(),
+                      onTap:
+                          () =>
+                              Navigator.of(context, rootNavigator: true).pop(),
                       child: Container(
                         width: 36,
                         height: 36,
@@ -177,8 +178,9 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
                   focusNode: _focusNode,
                   platform: analyzeState.detectedPlatform,
                   isUrlEmpty: analyzeState.currentUrl.isEmpty,
-                  onChanged: (url) =>
-                      ref.read(analyzeProvider.notifier).onUrlChanged(url),
+                  onChanged:
+                      (url) =>
+                          ref.read(analyzeProvider.notifier).onUrlChanged(url),
                   onPaste: _paste,
                   onClear: _clear,
                 ),
@@ -189,11 +191,12 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
                   label: _serviceReady ? 'Phân tích' : 'Đang khởi động...',
                   icon: Icons.search_rounded,
                   isLoading: analyzeState.isLoading || !_serviceReady,
-                  onPressed: _serviceReady &&
-                      analyzeState.currentUrl.isNotEmpty &&
-                      !analyzeState.isLoading
-                      ? _analyze
-                      : null,
+                  onPressed:
+                      _serviceReady &&
+                              analyzeState.currentUrl.isNotEmpty &&
+                              !analyzeState.isLoading
+                          ? _analyze
+                          : null,
                 ),
                 if (_initError != null)
                   Padding(
@@ -294,10 +297,7 @@ class _FolderPickerSheet extends StatelessWidget {
             const SizedBox(height: 4),
             const Text(
               'File tải về sẽ được lưu vào thư mục này',
-              style: TextStyle(
-                color: AppColors.textTertiary,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: AppColors.textTertiary, fontSize: 12),
             ),
             const SizedBox(height: 16),
 
@@ -313,16 +313,20 @@ class _FolderPickerSheet extends StatelessWidget {
                   duration: const Duration(milliseconds: 180),
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 13),
+                    horizontal: 14,
+                    vertical: 13,
+                  ),
                   decoration: BoxDecoration(
-                    color: isSelected
-                        ? opt.color.withOpacity(0.1)
-                        : AppColors.surfaceElevated,
+                    color:
+                        isSelected
+                            ? opt.color.withValues(alpha: 0.1)
+                            : AppColors.surfaceElevated,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isSelected
-                          ? opt.color.withOpacity(0.4)
-                          : AppColors.border,
+                      color:
+                          isSelected
+                              ? opt.color.withValues(alpha: 0.4)
+                              : AppColors.border,
                       width: isSelected ? 1.2 : 0.8,
                     ),
                   ),
@@ -332,7 +336,7 @@ class _FolderPickerSheet extends StatelessWidget {
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: opt.color.withOpacity(0.15),
+                          color: opt.color.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Icon(opt.icon, color: opt.color, size: 20),
@@ -345,9 +349,10 @@ class _FolderPickerSheet extends StatelessWidget {
                             Text(
                               opt.label,
                               style: TextStyle(
-                                color: isSelected
-                                    ? AppColors.textPrimary
-                                    : AppColors.textSecondary,
+                                color:
+                                    isSelected
+                                        ? AppColors.textPrimary
+                                        : AppColors.textSecondary,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -363,8 +368,11 @@ class _FolderPickerSheet extends StatelessWidget {
                         ),
                       ),
                       if (isSelected)
-                        const Icon(Icons.check_circle_rounded,
-                            color: AppColors.primary, size: 18),
+                        const Icon(
+                          Icons.check_circle_rounded,
+                          color: AppColors.primary,
+                          size: 18,
+                        ),
                     ],
                   ),
                 ),
@@ -381,12 +389,13 @@ class _FolderPickerSheet extends StatelessWidget {
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 13),
+                  horizontal: 14,
+                  vertical: 13,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceElevated,
                   borderRadius: BorderRadius.circular(12),
-                  border:
-                  Border.all(color: AppColors.border, width: 0.8),
+                  border: Border.all(color: AppColors.border, width: 0.8),
                 ),
                 child: Row(
                   children: [
@@ -394,11 +403,14 @@ class _FolderPickerSheet extends StatelessWidget {
                       width: 38,
                       height: 38,
                       decoration: BoxDecoration(
-                        color: AppColors.textTertiary.withOpacity(0.1),
+                        color: AppColors.textTertiary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.folder_open_rounded,
-                          color: AppColors.textSecondary, size: 20),
+                      child: const Icon(
+                        Icons.folder_open_rounded,
+                        color: AppColors.textSecondary,
+                        size: 20,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     const Expanded(
@@ -423,13 +435,15 @@ class _FolderPickerSheet extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const Icon(Icons.chevron_right_rounded,
-                        color: AppColors.textTertiary, size: 18),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.textTertiary,
+                      size: 18,
+                    ),
                   ],
                 ),
               ),
             ),
-
           ],
         ),
       ),
@@ -459,10 +473,7 @@ class _Header extends StatelessWidget {
   final bool serviceReady;
   final VoidCallback onPickFolder;
 
-  const _Header({
-    required this.serviceReady,
-    required this.onPickFolder,
-  });
+  const _Header({required this.serviceReady, required this.onPickFolder});
 
   @override
   Widget build(BuildContext context) {
@@ -470,8 +481,8 @@ class _Header extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ShaderMask(
-          shaderCallback: (bounds) =>
-              AppColors.primaryGradient.createShader(bounds),
+          shaderCallback:
+              (bounds) => AppColors.primaryGradient.createShader(bounds),
           child: Row(
             children: [
               const Text(
@@ -499,10 +510,7 @@ class _Header extends StatelessWidget {
 
         Text(
           'Dán link từ YouTube, TikTok, Instagram,... và hơn thế nữa',
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.textSecondary,
-          ),
+          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
         ),
 
         const SizedBox(height: 12),
@@ -544,7 +552,7 @@ class _Header extends StatelessWidget {
               ),
             ),
           ],
-        )
+        ),
       ],
     );
   }
@@ -555,16 +563,17 @@ void _showFullPath(BuildContext context) {
 
   showDialog(
     context: context,
-    builder: (_) => AlertDialog(
-      title: const Text('Thư mục lưu'),
-      content: SelectableText(path),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Đóng'),
+    builder:
+        (_) => AlertDialog(
+          title: const Text('Thư mục lưu'),
+          content: SelectableText(path),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Đóng'),
+            ),
+          ],
         ),
-      ],
-    ),
   );
 }
 
@@ -616,8 +625,7 @@ class _UrlInputCard extends StatelessWidget {
                     ),
                     border: InputBorder.none,
                     isDense: true,
-                    contentPadding:
-                    const EdgeInsets.symmetric(vertical: 4),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 4),
                   ),
                   maxLines: 2,
                   minLines: 1,
@@ -628,9 +636,10 @@ class _UrlInputCard extends StatelessWidget {
               ),
               _ActionIconButton(
                 onTap: isUrlEmpty ? onPaste : onClear,
-                icon: isUrlEmpty
-                    ? Icons.content_paste_rounded
-                    : Icons.close_rounded,
+                icon:
+                    isUrlEmpty
+                        ? Icons.content_paste_rounded
+                        : Icons.close_rounded,
                 tooltip: isUrlEmpty ? 'Dán' : 'Xóa',
               ),
             ],
@@ -642,10 +651,7 @@ class _UrlInputCard extends StatelessWidget {
               children: [
                 Text(
                   'Nhận diện: ',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textTertiary,
-                  ),
+                  style: TextStyle(fontSize: 12, color: AppColors.textTertiary),
                 ),
                 PlatformChip(platform: platform),
               ],
@@ -709,23 +715,25 @@ class _ResultCard extends StatelessWidget {
                 child: CachedNetworkImage(
                   imageUrl: info.thumbnail!,
                   fit: BoxFit.cover,
-                  placeholder: (_, __) => Container(
-                    color: AppColors.surfaceElevated,
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.primary,
+                  placeholder:
+                      (_, __) => Container(
+                        color: AppColors.surfaceElevated,
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.primary,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  errorWidget: (_, __, ___) => Container(
-                    color: AppColors.surfaceElevated,
-                    child: const Icon(
-                      Icons.broken_image_rounded,
-                      color: AppColors.textTertiary,
-                      size: 36,
-                    ),
-                  ),
+                  errorWidget:
+                      (_, __, ___) => Container(
+                        color: AppColors.surfaceElevated,
+                        child: const Icon(
+                          Icons.broken_image_rounded,
+                          color: AppColors.textTertiary,
+                          size: 36,
+                        ),
+                      ),
                 ),
               ),
             ),
@@ -750,15 +758,16 @@ class _ResultCard extends StatelessWidget {
               PlatformChip(platform: info.platform.displayName),
               const SizedBox(width: 8),
               _MetaBadge(
-                icon: info.type == VideoType.playlist
-                    ? Icons.playlist_play_rounded
-                    : Icons.play_arrow_rounded,
-                label: info.type == VideoType.playlist
-                    ? '${info.playlistCount ?? "?"} video'
-                    : 'Video',
+                icon:
+                    info.type == VideoType.playlist
+                        ? Icons.playlist_play_rounded
+                        : Icons.play_arrow_rounded,
+                label:
+                    info.type == VideoType.playlist
+                        ? '${info.playlistCount ?? "?"} video'
+                        : 'Video',
               ),
-              if (info.duration != null &&
-                  info.type == VideoType.video) ...[
+              if (info.duration != null && info.type == VideoType.video) ...[
                 const SizedBox(width: 8),
                 _MetaBadge(
                   icon: Icons.access_time_rounded,
@@ -773,25 +782,26 @@ class _ResultCard extends StatelessWidget {
           const SizedBox(height: 14),
 
           Consumer(
-            builder: (context, ref, _) => PrimaryButton(
-              label: 'Chọn định dạng',
-              icon: Icons.tune_rounded,
-              onPressed: () {
-                if (info.type == VideoType.playlist) {
-                  Navigator.pushNamed(
-                    context,
-                    AppRoutes.playlistPicker,
-                    arguments: info,
-                  );
-                } else {
-                  Navigator.pushNamed(
-                    context,
-                    AppRoutes.format,
-                    arguments: FormatScreenArgs(videoInfo: info),
-                  );
-                }
-              },
-            ),
+            builder:
+                (context, ref, _) => PrimaryButton(
+                  label: 'Chọn định dạng',
+                  icon: Icons.tune_rounded,
+                  onPressed: () {
+                    if (info.type == VideoType.playlist) {
+                      Navigator.pushNamed(
+                        context,
+                        AppRoutes.playlistPicker,
+                        arguments: info,
+                      );
+                    } else {
+                      Navigator.pushNamed(
+                        context,
+                        AppRoutes.format,
+                        arguments: FormatScreenArgs(videoInfo: info),
+                      );
+                    }
+                  },
+                ),
           ),
         ],
       ),
@@ -844,10 +854,10 @@ class _ErrorCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFF3B30).withOpacity(0.08),
+        color: const Color(0xFFFF3B30).withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFFFF3B30).withOpacity(0.25),
+          color: const Color(0xFFFF3B30).withValues(alpha: 0.25),
           width: 0.8,
         ),
       ),

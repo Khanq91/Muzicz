@@ -26,10 +26,12 @@ class SummaryScreen extends ConsumerWidget {
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                size: 20, color: AppColors.textPrimary),
-            onPressed: () =>
-                Navigator.of(context, rootNavigator: true).pop(),
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 20,
+              color: AppColors.textPrimary,
+            ),
+            onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
             tooltip: 'Về trang chủ',
           ),
           title: const Text(
@@ -68,16 +70,22 @@ class SummaryScreen extends ConsumerWidget {
                         // ── Failed list ──────────────────────────────
                         if (dlState.errorCount > 0) ...[
                           _FailedList(
-                            tasks: dlState.tasks
-                                .where((t) => t.status == DownloadStatus.error)
-                                .toList(),
+                            tasks:
+                                dlState.tasks
+                                    .where(
+                                      (t) => t.status == DownloadStatus.error,
+                                    )
+                                    .toList(),
                             onRetryAll: () {
-                              for (final t in dlState.tasks
-                                  .where((t) => t.status == DownloadStatus.error)) {
+                              for (final t in dlState.tasks.where(
+                                (t) => t.status == DownloadStatus.error,
+                              )) {
                                 ref.read(downloadProvider.notifier).retry(t.id);
                               }
                               Navigator.pushReplacementNamed(
-                                  context, AppRoutes.download);
+                                context,
+                                AppRoutes.download,
+                              );
                             },
                           ),
                           const SizedBox(height: 20),
@@ -100,11 +108,13 @@ class SummaryScreen extends ConsumerWidget {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: const Text(
-                                'Không thể mở thư mục, vui lòng mở Files thủ công'),
+                              'Không thể mở thư mục, vui lòng mở Files thủ công',
+                            ),
                             backgroundColor: AppColors.surfaceElevated,
                             behavior: SnackBarBehavior.floating,
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             margin: const EdgeInsets.all(16),
                           ),
                         );
@@ -119,7 +129,7 @@ class SummaryScreen extends ConsumerWidget {
                     Navigator.pushNamedAndRemoveUntil(
                       context,
                       AppRoutes.analyze,
-                          (_) => false,
+                      (_) => false,
                     );
                   },
                   icon: const Icon(Icons.add_rounded, size: 18),
@@ -127,19 +137,25 @@ class SummaryScreen extends ConsumerWidget {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.primary,
                     side: const BorderSide(
-                        color: AppColors.primary, width: 0.8),
+                      color: AppColors.primary,
+                      width: 0.8,
+                    ),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                     minimumSize: const Size(double.infinity, 52),
                   ),
                 ),
                 const SizedBox(height: 12),
                 // ── Nút về trang chủ / profile ──────────────
                 TextButton.icon(
-                  onPressed: () =>
-                      Navigator.of(context, rootNavigator: true).pop(),
-                  icon: const Icon(Icons.home_rounded,
-                      size: 18, color: AppColors.textTertiary),
+                  onPressed:
+                      () => Navigator.of(context, rootNavigator: true).pop(),
+                  icon: const Icon(
+                    Icons.home_rounded,
+                    size: 18,
+                    color: AppColors.textTertiary,
+                  ),
                   label: const Text(
                     'Về trang chủ',
                     style: TextStyle(color: AppColors.textTertiary),
@@ -160,10 +176,7 @@ class _SummaryHeader extends StatelessWidget {
   final int successCount;
   final int errorCount;
 
-  const _SummaryHeader({
-    required this.successCount,
-    required this.errorCount,
-  });
+  const _SummaryHeader({required this.successCount, required this.errorCount});
 
   @override
   Widget build(BuildContext context) {
@@ -176,16 +189,15 @@ class _SummaryHeader extends StatelessWidget {
           height: 72,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: allSuccess
-                ? const LinearGradient(
-              colors: [Color(0xFF34C759), Color(0xFF30D158)],
-            )
-                : AppColors.primaryGradient,
+            gradient:
+                allSuccess
+                    ? const LinearGradient(
+                      colors: [Color(0xFF34C759), Color(0xFF30D158)],
+                    )
+                    : AppColors.primaryGradient,
           ),
           child: Icon(
-            allSuccess
-                ? Icons.check_rounded
-                : Icons.download_done_rounded,
+            allSuccess ? Icons.check_rounded : Icons.download_done_rounded,
             color: Colors.white,
             size: 36,
           ),
@@ -206,10 +218,7 @@ class _SummaryHeader extends StatelessWidget {
           allSuccess
               ? 'Tất cả $successCount video đã được tải xuống'
               : '$successCount thành công · $errorCount thất bại',
-          style: const TextStyle(
-            color: AppColors.textSecondary,
-            fontSize: 14,
-          ),
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
         ),
       ],
     );
@@ -292,10 +301,7 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
-            style: const TextStyle(
-              color: AppColors.textTertiary,
-              fontSize: 12,
-            ),
+            style: const TextStyle(color: AppColors.textTertiary, fontSize: 12),
           ),
         ],
       ),
@@ -332,16 +338,21 @@ class _FailedList extends StatelessWidget {
                 onTap: onRetryAll,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.12),
+                    color: AppColors.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.refresh_rounded,
-                          size: 13, color: AppColors.primary),
+                      Icon(
+                        Icons.refresh_rounded,
+                        size: 13,
+                        color: AppColors.primary,
+                      ),
                       SizedBox(width: 4),
                       Text(
                         'Thử lại tất cả',
@@ -367,8 +378,11 @@ class _FailedList extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.error_outline_rounded,
-                          size: 14, color: Color(0xFFFF3B30)),
+                      const Icon(
+                        Icons.error_outline_rounded,
+                        size: 14,
+                        color: Color(0xFFFF3B30),
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(

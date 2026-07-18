@@ -32,56 +32,59 @@ class PrimaryButton extends StatelessWidget {
         child: Container(
           height: height,
           decoration: BoxDecoration(
-            gradient: enabled
-                ? AppColors.primaryGradient
-                : const LinearGradient(
-                    colors: [Color(0xFF444444), Color(0xFF333333)],
-                  ),
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: enabled
-                ? [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.35),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
+            gradient:
+                enabled
+                    ? AppColors.primaryGradient
+                    : const LinearGradient(
+                      colors: [Color(0xFF444444), Color(0xFF333333)],
                     ),
-                  ]
-                : null,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow:
+                enabled
+                    ? [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.35),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ]
+                    : null,
           ),
           child: Material(
             color: Colors.transparent,
             child: InkWell(
               onTap: enabled ? onPressed : null,
               borderRadius: BorderRadius.circular(14),
-              splashColor: Colors.white.withOpacity(0.1),
+              splashColor: Colors.white.withValues(alpha: 0.1),
               child: Center(
-                child: isLoading
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (icon != null) ...[
-                            Icon(icon, color: Colors.white, size: 18),
-                            const SizedBox(width: 8),
-                          ],
-                          Text(
-                            label,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.2,
-                            ),
+                child:
+                    isLoading
+                        ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
                           ),
-                        ],
-                      ),
+                        )
+                        : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (icon != null) ...[
+                              Icon(icon, color: Colors.white, size: 18),
+                              const SizedBox(width: 8),
+                            ],
+                            Text(
+                              label,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                          ],
+                        ),
               ),
             ),
           ),

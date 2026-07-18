@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
-import '../theme/app_colors.dart';
 import 'splash_screen.dart';
 import 'onboarding_screen.dart';
-import 'home_screen.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -57,7 +55,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    c.primary.withOpacity(0.12),
+                    c.primary.withValues(alpha: 0.12),
                     Colors.transparent,
                   ],
                 ),
@@ -74,7 +72,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    c.tertiary.withOpacity(0.08),
+                    c.tertiary.withValues(alpha: 0.08),
                     Colors.transparent,
                   ],
                 ),
@@ -163,11 +161,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 }
 
 class _GradientButton extends StatefulWidget {
-  const _GradientButton({
-    required this.label,
-    required this.onTap,
-    this.icon,
-  });
+  const _GradientButton({required this.label, required this.onTap, this.icon});
   final String label;
   final VoidCallback onTap;
   final IconData? icon;
@@ -188,9 +182,10 @@ class _GradientButtonState extends State<_GradientButton>
       vsync: this,
       duration: const Duration(milliseconds: 120),
     );
-    _scale = Tween(begin: 1.0, end: 0.96).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
+    _scale = Tween(
+      begin: 1.0,
+      end: 0.96,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -223,7 +218,7 @@ class _GradientButtonState extends State<_GradientButton>
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: c.primary.withOpacity(0.35),
+                color: c.primary.withValues(alpha: 0.35),
                 blurRadius: 20,
                 offset: const Offset(0, 6),
               ),
@@ -273,9 +268,10 @@ class _OutlinedButtonState extends State<_OutlinedButton>
       vsync: this,
       duration: const Duration(milliseconds: 120),
     );
-    _scale = Tween(begin: 1.0, end: 0.96).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
+    _scale = Tween(
+      begin: 1.0,
+      end: 0.96,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override

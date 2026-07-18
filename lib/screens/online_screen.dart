@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
-import '../theme/app_colors.dart';
 
 class OnlineScreen extends StatelessWidget {
   const OnlineScreen({super.key, this.isEmbedded = false});
@@ -23,12 +22,14 @@ class OnlineScreen extends StatelessWidget {
                   // ← Ẩn back button khi isEmbedded
                   if (!isEmbedded)
                     IconButton(
-                      icon: Icon(Icons.arrow_back_ios_new_rounded,
-                          size: 20, color: c.textPrimary),
+                      icon: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        size: 20,
+                        color: c.textPrimary,
+                      ),
                       onPressed: () => Navigator.pop(context),
                     ),
-                  if (isEmbedded)
-                    const SizedBox(width: 16),
+                  if (isEmbedded) const SizedBox(width: 16),
                   Text(
                     'Trực tuyến',
                     style: GoogleFonts.outfit(
@@ -57,9 +58,9 @@ class OnlineScreen extends StatelessWidget {
                             height: 88,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: c.primary.withOpacity(0.12),
+                              color: c.primary.withValues(alpha: 0.12),
                               border: Border.all(
-                                color: c.primary.withOpacity(0.2),
+                                color: c.primary.withValues(alpha: 0.2),
                                 width: 1,
                               ),
                             ),
@@ -120,7 +121,8 @@ class OnlineScreen extends StatelessWidget {
                           icon: Icons.download_rounded,
                           iconColor: c.secondary,
                           title: 'Tải nhạc từ URL',
-                          subtitle: 'TikTok, YouTube, SoundCloud và hơn thế nữa',
+                          subtitle:
+                              'TikTok, YouTube, SoundCloud và hơn thế nữa',
                           badge: 'Sớm',
                         ),
                         _FeatureTile(
@@ -193,7 +195,7 @@ class _FeatureTile extends StatelessWidget {
             height: 42,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
-              color: iconColor.withOpacity(0.12),
+              color: iconColor.withValues(alpha: 0.12),
             ),
             child: Icon(icon, color: iconColor, size: 22),
           ),
@@ -226,10 +228,10 @@ class _FeatureTile extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: c.primary.withOpacity(0.12),
+              color: c.primary.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: c.primary.withOpacity(0.2),
+                color: c.primary.withValues(alpha: 0.2),
                 width: 0.5,
               ),
             ),

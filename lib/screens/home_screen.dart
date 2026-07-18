@@ -1,14 +1,11 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:muziczz/screens/playlist_screen.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
 import '../models/song_item.dart';
 import '../providers/music_provider.dart';
 import '../providers/player_provider.dart';
-import '../theme/app_colors.dart';
 import '../widgets/mini_player.dart';
 import '../widgets/music_list_tile.dart';
 import 'library_screen.dart';
@@ -39,21 +36,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-  final c = context.appColors;
+    final c = context.appColors;
     return Scaffold(
       backgroundColor: c.background,
       body: Column(
         children: [
-          Expanded(
-            child: IndexedStack(
-              index: _currentIndex,
-              children: _tabs,
-            ),
-          ),
+          Expanded(child: IndexedStack(index: _currentIndex, children: _tabs)),
           Consumer<PlayerProvider>(
-            builder: (_, player, __) => player.currentSong != null
-                ? const RepaintBoundary(child: MiniPlayer())
-                : const SizedBox.shrink(),
+            builder:
+                (_, player, __) =>
+                    player.currentSong != null
+                        ? const RepaintBoundary(child: MiniPlayer())
+                        : const SizedBox.shrink(),
           ),
         ],
       ),
@@ -97,7 +91,6 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.appColors;
     return CustomScrollView(
       controller: _scrollCtrl,
       physics: const BouncingScrollPhysics(),
@@ -179,8 +172,7 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // FIX 2: Nút scan — chỉ hiện sau lần quét đầu tiên
-                if (music.hasScannedOnce)
-                  _ScanButton(isScanning: isScanning),
+                if (music.hasScannedOnce) _ScanButton(isScanning: isScanning),
 
                 const SizedBox(width: 4),
                 _AvatarButton(),
@@ -199,13 +191,16 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
       PageRouteBuilder(
         pageBuilder: (_, animation, __) => const NowPlayingScreen(),
         transitionDuration: const Duration(milliseconds: 400),
-        transitionsBuilder: (_, anim, __, child) => SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 1),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
-          child: child,
-        ),
+        transitionsBuilder:
+            (_, anim, __, child) => SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 1),
+                end: Offset.zero,
+              ).animate(
+                CurvedAnimation(parent: anim, curve: Curves.easeOutCubic),
+              ),
+              child: child,
+            ),
       ),
     );
   }
@@ -223,33 +218,32 @@ class _ScanButton extends StatelessWidget {
     return SizedBox(
       width: 40,
       height: 40,
-      child: isScanning
-          ? Center(
-        child: SizedBox(
-          width: 18,
-          height: 18,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: c.primary,
-          ),
-        ),
-      )
-          : IconButton(
-        padding: EdgeInsets.zero,
-        icon: Icon(
-          Icons.refresh_rounded,
-          color: c.textTertiary,
-          size: 22,
-        ),
-        tooltip: 'Quét lại nhạc',
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => const OnboardingScreen(),
-            ),
-          );
-        },
-      ),
+      child:
+          isScanning
+              ? Center(
+                child: SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: c.primary,
+                  ),
+                ),
+              )
+              : IconButton(
+                padding: EdgeInsets.zero,
+                icon: Icon(
+                  Icons.refresh_rounded,
+                  color: c.textTertiary,
+                  size: 22,
+                ),
+                tooltip: 'Quét lại nhạc',
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+                  );
+                },
+              ),
     );
   }
 }
@@ -276,12 +270,12 @@ class _BottomNav extends StatelessWidget {
           border: Border.all(color: c.border, width: 0.5),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.30),
+              color: Colors.black.withValues(alpha: 0.30),
               blurRadius: 24,
               offset: const Offset(0, 6),
             ),
             BoxShadow(
-              color: c.primary.withOpacity(0.06),
+              color: c.primary.withValues(alpha: 0.06),
               blurRadius: 32,
               offset: const Offset(0, 2),
             ),
@@ -342,9 +336,8 @@ class _NavItem extends StatelessWidget {
           vertical: 10,
         ),
         decoration: BoxDecoration(
-          color: active
-              ? c.primary.withOpacity(0.14)
-              : Colors.transparent,
+          color:
+              active ? c.primary.withValues(alpha: 0.14) : Colors.transparent,
           borderRadius: BorderRadius.circular(18),
         ),
         child: Row(
@@ -363,19 +356,20 @@ class _NavItem extends StatelessWidget {
             AnimatedSize(
               duration: const Duration(milliseconds: 260),
               curve: Curves.easeOutCubic,
-              child: active
-                  ? Padding(
-                padding: const EdgeInsets.only(left: 7),
-                child: Text(
-                  label,
-                  style: GoogleFonts.outfit(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: c.primary,
-                  ),
-                ),
-              )
-                  : const SizedBox.shrink(),
+              child:
+                  active
+                      ? Padding(
+                        padding: const EdgeInsets.only(left: 7),
+                        child: Text(
+                          label,
+                          style: GoogleFonts.outfit(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: c.primary,
+                          ),
+                        ),
+                      )
+                      : const SizedBox.shrink(),
             ),
           ],
         ),
@@ -397,37 +391,41 @@ class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
   final VoidCallback onClear;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     final elevated = shrinkOffset > 0;
     final c = context.appColors;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
-      color: elevated
-          ? c.background.withOpacity(0.95)
-          : Colors.transparent,
+      color:
+          elevated ? c.background.withValues(alpha: 0.95) : Colors.transparent,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: TextField(
         controller: searchCtrl,
         onChanged: onChanged,
-        style: GoogleFonts.outfit(
-          color: c.textPrimary,
-          fontSize: 15,
-        ),
+        style: GoogleFonts.outfit(color: c.textPrimary, fontSize: 15),
         decoration: InputDecoration(
           hintText: 'Tìm bài hát, nghệ sĩ, album…',
-          hintStyle: GoogleFonts.outfit(
-            color: c.textDisabled,
-            fontSize: 15,
+          hintStyle: GoogleFonts.outfit(color: c.textDisabled, fontSize: 15),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            color: c.textTertiary,
+            size: 22,
           ),
-          prefixIcon: Icon(Icons.search_rounded,
-              color: c.textTertiary, size: 22),
-          suffixIcon: searchCtrl.text.isNotEmpty
-              ? GestureDetector(
-            onTap: onClear,
-            child: Icon(Icons.close_rounded,
-                color: c.textTertiary, size: 20),
-          )
-              : null,
+          suffixIcon:
+              searchCtrl.text.isNotEmpty
+                  ? GestureDetector(
+                    onTap: onClear,
+                    child: Icon(
+                      Icons.close_rounded,
+                      color: c.textTertiary,
+                      size: 20,
+                    ),
+                  )
+                  : null,
           filled: true,
           fillColor: c.surfaceElevated,
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
@@ -476,23 +474,16 @@ class _SearchResultsSliver extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.search_off_rounded,
-                  color: c.textDisabled, size: 48),
+              Icon(Icons.search_off_rounded, color: c.textDisabled, size: 48),
               const SizedBox(height: 12),
               Text(
                 'Không tìm thấy kết quả',
-                style: GoogleFonts.outfit(
-                  color: c.textTertiary,
-                  fontSize: 15,
-                ),
+                style: GoogleFonts.outfit(color: c.textTertiary, fontSize: 15),
               ),
               const SizedBox(height: 8),
               Text(
                 'Thử tìm bằng tên nghệ sĩ hoặc album',
-                style: GoogleFonts.outfit(
-                  color: c.textDisabled,
-                  fontSize: 13,
-                ),
+                style: GoogleFonts.outfit(color: c.textDisabled, fontSize: 13),
               ),
             ],
           ),
@@ -501,17 +492,14 @@ class _SearchResultsSliver extends StatelessWidget {
     }
 
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-            (_, i) {
-          final song = results[i];
-          return MusicListTile(
-            song: song,
-            isActive: player.currentSong?.id == song.id,
-            onTap: () => onSongTap(results, song),
-          );
-        },
-        childCount: results.length,
-      ),
+      delegate: SliverChildBuilderDelegate((_, i) {
+        final song = results[i];
+        return MusicListTile(
+          song: song,
+          isActive: player.currentSong?.id == song.id,
+          onTap: () => onSongTap(results, song),
+        );
+      }, childCount: results.length),
     );
   }
 }
@@ -609,9 +597,13 @@ class _QuickCardState extends State<_QuickCard>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 120));
-    _scale = Tween(begin: 1.0, end: 0.95)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+      vsync: this,
+      duration: const Duration(milliseconds: 120),
+    );
+    _scale = Tween(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -630,6 +622,7 @@ class _QuickCardState extends State<_QuickCard>
       onTapDown: (_) => _ctrl.forward(),
       onTapUp: (_) async {
         await _ctrl.reverse();
+        if (!context.mounted) return;
         if (s.songs.isEmpty) return;
         final player = context.read<PlayerProvider>();
         final music = context.read<MusicProvider>();
@@ -672,10 +665,7 @@ class _QuickCardState extends State<_QuickCard>
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        c.scrimMedium,
-                      ],
+                      colors: [Colors.transparent, c.scrimMedium],
                     ),
                   ),
                 ),
@@ -686,8 +676,11 @@ class _QuickCardState extends State<_QuickCard>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(s.icon,
-                        color: Colors.white.withOpacity(0.9), size: 28),
+                    Icon(
+                      s.icon,
+                      color: Colors.white.withValues(alpha: 0.9),
+                      size: 28,
+                    ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -704,7 +697,7 @@ class _QuickCardState extends State<_QuickCard>
                           style: GoogleFonts.outfit(
                             fontSize: 11,
                             fontWeight: FontWeight.w300,
-                            color: Colors.white.withOpacity(0.7),
+                            color: Colors.white.withValues(alpha: 0.7),
                           ),
                         ),
                       ],
@@ -738,21 +731,29 @@ class _SmartListsSection extends StatelessWidget {
       children: [
         if (recentlyAdded.isNotEmpty) ...[
           _SectionHeader(title: 'Mới thêm gần đây'),
-          ...recentlyAdded.take(5).map((song) => MusicListTile(
-            key: ValueKey('ra_${song.id}'),
-            song: song,
-            isActive: player.currentSong?.id == song.id,
-            onTap: () => onSongTap(recentlyAdded, song),
-          )),
+          ...recentlyAdded
+              .take(5)
+              .map(
+                (song) => MusicListTile(
+                  key: ValueKey('ra_${song.id}'),
+                  song: song,
+                  isActive: player.currentSong?.id == song.id,
+                  onTap: () => onSongTap(recentlyAdded, song),
+                ),
+              ),
         ],
         if (neverPlayed.isNotEmpty) ...[
           _SectionHeader(title: 'Chưa từng nghe'),
-          ...neverPlayed.take(5).map((song) => MusicListTile(
-            key: ValueKey('np_${song.id}'),
-            song: song,
-            isActive: player.currentSong?.id == song.id,
-            onTap: () => onSongTap(neverPlayed, song),
-          )),
+          ...neverPlayed
+              .take(5)
+              .map(
+                (song) => MusicListTile(
+                  key: ValueKey('np_${song.id}'),
+                  song: song,
+                  isActive: player.currentSong?.id == song.id,
+                  onTap: () => onSongTap(neverPlayed, song),
+                ),
+              ),
         ],
         // FIX 2: Empty state với nút quét — hướng user rõ ràng hơn
         if (recentlyAdded.isEmpty && neverPlayed.isEmpty)
@@ -761,8 +762,11 @@ class _SmartListsSection extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(40, 40, 40, 20),
               child: Column(
                 children: [
-                  Icon(Icons.music_off_rounded,
-                      color: c.textDisabled, size: 48),
+                  Icon(
+                    Icons.music_off_rounded,
+                    color: c.textDisabled,
+                    size: 48,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Chưa có nhạc nào.\nHãy quét thư viện nhạc của bạn.',
@@ -794,9 +798,12 @@ class _SmartListsSection extends StatelessWidget {
                       backgroundColor: c.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 12),
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ],
@@ -834,17 +841,16 @@ class _AvatarButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.appColors;
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const ProfileScreen()),
-      ),
+      onTap:
+          () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const ProfileScreen())),
       child: Container(
         width: 40,
         height: 40,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: LinearGradient(
-            colors: [c.primary, c.tertiary],
-          ),
+          gradient: LinearGradient(colors: [c.primary, c.tertiary]),
         ),
         child: const Icon(Icons.person_rounded, color: Colors.white, size: 22),
       ),

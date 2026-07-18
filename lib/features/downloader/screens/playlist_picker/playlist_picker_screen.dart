@@ -41,10 +41,10 @@ class _PlaylistPickerScreenState extends ConsumerState<PlaylistPickerScreen> {
   List<PlaylistEntry> get _filteredEntries {
     if (_searchQuery.isEmpty) return _entries;
 
-    final query = VNnormalize(_searchQuery);
+    final query = vnNormalize(_searchQuery);
 
     return _entries.where((e) {
-      final title = VNnormalize(e.title);
+      final title = vnNormalize(e.title);
       return title.contains(query);
     }).toList();
   }
@@ -55,8 +55,9 @@ class _PlaylistPickerScreenState extends ConsumerState<PlaylistPickerScreen> {
       _error = null;
     });
 
-    final result = await YtdlpService.instance
-        .getPlaylistEntries(widget.playlistInfo.url);
+    final result = await YtdlpService.instance.getPlaylistEntries(
+      widget.playlistInfo.url,
+    );
 
     if (!mounted) return;
 
@@ -77,7 +78,8 @@ class _PlaylistPickerScreenState extends ConsumerState<PlaylistPickerScreen> {
   // ── Selection helpers ──────────────────────────────────
 
   int get _selectedCount => _entries.where((e) => e.selected).length;
-  bool get _allSelected => _entries.isNotEmpty && _entries.every((e) => e.selected);
+  bool get _allSelected =>
+      _entries.isNotEmpty && _entries.every((e) => e.selected);
 
   void _toggleEntry(int index) {
     setState(() {
@@ -109,9 +111,7 @@ class _PlaylistPickerScreenState extends ConsumerState<PlaylistPickerScreen> {
       context,
       AppRoutes.format,
       arguments: FormatScreenArgs(
-        videoInfo: widget.playlistInfo.copyWith(
-          playlistCount: selected.length,
-        ),
+        videoInfo: widget.playlistInfo.copyWith(playlistCount: selected.length),
         selectedEntries: selected,
       ),
     );
@@ -159,15 +159,16 @@ class _PlaylistPickerScreenState extends ConsumerState<PlaylistPickerScreen> {
                     hintText: 'Tìm video...',
                     hintStyle: const TextStyle(color: AppColors.textTertiary),
                     prefixIcon: const Icon(Icons.search, size: 20),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () {
-                        _searchController.clear();
-                        setState(() => _searchQuery = '');
-                      },
-                    )
-                        : null,
+                    suffixIcon:
+                        _searchQuery.isNotEmpty
+                            ? IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _searchQuery = '');
+                              },
+                            )
+                            : null,
                     filled: true,
                     fillColor: AppColors.surface,
                     contentPadding: const EdgeInsets.symmetric(vertical: 10),
@@ -180,20 +181,20 @@ class _PlaylistPickerScreenState extends ConsumerState<PlaylistPickerScreen> {
               ),
             // ── Body ─────────────────────────────────────
             Expanded(
-              child: _isLoading
-                  ? const _LoadingState()
-                  : _error != null
-                  ? _ErrorState(
-                message: _error!,
-                onRetry: _loadEntries,
-              )
-                  : _EntryList(
-                entries: _filteredEntries,
-                onToggle: (index) {
-                  final realIndex = _entries.indexOf(_filteredEntries[index]);
-                  _toggleEntry(realIndex);
-                },
-              ),
+              child:
+                  _isLoading
+                      ? const _LoadingState()
+                      : _error != null
+                      ? _ErrorState(message: _error!, onRetry: _loadEntries)
+                      : _EntryList(
+                        entries: _filteredEntries,
+                        onToggle: (index) {
+                          final realIndex = _entries.indexOf(
+                            _filteredEntries[index],
+                          );
+                          _toggleEntry(realIndex);
+                        },
+                      ),
             ),
 
             // ── Bottom bar ───────────────────────────────
@@ -232,7 +233,9 @@ class _SelectionToolbar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.divider, width: 0.5)),
+        border: Border(
+          bottom: BorderSide(color: AppColors.divider, width: 0.5),
+        ),
       ),
       child: Row(
         children: [
@@ -249,7 +252,7 @@ class _SelectionToolbar extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.12),
+                color: AppColors.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -312,14 +315,16 @@ class _EntryTile extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: entry.selected
-              ? AppColors.primary.withOpacity(0.08)
-              : AppColors.surface,
+          color:
+              entry.selected
+                  ? AppColors.primary.withValues(alpha: 0.08)
+                  : AppColors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: entry.selected
-                ? AppColors.primary.withOpacity(0.4)
-                : AppColors.border,
+            color:
+                entry.selected
+                    ? AppColors.primary.withValues(alpha: 0.4)
+                    : AppColors.border,
             width: entry.selected ? 1.2 : 0.8,
           ),
         ),
@@ -333,28 +338,36 @@ class _EntryTile extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: entry.selected ? AppColors.primaryGradient : null,
-                border: entry.selected
-                    ? null
-                    : Border.all(color: AppColors.textTertiary, width: 1.5),
+                border:
+                    entry.selected
+                        ? null
+                        : Border.all(color: AppColors.textTertiary, width: 1.5),
               ),
-              child: entry.selected
-                  ? const Icon(Icons.check_rounded, color: Colors.white, size: 14)
-                  : null,
+              child:
+                  entry.selected
+                      ? const Icon(
+                        Icons.check_rounded,
+                        color: Colors.white,
+                        size: 14,
+                      )
+                      : null,
             ),
             const SizedBox(width: 10),
 
             // Thumbnail
             ClipRRect(
               borderRadius: BorderRadius.circular(6),
-              child: entry.thumbnail != null
-                  ? CachedNetworkImage(
-                imageUrl: entry.thumbnail!,
-                width: 72,
-                height: 46,
-                fit: BoxFit.cover,
-                errorWidget: (_, __, ___) => _ThumbnailPlaceholder(index: index),
-              )
-                  : _ThumbnailPlaceholder(index: index),
+              child:
+                  entry.thumbnail != null
+                      ? CachedNetworkImage(
+                        imageUrl: entry.thumbnail!,
+                        width: 72,
+                        height: 46,
+                        fit: BoxFit.cover,
+                        errorWidget:
+                            (_, __, ___) => _ThumbnailPlaceholder(index: index),
+                      )
+                      : _ThumbnailPlaceholder(index: index),
             ),
             const SizedBox(width: 10),
 
@@ -368,9 +381,10 @@ class _EntryTile extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: entry.selected
-                          ? AppColors.textPrimary
-                          : AppColors.textSecondary,
+                      color:
+                          entry.selected
+                              ? AppColors.textPrimary
+                              : AppColors.textSecondary,
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                       height: 1.3,
@@ -484,14 +498,19 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline_rounded,
-                color: Color(0xFFFF3B30), size: 40),
+            const Icon(
+              Icons.error_outline_rounded,
+              color: Color(0xFFFF3B30),
+              size: 40,
+            ),
             const SizedBox(height: 12),
             Text(
               message,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                  color: AppColors.textSecondary, fontSize: 14),
+                color: AppColors.textSecondary,
+                fontSize: 14,
+              ),
             ),
             const SizedBox(height: 20),
             GlassCard(
@@ -501,14 +520,18 @@ class _ErrorState extends StatelessWidget {
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.refresh_rounded,
-                        color: AppColors.primary, size: 18),
+                    Icon(
+                      Icons.refresh_rounded,
+                      color: AppColors.primary,
+                      size: 18,
+                    ),
                     SizedBox(width: 8),
                     Text(
                       'Thử lại',
                       style: TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600),
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -538,13 +561,16 @@ class _BottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.fromLTRB(
-        20, 12, 20,
+        20,
+        12,
+        20,
         MediaQuery.of(context).padding.bottom + 16,
       ),
       decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.95),
+        color: AppColors.surface.withValues(alpha: 0.95),
         border: const Border(
-            top: BorderSide(color: AppColors.divider, width: 0.5)),
+          top: BorderSide(color: AppColors.divider, width: 0.5),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -555,13 +581,18 @@ class _BottomBar extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.info_outline_rounded,
-                      size: 13, color: AppColors.textTertiary),
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    size: 13,
+                    color: AppColors.textTertiary,
+                  ),
                   const SizedBox(width: 5),
                   Text(
                     '${total - selectedCount} video bị bỏ qua',
                     style: const TextStyle(
-                        color: AppColors.textTertiary, fontSize: 12),
+                      color: AppColors.textTertiary,
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),

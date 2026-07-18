@@ -19,10 +19,11 @@ class ThemeSelectorSheet extends StatefulWidget {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (_) => ChangeNotifierProvider.value(
-        value: context.read<ThemeProvider>(),
-        child: const ThemeSelectorSheet(),
-      ),
+      builder:
+          (_) => ChangeNotifierProvider.value(
+            value: context.read<ThemeProvider>(),
+            child: const ThemeSelectorSheet(),
+          ),
     );
   }
 
@@ -113,30 +114,33 @@ class _ThemeSelectorSheetState extends State<ThemeSelectorSheet> {
                 child: TextButton(
                   onPressed: _previewMode != currentMode ? _apply : null,
                   style: TextButton.styleFrom(
-                    backgroundColor: c.primary.withOpacity(0.12),
+                    backgroundColor: c.primary.withValues(alpha: 0.12),
                     foregroundColor: c.primary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
-                  ),
-                  child: _isApplying
-                      ? SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: c.primary,
-                    ),
-                  )
-                      : Text(
-                    'Áp dụng',
-                    style: GoogleFonts.outfit(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                      horizontal: 16,
+                      vertical: 8,
                     ),
                   ),
+                  child:
+                      _isApplying
+                          ? SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: c.primary,
+                            ),
+                          )
+                          : Text(
+                            'Áp dụng',
+                            style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
                 ),
               ),
             ],
@@ -145,7 +149,7 @@ class _ThemeSelectorSheetState extends State<ThemeSelectorSheet> {
 
           // Theme options — tap để preview, không apply ngay
           ...AppThemeMode.values.map(
-                (mode) => _ThemeOption(
+            (mode) => _ThemeOption(
               mode: mode,
               isSelected: _previewMode == mode,
               isCurrentlyActive: currentMode == mode,
@@ -162,10 +166,7 @@ class _ThemeSelectorSheetState extends State<ThemeSelectorSheet> {
             Text(
               'Nhấn "Áp dụng" để chuyển sang giao diện ${_previewMode.label}',
               textAlign: TextAlign.center,
-              style: GoogleFonts.outfit(
-                fontSize: 12,
-                color: c.textTertiary,
-              ),
+              style: GoogleFonts.outfit(fontSize: 12, color: c.textTertiary),
             ),
           ],
         ],
@@ -185,7 +186,7 @@ class _ThemeOption extends StatelessWidget {
   });
 
   final AppThemeMode mode;
-  final bool isSelected;      // đang preview/chọn
+  final bool isSelected; // đang preview/chọn
   final bool isCurrentlyActive; // đang dùng thực tế
   final VoidCallback onTap;
 
@@ -201,9 +202,10 @@ class _ThemeOption extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected
-              ? c.primary.withOpacity(0.10)
-              : c.surfaceElevated,
+          color:
+              isSelected
+                  ? c.primary.withValues(alpha: 0.10)
+                  : c.surfaceElevated,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected ? c.primary : c.border,
@@ -234,9 +236,11 @@ class _ThemeOption extends StatelessWidget {
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 7, vertical: 2),
+                            horizontal: 7,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: c.primary.withOpacity(0.15),
+                            color: c.primary.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -279,9 +283,9 @@ class _ThemeOption extends StatelessWidget {
   }
 
   String _subtitle(AppThemeMode mode) => switch (mode) {
-    AppThemeMode.dark   => 'Nền đen xám, dễ dùng ban đêm',
+    AppThemeMode.dark => 'Nền đen xám, dễ dùng ban đêm',
     AppThemeMode.amoled => 'Pure black, tiết kiệm pin OLED',
-    AppThemeMode.light  => 'Nền sáng, dễ đọc ngoài trời',
+    AppThemeMode.light => 'Nền sáng, dễ đọc ngoài trời',
   };
 }
 

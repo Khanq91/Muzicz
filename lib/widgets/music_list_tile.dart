@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import '../models/song_item.dart';
 import '../providers/music_provider.dart';
 import '../providers/player_provider.dart';
-import '../theme/app_colors.dart';
 import 'add_to_playlist_sheet.dart';
 
 class MusicListTile extends StatelessWidget {
@@ -40,26 +39,28 @@ class MusicListTile extends StatelessWidget {
     final isFav = musicProvider.isFavorite(song.id);
     final c = context.appColors;
 
-    final bgColor = isSelected
-        ? c.primary.withOpacity(0.14)
-        : isActive
-        ? c.primary.withOpacity(0.08)
-        : Colors.transparent;
+    final bgColor =
+        isSelected
+            ? c.primary.withValues(alpha: 0.14)
+            : isActive
+            ? c.primary.withValues(alpha: 0.08)
+            : Colors.transparent;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        onLongPress: isSelecting
-            ? null
-            : (onLongPress ??
-                () {
-              HapticFeedback.mediumImpact();
-              _showContextMenu(context, isFav, musicProvider);
-            }),
+        onLongPress:
+            isSelecting
+                ? null
+                : (onLongPress ??
+                    () {
+                      HapticFeedback.mediumImpact();
+                      _showContextMenu(context, isFav, musicProvider);
+                    }),
         borderRadius: BorderRadius.circular(12),
-        splashColor: c.primary.withOpacity(0.1),
-        highlightColor: c.primary.withOpacity(0.05),
+        splashColor: c.primary.withValues(alpha: 0.1),
+        highlightColor: c.primary.withValues(alpha: 0.05),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -87,11 +88,13 @@ class MusicListTile extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: isSelected || isActive ? c.primary : c.textPrimary,
+                        color:
+                            isSelected || isActive ? c.primary : c.textPrimary,
                         fontSize: 15,
-                        fontWeight: isActive || isSelected
-                            ? FontWeight.w600
-                            : FontWeight.w500,
+                        fontWeight:
+                            isActive || isSelected
+                                ? FontWeight.w600
+                                : FontWeight.w500,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -130,7 +133,10 @@ class MusicListTile extends StatelessWidget {
   }
 
   void _showContextMenu(
-      BuildContext context, bool isFav, MusicProvider musicProvider) {
+    BuildContext context,
+    bool isFav,
+    MusicProvider musicProvider,
+  ) {
     final c = context.appColors;
     showModalBottomSheet(
       context: context,
@@ -138,12 +144,13 @@ class MusicListTile extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => _SongContextMenu(
-        song: song,
-        isFavorite: isFav,
-        onFavoriteToggle: () => musicProvider.toggleFavorite(song.id),
-        parentContext: context,
-      ),
+      builder:
+          (_) => _SongContextMenu(
+            song: song,
+            isFavorite: isFav,
+            onFavoriteToggle: () => musicProvider.toggleFavorite(song.id),
+            parentContext: context,
+          ),
     );
   }
 }
@@ -178,9 +185,10 @@ class _AlbumArtWithCheckbox extends StatelessWidget {
               height: 48,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
-                color: isSelected
-                    ? c.primary.withOpacity(0.65)
-                    : Colors.black.withOpacity(0.35),
+                color:
+                    isSelected
+                        ? c.primary.withValues(alpha: 0.65)
+                        : Colors.black.withValues(alpha: 0.35),
               ),
               child: Center(
                 child: Icon(
@@ -214,8 +222,7 @@ class _AlbumArtThumbnail extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
         color: c.surfaceElevated,
-        border:
-        isActive ? Border.all(color: c.primary, width: 1.5) : null,
+        border: isActive ? Border.all(color: c.primary, width: 1.5) : null,
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(10),
@@ -240,8 +247,7 @@ class _DefaultArtwork extends StatelessWidget {
     final c = context.appColors;
     return Container(
       color: c.surfaceElevated,
-      child: Icon(Icons.music_note_rounded,
-          color: c.textDisabled, size: 22),
+      child: Icon(Icons.music_note_rounded, color: c.textDisabled, size: 22),
     );
   }
 }
@@ -270,7 +276,8 @@ class _SongContextMenu extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 36, height: 4,
+            width: 36,
+            height: 4,
             decoration: BoxDecoration(
               color: c.divider,
               borderRadius: BorderRadius.circular(2),
@@ -287,18 +294,22 @@ class _SongContextMenu extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(song.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                              color: c.textPrimary,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600)),
-                      Text(song.artist,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                              color: c.textTertiary, fontSize: 13)),
+                      Text(
+                        song.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: c.textPrimary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        song.artist,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: c.textTertiary, fontSize: 13),
+                      ),
                     ],
                   ),
                 ),
@@ -309,9 +320,10 @@ class _SongContextMenu extends StatelessWidget {
           Divider(color: c.divider),
 
           _ContextMenuItem(
-            icon: isFavorite
-                ? Icons.favorite_rounded
-                : Icons.favorite_border_rounded,
+            icon:
+                isFavorite
+                    ? Icons.favorite_rounded
+                    : Icons.favorite_border_rounded,
             iconColor: isFavorite ? c.tertiary : null,
             label: isFavorite ? 'Bỏ yêu thích' : 'Thêm vào yêu thích',
             onTap: () {
@@ -329,10 +341,11 @@ class _SongContextMenu extends StatelessWidget {
                 context: parentContext,
                 backgroundColor: Colors.transparent,
                 isScrollControlled: true,
-                builder: (_) => ChangeNotifierProvider.value(
-                  value: parentContext.read<MusicProvider>(),
-                  child: AddToPlaylistSheet(song: song),
-                ),
+                builder:
+                    (_) => ChangeNotifierProvider.value(
+                      value: parentContext.read<MusicProvider>(),
+                      child: AddToPlaylistSheet(song: song),
+                    ),
               );
             },
           ),
@@ -358,7 +371,8 @@ class _SongContextMenu extends StatelessWidget {
                     behavior: SnackBarBehavior.floating,
                     margin: const EdgeInsets.fromLTRB(16, 0, 16, 80),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                 );
               }
@@ -387,27 +401,31 @@ class _SongContextMenu extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Thông tin bài hát',
-                style: TextStyle(
+      builder:
+          (_) => Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Thông tin bài hát',
+                  style: TextStyle(
                     color: c.textPrimary,
                     fontSize: 16,
-                    fontWeight: FontWeight.w700)),
-            const SizedBox(height: 16),
-            _infoRow(context, 'Tên bài', song.title),
-            _infoRow(context, 'Nghệ sĩ', song.artist),
-            _infoRow(context, 'Album', song.album),
-            _infoRow(context, 'Thời lượng', song.durationFormatted),
-            _infoRow(context, 'Đường dẫn', song.data),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _infoRow(context, 'Tên bài', song.title),
+                _infoRow(context, 'Nghệ sĩ', song.artist),
+                _infoRow(context, 'Album', song.album),
+                _infoRow(context, 'Thời lượng', song.durationFormatted),
+                _infoRow(context, 'Đường dẫn', song.data),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
     );
   }
 
@@ -420,16 +438,20 @@ class _SongContextMenu extends StatelessWidget {
         children: [
           SizedBox(
             width: 90,
-            child: Text(label,
-                style: TextStyle(
-                    color: c.textTertiary, fontSize: 13)),
+            child: Text(
+              label,
+              style: TextStyle(color: c.textTertiary, fontSize: 13),
+            ),
           ),
           Expanded(
-            child: Text(value,
-                style: TextStyle(
-                    color: c.textPrimary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500)),
+            child: Text(
+              value,
+              style: TextStyle(
+                color: c.textPrimary,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
         ],
       ),
@@ -454,13 +476,15 @@ class _ContextMenuItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.appColors;
     return ListTile(
-      leading: Icon(icon,
-          color: iconColor ?? c.textSecondary, size: 22),
-      title: Text(label,
-          style: TextStyle(
-              color: c.textPrimary,
-              fontSize: 15,
-              fontWeight: FontWeight.w400)),
+      leading: Icon(icon, color: iconColor ?? c.textSecondary, size: 22),
+      title: Text(
+        label,
+        style: TextStyle(
+          color: c.textPrimary,
+          fontSize: 15,
+          fontWeight: FontWeight.w400,
+        ),
+      ),
       onTap: onTap,
     );
   }

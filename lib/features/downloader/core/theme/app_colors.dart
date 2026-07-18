@@ -56,11 +56,15 @@ class AppColors {
 
   static LinearGradient dynamicGradient(Color dominantColor) {
     final hsl = HSLColor.fromColor(dominantColor);
-    final darker = hsl.withLightness((hsl.lightness - 0.3).clamp(0.0, 1.0)).toColor();
+    final darker =
+        hsl.withLightness((hsl.lightness - 0.3).clamp(0.0, 1.0)).toColor();
     return LinearGradient(
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
-      colors: [dominantColor.withOpacity(0.6), darker.withOpacity(0.9)],
+      colors: [
+        dominantColor.withValues(alpha: 0.6),
+        darker.withValues(alpha: 0.9),
+      ],
     );
   }
 }

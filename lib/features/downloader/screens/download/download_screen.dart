@@ -71,38 +71,36 @@ class _DownloadScreenState extends ConsumerState<DownloadScreen> {
           actions: [
             if (dlState.finishedTasks.isNotEmpty)
               TextButton(
-                onPressed: () =>
-                    ref.read(downloadProvider.notifier).clearFinished(),
+                onPressed:
+                    () => ref.read(downloadProvider.notifier).clearFinished(),
                 child: const Text(
                   'Xóa xong',
-                  style: TextStyle(
-                    color: AppColors.textTertiary,
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: AppColors.textTertiary, fontSize: 13),
                 ),
               ),
           ],
         ),
-        child: dlState.tasks.isEmpty
-            ? const _EmptyState()
-            : Column(
-                children: [
-                  // Stats header
-                  _StatsHeader(state: dlState),
+        child:
+            dlState.tasks.isEmpty
+                ? const _EmptyState()
+                : Column(
+                  children: [
+                    // Stats header
+                    _StatsHeader(state: dlState),
 
-                  // Task list
-                  Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-                      itemCount: dlState.tasks.length,
-                      itemBuilder: (ctx, i) {
-                        final task = dlState.tasks[i];
-                        return _DownloadTaskCard(task: task);
-                      },
+                    // Task list
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                        itemCount: dlState.tasks.length,
+                        itemBuilder: (ctx, i) {
+                          final task = dlState.tasks[i];
+                          return _DownloadTaskCard(task: task);
+                        },
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
       ),
     );
   }
@@ -173,9 +171,9 @@ class _StatChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.25), width: 0.8),
+        border: Border.all(color: color.withValues(alpha: 0.25), width: 0.8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -191,10 +189,7 @@ class _StatChip extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: TextStyle(
-              color: color.withOpacity(0.8),
-              fontSize: 12,
-            ),
+            style: TextStyle(color: color.withValues(alpha: 0.8), fontSize: 12),
           ),
         ],
       ),
@@ -270,15 +265,12 @@ class _DownloadTaskCard extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFFFF3B30).withOpacity(0.08),
+                color: const Color(0xFFFF3B30).withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 task.errorMessage!,
-                style: const TextStyle(
-                  color: Color(0xFFFF3B30),
-                  fontSize: 12,
-                ),
+                style: const TextStyle(color: Color(0xFFFF3B30), fontSize: 12),
               ),
             ),
           ],
@@ -289,8 +281,11 @@ class _DownloadTaskCard extends ConsumerWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(Icons.folder_rounded,
-                    size: 13, color: AppColors.textTertiary),
+                const Icon(
+                  Icons.folder_rounded,
+                  size: 13,
+                  color: AppColors.textTertiary,
+                ),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
@@ -311,12 +306,9 @@ class _DownloadTaskCard extends ConsumerWidget {
           const SizedBox(height: 10),
           _ActionButtons(
             task: task,
-            onCancel: () =>
-                ref.read(downloadProvider.notifier).cancel(task.id),
-            onRetry: () =>
-                ref.read(downloadProvider.notifier).retry(task.id),
-            onRemove: () =>
-                ref.read(downloadProvider.notifier).remove(task.id),
+            onCancel: () => ref.read(downloadProvider.notifier).cancel(task.id),
+            onRetry: () => ref.read(downloadProvider.notifier).retry(task.id),
+            onRemove: () => ref.read(downloadProvider.notifier).remove(task.id),
           ),
         ],
       ),
@@ -337,15 +329,16 @@ class _TaskThumbnail extends StatelessWidget {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: task.thumbnail != null
-              ? CachedNetworkImage(
-                  imageUrl: task.thumbnail!,
-                  width: 64,
-                  height: 42,
-                  fit: BoxFit.cover,
-                  errorWidget: (_, __, ___) => _placeholder(),
-                )
-              : _placeholder(),
+          child:
+              task.thumbnail != null
+                  ? CachedNetworkImage(
+                    imageUrl: task.thumbnail!,
+                    width: 64,
+                    height: 42,
+                    fit: BoxFit.cover,
+                    errorWidget: (_, __, ___) => _placeholder(),
+                  )
+                  : _placeholder(),
         ),
         // Status overlay icon
         Positioned(
@@ -358,15 +351,18 @@ class _TaskThumbnail extends StatelessWidget {
   }
 
   Widget _placeholder() => Container(
-        width: 64,
-        height: 42,
-        decoration: BoxDecoration(
-          color: AppColors.surfaceElevated,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: const Icon(Icons.movie_rounded,
-            color: AppColors.textTertiary, size: 20),
-      );
+    width: 64,
+    height: 42,
+    decoration: BoxDecoration(
+      color: AppColors.surfaceElevated,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: const Icon(
+      Icons.movie_rounded,
+      color: AppColors.textTertiary,
+      size: 20,
+    ),
+  );
 }
 
 class _StatusIcon extends StatelessWidget {
@@ -457,28 +453,19 @@ class _ProgressMeta extends StatelessWidget {
         if (task.speed.isNotEmpty) ...[
           Text(
             '  ·  ${task.speed}',
-            style: const TextStyle(
-              color: AppColors.textTertiary,
-              fontSize: 12,
-            ),
+            style: const TextStyle(color: AppColors.textTertiary, fontSize: 12),
           ),
         ],
         if (task.eta.isNotEmpty) ...[
           Text(
             '  ·  ETA ${task.eta}',
-            style: const TextStyle(
-              color: AppColors.textTertiary,
-              fontSize: 12,
-            ),
+            style: const TextStyle(color: AppColors.textTertiary, fontSize: 12),
           ),
         ],
         const Spacer(),
         Text(
           task.status.displayText,
-          style: const TextStyle(
-            color: AppColors.textTertiary,
-            fontSize: 11,
-          ),
+          style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
         ),
       ],
     );
@@ -511,11 +498,7 @@ class _StatusBadge extends StatelessWidget {
 
     return Text(
       status.displayText,
-      style: TextStyle(
-        color: color,
-        fontSize: 11,
-        fontWeight: FontWeight.w500,
-      ),
+      style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w500),
     );
   }
 }
@@ -601,9 +584,9 @@ class _TinyButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
+          color: color.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withOpacity(0.2), width: 0.6),
+          border: Border.all(color: color.withValues(alpha: 0.2), width: 0.6),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -639,23 +622,17 @@ class _EmptyState extends StatelessWidget {
           Icon(
             Icons.download_rounded,
             size: 56,
-            color: AppColors.textTertiary.withOpacity(0.4),
+            color: AppColors.textTertiary.withValues(alpha: 0.4),
           ),
           const SizedBox(height: 16),
           const Text(
             'Chưa có download nào',
-            style: TextStyle(
-              color: AppColors.textTertiary,
-              fontSize: 16,
-            ),
+            style: TextStyle(color: AppColors.textTertiary, fontSize: 16),
           ),
           const SizedBox(height: 8),
           const Text(
             'Phân tích một link để bắt đầu',
-            style: TextStyle(
-              color: AppColors.textTertiary,
-              fontSize: 13,
-            ),
+            style: TextStyle(color: AppColors.textTertiary, fontSize: 13),
           ),
         ],
       ),

@@ -1,6 +1,5 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:on_audio_query/on_audio_query.dart';
@@ -8,7 +7,6 @@ import 'package:provider/provider.dart';
 import '../models/song_item.dart';
 import '../providers/music_provider.dart';
 import '../providers/player_provider.dart';
-import '../theme/app_colors.dart';
 import '../widgets/music_list_tile.dart';
 import 'now_playing_screen.dart';
 
@@ -46,8 +44,11 @@ class ArtistDetailScreen extends StatelessWidget {
             pinned: true,
             backgroundColor: c.background,
             leading: IconButton(
-              icon: Icon(Icons.arrow_back_ios_new_rounded,
-                  size: 20, color: c.onPlayer),
+              icon: Icon(
+                Icons.arrow_back_ios_new_rounded,
+                size: 20,
+                color: c.onPlayer,
+              ),
               onPressed: () => Navigator.pop(context),
             ),
             flexibleSpace: FlexibleSpaceBar(
@@ -120,35 +121,51 @@ class ArtistDetailScreen extends StatelessWidget {
                       final c = context.appColors;
                       showDialog(
                         context: context,
-                        builder: (_) => AlertDialog(
-                          backgroundColor: c.card,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
-                          title: Row(
-                            children: [
-                              Icon(Icons.all_inclusive_rounded, color: c.primary, size: 20),
-                              const SizedBox(width: 8),
-                              Text('Shuffle Loop',
-                                  style: GoogleFonts.outfit(
+                        builder:
+                            (_) => AlertDialog(
+                              backgroundColor: c.card,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              title: Row(
+                                children: [
+                                  Icon(
+                                    Icons.all_inclusive_rounded,
+                                    color: c.primary,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Shuffle Loop',
+                                    style: GoogleFonts.outfit(
                                       color: c.textPrimary,
                                       fontWeight: FontWeight.w600,
-                                      fontSize: 16)),
-                            ],
-                          ),
-                          content: Text(
-                            'Phát ngẫu nhiên toàn bộ danh sách. Khi hết, tự động xáo bài và phát lại từ đầu — không trùng lặp theo chu kì.',
-                            style: GoogleFonts.outfit(
-                                color: c.textSecondary, fontSize: 14, height: 1.6),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: Text('OK',
-                                  style: GoogleFonts.outfit(
-                                      color: c.primary, fontWeight: FontWeight.w600)),
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              content: Text(
+                                'Phát ngẫu nhiên toàn bộ danh sách. Khi hết, tự động xáo bài và phát lại từ đầu — không trùng lặp theo chu kì.',
+                                style: GoogleFonts.outfit(
+                                  color: c.textSecondary,
+                                  fontSize: 14,
+                                  height: 1.6,
+                                ),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: Text(
+                                    'OK',
+                                    style: GoogleFonts.outfit(
+                                      color: c.primary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
                       );
                     },
                     child: Builder(
@@ -162,8 +179,11 @@ class ArtistDetailScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: c.border, width: 0.5),
                           ),
-                          child: Icon(Icons.info_outline_rounded,
-                              color: c.textTertiary, size: 20),
+                          child: Icon(
+                            Icons.info_outline_rounded,
+                            color: c.textTertiary,
+                            size: 20,
+                          ),
                         );
                       },
                     ),
@@ -222,9 +242,11 @@ class ArtistDetailScreen extends StatelessWidget {
                                   artworkQuality: FilterQuality.low,
                                   nullArtworkWidget: Container(
                                     color: c.surfaceElevated,
-                                    child: Icon(Icons.album_rounded,
-                                        color: c.textDisabled,
-                                        size: 32),
+                                    child: Icon(
+                                      Icons.album_rounded,
+                                      color: c.textDisabled,
+                                      size: 32,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -272,21 +294,18 @@ class ArtistDetailScreen extends StatelessWidget {
             ),
           ),
           SliverList(
-            delegate: SliverChildBuilderDelegate(
-                  (_, i) {
-                final song = songs[i];
-                return MusicListTile(
-                  song: song,
-                  isActive: player.currentSong?.id == song.id,
-                  onTap: () {
-                    player.playSongs(songs, specificSong: song);
-                    music.onSongPlayed(song.id);
-                    Navigator.of(context).push(_playerRoute());
-                  },
-                );
-              },
-              childCount: songs.length,
-            ),
+            delegate: SliverChildBuilderDelegate((_, i) {
+              final song = songs[i];
+              return MusicListTile(
+                song: song,
+                isActive: player.currentSong?.id == song.id,
+                onTap: () {
+                  player.playSongs(songs, specificSong: song);
+                  music.onSongPlayed(song.id);
+                  Navigator.of(context).push(_playerRoute());
+                },
+              );
+            }, childCount: songs.length),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 40)),
         ],
@@ -314,9 +333,7 @@ class _ArtistHeader extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         // Background
-        Container(
-            decoration:
-            BoxDecoration(gradient: c.backgroundGradient)),
+        Container(decoration: BoxDecoration(gradient: c.backgroundGradient)),
         // Artist artwork (blurred bg)
         QueryArtworkWidget(
           id: artistId,
@@ -330,8 +347,8 @@ class _ArtistHeader extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  c.primary.withOpacity(0.4),
-                  c.secondary.withOpacity(0.4),
+                  c.primary.withValues(alpha: 0.4),
+                  c.secondary.withValues(alpha: 0.4),
                 ],
               ),
             ),
@@ -355,8 +372,9 @@ class _ArtistHeader extends StatelessWidget {
                 border: Border.all(color: c.primary, width: 2),
                 boxShadow: [
                   BoxShadow(
-                      color: c.primary.withOpacity(0.3),
-                      blurRadius: 20),
+                    color: c.primary.withValues(alpha: 0.3),
+                    blurRadius: 20,
+                  ),
                 ],
               ),
               child: ClipOval(
@@ -367,9 +385,7 @@ class _ArtistHeader extends StatelessWidget {
                   artworkBorder: BorderRadius.zero,
                   keepOldArtwork: true,
                   nullArtworkWidget: Container(
-                    decoration: BoxDecoration(
-                      gradient: c.primaryGradient,
-                    ),
+                    decoration: BoxDecoration(gradient: c.primaryGradient),
                     child: Center(
                       child: Text(
                         artistName.isNotEmpty
@@ -410,9 +426,10 @@ class _ArtistHeader extends StatelessWidget {
                 '$songCount bài hát · $albumCount album',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.outfit(
-                    fontSize: 13,
-                    color: c.onPlayerHigh,
-                    fontWeight: FontWeight.w300),
+                  fontSize: 13,
+                  color: c.onPlayerHigh,
+                  fontWeight: FontWeight.w300,
+                ),
               ),
             ],
           ),
@@ -442,21 +459,16 @@ class _ActionButton extends StatelessWidget {
       child: Container(
         height: 46,
         decoration: BoxDecoration(
-          gradient: primary
-              ? LinearGradient(
-              colors: [c.primary, c.secondary])
-              : null,
+          gradient:
+              primary ? LinearGradient(colors: [c.primary, c.secondary]) : null,
           color: primary ? null : c.surfaceElevated,
           borderRadius: BorderRadius.circular(12),
-          border:
-          primary ? null : Border.all(color: c.border, width: 0.5),
+          border: primary ? null : Border.all(color: c.border, width: 0.5),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon,
-                color: primary ? c.onPlayer : c.textSecondary,
-                size: 20),
+            Icon(icon, color: primary ? c.onPlayer : c.textSecondary, size: 20),
             const SizedBox(width: 6),
             Text(
               label,
@@ -476,11 +488,12 @@ class _ActionButton extends StatelessWidget {
 PageRouteBuilder _playerRoute() => PageRouteBuilder(
   pageBuilder: (_, anim, __) => const NowPlayingScreen(),
   transitionDuration: const Duration(milliseconds: 400),
-  transitionsBuilder: (_, anim, __, child) => SlideTransition(
-    position: Tween<Offset>(
-        begin: const Offset(0, 1), end: Offset.zero)
-        .animate(
-        CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
-    child: child,
-  ),
+  transitionsBuilder:
+      (_, anim, __, child) => SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 1),
+          end: Offset.zero,
+        ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
+        child: child,
+      ),
 );

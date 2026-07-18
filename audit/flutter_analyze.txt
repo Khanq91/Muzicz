@@ -1,13 +1,13 @@
 ============================================================
 Flutter Analyze Report
 ============================================================
-Run ID       : 7bd271bd-712c-4b32-a726-5e54425f40a9
-Generated At : 2026-07-18 20:13:19
+Run ID       : f310f383-255c-4f4a-9b1d-b8246c84a32b
+Generated At : 2026-07-18 20:31:49
 Computer     : LAPTOP-J44MMRC9
 User         : chikh
 Working Dir  : D:\program\data\flutterDev\project\Muzicz
 Git Branch   : main
-Git Commit   : d41b8ae
+Git Commit   : efd56e8
 Log File     : audit\flutter_analyze.txt
 Command      : flutter analyze --no-pub
 ------------------------------------------------------------
@@ -31,203 +31,18 @@ BEGIN FLUTTER ANALYZE
 ============================================================
 
 Analyzing Muzicz...                                             
-
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\core\theme\app_colors.dart:63:30 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\core\theme\app_colors.dart:63:55 - deprecated_member_use
-  error - The argument type 'TabBarTheme' can't be assigned to the parameter type 'TabBarThemeData?'.  - lib\features\downloader\core\theme\app_theme.dart:73:20 - argument_type_not_assignable
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\core\theme\app_theme.dart:92:41 - deprecated_member_use
-   info - Unnecessary braces in a string interpolation. Try removing the braces - lib\features\downloader\models\download_task.dart:155:40 - unnecessary_brace_in_string_interps
-   info - The local variable '_parseInt' starts with an underscore. Try renaming the variable to not start with an underscore - lib\features\downloader\models\format_option.dart:60:10 - no_leading_underscores_for_local_identifiers
-warning - Unused import: '../utils/fake_progress.dart'. Try removing the import directive - lib\features\downloader\providers\download_provider.dart:14:8 - unused_import
-warning - The method doesn't override an inherited method. Try updating this class to match the superclass, or removing the override annotation - lib\features\downloader\providers\download_provider.dart:416:8 - override_on_non_overriding_member
-warning - Unused import: '../../providers/network_provider.dart'. Try removing the import directive - lib\features\downloader\screens\analyze\analyze_screen.dart:12:8 - unused_import
-warning - Unused import: '../../services/network_service.dart'. Try removing the import directive - lib\features\downloader\screens\analyze\analyze_screen.dart:13:8 - unused_import
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\analyze\analyze_screen.dart:319:37 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\analyze\analyze_screen.dart:324:39 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\analyze\analyze_screen.dart:335:44 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\analyze\analyze_screen.dart:397:55 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\analyze\analyze_screen.dart:847:40 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\analyze\analyze_screen.dart:850:42 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\download\download_screen.dart:176:22 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\download\download_screen.dart:178:41 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\download\download_screen.dart:195:28 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\download\download_screen.dart:273:48 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\download\download_screen.dart:604:24 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\download\download_screen.dart:606:43 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\download\download_screen.dart:642:43 - deprecated_member_use
-warning - Unused import: 'package:provider/provider.dart'. Try removing the import directive - lib\features\downloader\screens\downloader_gateway_screen.dart:7:8 - unused_import
-warning - Unused import: '../../../providers/music_provider.dart'. Try removing the import directive - lib\features\downloader\screens\downloader_gateway_screen.dart:9:8 - unused_import
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\downloader_gateway_screen.dart:184:22 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\downloader_gateway_screen.dart:186:41 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\downloader_gateway_screen.dart:195:28 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\downloader_gateway_screen.dart:219:34 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\downloader_gateway_screen.dart:235:32 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\downloader_gateway_screen.dart:423:44 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\downloader_gateway_screen.dart:436:41 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\downloader_gateway_screen.dart:461:47 - deprecated_member_use
-   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\features\downloader\screens\format\format_screen.dart:300:7 - use_build_context_synchronously
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\format\format_screen.dart:332:52 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\format\format_screen.dart:335:56 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\format\format_screen.dart:567:37 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\format\format_screen.dart:572:39 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\format\format_screen.dart:583:44 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\format\format_screen.dart:644:55 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\format\format_screen.dart:713:35 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\format\format_screen.dart:718:37 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\format\format_screen.dart:730:41 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\format\format_screen.dart:809:38 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\format\format_screen.dart:812:42 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\format\format_screen.dart:818:44 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\format\format_screen.dart:896:35 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\format\format_screen.dart:901:37 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\format\format_screen.dart:913:41 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\format\format_screen.dart:1022:34 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\format\format_screen.dart:1254:35 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\format\format_screen.dart:1259:37 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\format\format_screen.dart:1316:41 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\playlist_picker\playlist_picker_screen.dart:252:42 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\playlist_picker\playlist_picker_screen.dart:316:35 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\playlist_picker\playlist_picker_screen.dart:321:37 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\playlist_picker\playlist_picker_screen.dart:545:34 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\screens\summary\summary_screen.dart:337:46 - deprecated_member_use
-warning - Unused import: '../core/constants/app_constants.dart'. Try removing the import directive - lib\features\downloader\widgets\network_status_badge.dart:5:8 - unused_import
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\widgets\network_status_badge.dart:87:22 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\widgets\network_status_badge.dart:89:41 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\widgets\network_status_badge.dart:104:32 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\widgets\platform_chip.dart:24:24 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\widgets\platform_chip.dart:26:43 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\widgets\primary_button.dart:44:48 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\widgets\primary_button.dart:56:41 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\widgets\primary_icon_button.dart:42:42 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\downloader\widgets\primary_icon_button.dart:54:41 - deprecated_member_use
-warning - Unused import: 'theme/app_theme.dart'. Try removing the import directive - lib\main.dart:12:8 - unused_import
-   info - 'textScaleFactor' is deprecated and shouldn't be used. Use textScaler instead. Use of textScaleFactor was deprecated in preparation for the upcoming nonlinear text scaling support. This feature was deprecated after v3.12.0-2.0.pre. Try replacing the use of the deprecated member with the replacement - lib\main.dart:85:40 - deprecated_member_use
-warning - Unused import: '../theme/app_colors.dart'. Try removing the import directive - lib\screens\album_detail_screen.dart:9:8 - unused_import
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\album_detail_screen.dart:251:29 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\album_detail_screen.dart:252:31 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\album_detail_screen.dart:259:39 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\album_detail_screen.dart:273:41 - deprecated_member_use
-   info - The import of 'package:flutter/services.dart' is unnecessary because all of the used elements are also provided by the import of 'dart:ui'. Try removing the import directive - lib\screens\artist_detail_screen.dart:3:8 - unnecessary_import
-warning - Unused import: '../theme/app_colors.dart'. Try removing the import directive - lib\screens\artist_detail_screen.dart:11:8 - unused_import
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\artist_detail_screen.dart:333:29 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\artist_detail_screen.dart:334:31 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\artist_detail_screen.dart:358:40 - deprecated_member_use
-warning - Unused import: '../theme/app_colors.dart'. Try removing the import directive - lib\screens\hidden_songs_screen.dart:5:8 - unused_import
-warning - Unused import: 'dart:math'. Try removing the import directive - lib\screens\home_screen.dart:1:8 - unused_import
-warning - Unused import: 'package:muziczz/screens/playlist_screen.dart'. Try removing the import directive - lib\screens\home_screen.dart:4:8 - unused_import
-warning - Unused import: '../theme/app_colors.dart'. Try removing the import directive - lib\screens\home_screen.dart:11:8 - unused_import
-warning - The value of the local variable 'c' isn't used. Try removing the variable or using it - lib\screens\home_screen.dart:100:11 - unused_local_variable
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\home_screen.dart:279:35 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\home_screen.dart:284:32 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\home_screen.dart:346:27 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\home_screen.dart:406:26 - deprecated_member_use
-   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\home_screen.dart:634:24 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\home_screen.dart:635:23 - use_build_context_synchronously
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\home_screen.dart:690:45 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\home_screen.dart:707:49 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\library_screen.dart:1117:32 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\library_screen.dart:1161:34 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\now_playing_screen.dart:214:52 - deprecated_member_use
-   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\screens\now_playing_screen.dart:254:50 - curly_braces_in_flow_control_structures
-   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\screens\now_playing_screen.dart:255:36 - curly_braces_in_flow_control_structures
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\now_playing_screen.dart:383:35 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\now_playing_screen.dart:616:38 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\now_playing_screen.dart:620:41 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\now_playing_screen.dart:720:50 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\now_playing_screen.dart:722:60 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\now_playing_screen.dart:725:35 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\now_playing_screen.dart:826:41 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\now_playing_screen.dart:904:37 - deprecated_member_use
-   info - Unnecessary braces in a string interpolation. Try removing the braces - lib\screens\now_playing_screen.dart:913:51 - unnecessary_brace_in_string_interps
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\now_playing_screen.dart:991:34 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\now_playing_screen.dart:993:53 - deprecated_member_use
-  error - The name 'RepeatMode' is defined in the libraries 'package:flutter/src/widgets/repeating_animation_builder.dart (via package:flutter/material.dart)' and 'package:muziczz/providers/player_provider.dart'. Try using 'as prefix' for one of the import directives, or hiding the name from all but one of the imports - lib\screens\now_playing_screen.dart:1764:40 - ambiguous_import
-  error - The name 'RepeatMode' is defined in the libraries 'package:flutter/src/widgets/repeating_animation_builder.dart (via package:flutter/material.dart)' and 'package:muziczz/providers/player_provider.dart'. Try using 'as prefix' for one of the import directives, or hiding the name from all but one of the imports - lib\screens\now_playing_screen.dart:1767:41 - ambiguous_import
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\now_playing_screen.dart:1831:39 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\now_playing_screen.dart:1926:26 - deprecated_member_use
-   info - 'onReorder' is deprecated and shouldn't be used. Use the onReorderItem callback instead. The onReorderItem callback adjusts the newIndex parameter for a removed item at the oldIndex. This feature was deprecated after v3.41.0-0.0.pre. Try replacing the use of the deprecated member with the replacement - lib\screens\now_playing_screen.dart:1964:15 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\now_playing_screen.dart:1970:51 - deprecated_member_use
-warning - Unused import: '../theme/app_colors.dart'. Try removing the import directive - lib\screens\onboarding_screen.dart:7:8 - unused_import
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\onboarding_screen.dart:164:37 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\onboarding_screen.dart:165:37 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\onboarding_screen.dart:391:44 - deprecated_member_use
-warning - Unused import: '../theme/app_colors.dart'. Try removing the import directive - lib\screens\online_screen.dart:4:8 - unused_import
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\online_screen.dart:60:48 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\online_screen.dart:62:50 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\online_screen.dart:196:32 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\online_screen.dart:229:32 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\online_screen.dart:232:34 - deprecated_member_use
-warning - Unused import: '../models/song_item.dart'. Try removing the import directive - lib\screens\playlist_screen.dart:8:8 - unused_import
-warning - Unused import: '../theme/app_colors.dart'. Try removing the import directive - lib\screens\playlist_screen.dart:11:8 - unused_import
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\playlist_screen.dart:805:30 - deprecated_member_use
-warning - Unused import: '../theme/app_colors.dart'. Try removing the import directive - lib\screens\profile_screen.dart:8:8 - unused_import
-   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\profile_screen.dart:256:41 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\profile_screen.dart:295:30 - use_build_context_synchronously
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\profile_screen.dart:353:36 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\profile_screen.dart:405:38 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\profile_screen.dart:489:24 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\profile_screen.dart:491:43 - deprecated_member_use
-warning - A value for optional parameter 'disabled' isn't ever given. Try removing the unused parameter - lib\screens\profile_screen.dart:524:10 - unused_element_parameter
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\profile_screen.dart:553:32 - deprecated_member_use
-   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre. Try replacing the use of the deprecated member with the replacement - lib\screens\profile_screen.dart:626:11 - deprecated_member_use
-warning - Unused import: '../theme/app_colors.dart'. Try removing the import directive - lib\screens\splash_screen.dart:6:8 - unused_import
-warning - The declaration '_navigateOLD' isn't referenced. Try removing the declaration of '_navigateOLD' - lib\screens\splash_screen.dart:77:8 - unused_element
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\splash_screen.dart:151:31 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\splash_screen.dart:228:48 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\splash_screen.dart:266:30 - deprecated_member_use
-warning - Unused import: '../theme/app_colors.dart'. Try removing the import directive - lib\screens\welcome_screen.dart:4:8 - unused_import
-warning - Unused import: 'home_screen.dart'. Try removing the import directive - lib\screens\welcome_screen.dart:7:8 - unused_import
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\welcome_screen.dart:60:31 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\welcome_screen.dart:77:32 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\welcome_screen.dart:226:34 - deprecated_member_use
-   info - The imported package 'audio_service' isn't a dependency of the importing package. Try adding a dependency for 'audio_service' in the 'pubspec.yaml' file - lib\services\audio_handler.dart:4:8 - depend_on_referenced_packages
-   info - Use a function declaration rather than a variable assignment to bind a function to a name. Try rewriting the closure assignment as a function declaration - lib\services\lyrics_service.dart:65:11 - prefer_function_declarations_over_variables
-   info - Use interpolation to compose strings and values. Try using string interpolation to build the composite string - lib\services\lyrics_service.dart:166:75 - prefer_interpolation_to_compose_strings
-   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\services\storage_service.dart:86:21 - curly_braces_in_flow_control_structures
-   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\services\storage_service.dart:86:40 - curly_braces_in_flow_control_structures
-   info - Don't invoke 'print' in production code. Try using a logging framework - lib\services\storage_service.dart:118:9 - avoid_print
-warning - Unused import: 'app_colors_data.dart'. Try removing the import directive - lib\theme\app_colors.dart:3:8 - unused_import
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\theme\app_colors.dart:152:23 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\theme\app_colors.dart:153:16 - deprecated_member_use
-warning - Unused import: 'app_colors.dart'. Try removing the import directive - lib\theme\app_theme.dart:4:8 - unused_import
-  error - The argument type 'TabBarTheme' can't be assigned to the parameter type 'TabBarThemeData?'.  - lib\theme\app_theme.dart:91:20 - argument_type_not_assignable
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\theme\app_theme.dart:111:33 - deprecated_member_use
-  error - The argument type 'CardTheme' can't be assigned to the parameter type 'CardThemeData?'.  - lib\theme\app_theme.dart:123:18 - argument_type_not_assignable
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\theme\app_theme.dart:153:30 - deprecated_member_use
-   info - The variable name 'VNnormalize' isn't a lowerCamelCase identifier. Try changing the name to follow the lowerCamelCase style - lib\utils\vietnamese_normalize.dart:1:8 - non_constant_identifier_names
-warning - Unused import: '../theme/app_colors.dart'. Try removing the import directive - lib\widgets\add_to_playlist_sheet.dart:9:8 - unused_import
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\add_to_playlist_sheet.dart:364:32 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\add_to_playlist_sheet.dart:367:30 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\add_to_playlist_sheet.dart:376:36 - deprecated_member_use
-warning - Unused import: '../theme/app_colors.dart'. Try removing the import directive - lib\widgets\glass_container.dart:4:8 - unused_import
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\glass_container.dart:36:41 - deprecated_member_use
-warning - Unused import: '../theme/app_colors.dart'. Try removing the import directive - lib\widgets\mini_player.dart:9:8 - unused_import
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\mini_player.dart:60:32 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\mini_player.dart:315:31 - deprecated_member_use
-warning - Unused import: '../theme/app_colors.dart'. Try removing the import directive - lib\widgets\music_list_tile.dart:9:8 - unused_import
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\music_list_tile.dart:44:21 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\music_list_tile.dart:46:21 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\music_list_tile.dart:61:32 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\music_list_tile.dart:62:35 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\music_list_tile.dart:182:33 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\music_list_tile.dart:183:36 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\theme_selector_sheet.dart:116:48 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\theme_selector_sheet.dart:205:27 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\widgets\theme_selector_sheet.dart:239:46 - deprecated_member_use
-warning - The asset directory 'assets/images/' doesn't exist. Try creating the directory or fixing the path to the directory - pubspec.yaml:118:7 - asset_directory_does_not_exist
-
-183 issues found. (ran in 3.8s)
+No issues found! (ran in 1.4s)
 
 ============================================================
 END FLUTTER ANALYZE
 ============================================================
-Finished At : 2026-07-18 20:13:29
-Duration    : 9.69s
-Exit Code   : 1
-Status      : FAILED
+Finished At : 2026-07-18 20:31:56
+Duration    : 6.91s
+Exit Code   : 0
+Status      : SUCCESS
 ------------------------------------------------------------
 Analyzer Summary:
-Errors      : 5
-Warnings    : 32
-Infos       : 146
+Errors      : 0
+Warnings    : 0
+Infos       : 0
 ============================================================

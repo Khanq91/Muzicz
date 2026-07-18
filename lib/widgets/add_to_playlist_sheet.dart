@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import '../models/song_item.dart';
 import '../models/playlist_item.dart';
 import '../providers/music_provider.dart';
-import '../theme/app_colors.dart';
 
 /// Sheet thêm bài hát vào playlist — phong cách YouTube.
 /// Dùng được từ NowPlayingScreen, MusicListTile context menu, v.v.
@@ -134,10 +133,7 @@ class _AddToPlaylistSheetState extends State<AddToPlaylistSheet> {
               child: TextField(
                 controller: _searchCtrl,
                 onChanged: (q) => setState(() => _query = q),
-                style: GoogleFonts.outfit(
-                  color: c.textPrimary,
-                  fontSize: 14,
-                ),
+                style: GoogleFonts.outfit(color: c.textPrimary, fontSize: 14),
                 decoration: InputDecoration(
                   hintText: 'Tìm danh sách…',
                   hintStyle: GoogleFonts.outfit(
@@ -149,19 +145,20 @@ class _AddToPlaylistSheetState extends State<AddToPlaylistSheet> {
                     color: c.textTertiary,
                     size: 20,
                   ),
-                  suffixIcon: _query.isNotEmpty
-                      ? GestureDetector(
-                    onTap: () {
-                      _searchCtrl.clear();
-                      setState(() => _query = '');
-                    },
-                    child: Icon(
-                      Icons.close_rounded,
-                      color: c.textTertiary,
-                      size: 18,
-                    ),
-                  )
-                      : null,
+                  suffixIcon:
+                      _query.isNotEmpty
+                          ? GestureDetector(
+                            onTap: () {
+                              _searchCtrl.clear();
+                              setState(() => _query = '');
+                            },
+                            child: Icon(
+                              Icons.close_rounded,
+                              color: c.textTertiary,
+                              size: 18,
+                            ),
+                          )
+                          : null,
                   filled: true,
                   fillColor: c.surfaceElevated,
                   contentPadding: const EdgeInsets.symmetric(vertical: 10),
@@ -171,8 +168,7 @@ class _AddToPlaylistSheetState extends State<AddToPlaylistSheet> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                    BorderSide(color: c.primary, width: 1),
+                    borderSide: BorderSide(color: c.primary, width: 1),
                   ),
                 ),
               ),
@@ -180,67 +176,70 @@ class _AddToPlaylistSheetState extends State<AddToPlaylistSheet> {
 
           // ── Danh sách playlist ───────────────────────────────────
           Flexible(
-            child: playlists.isEmpty
-                ? Padding(
-              padding: const EdgeInsets.symmetric(vertical: 32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.playlist_play_rounded,
-                    color: c.textDisabled,
-                    size: 48,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Chưa có danh sách nào.\nNhấn "+ Tạo mới" để bắt đầu.',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.outfit(
-                      color: c.textTertiary,
-                      fontSize: 14,
-                      height: 1.5,
+            child:
+                playlists.isEmpty
+                    ? Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 32),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.playlist_play_rounded,
+                            color: c.textDisabled,
+                            size: 48,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Chưa có danh sách nào.\nNhấn "+ Tạo mới" để bắt đầu.',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.outfit(
+                              color: c.textTertiary,
+                              fontSize: 14,
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                    : filtered.isEmpty
+                    ? Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      child: Text(
+                        'Không tìm thấy danh sách nào.',
+                        style: GoogleFonts.outfit(color: c.textTertiary),
+                      ),
+                    )
+                    : ListView.builder(
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.only(bottom: 24),
+                      itemCount: filtered.length,
+                      itemBuilder: (_, i) {
+                        final pl = filtered[i];
+                        final inPlaylist = pl.songs.any(
+                          (s) => s.id == widget.song.id,
+                        );
+                        return _PlaylistCheckTile(
+                          playlist: pl,
+                          checked: inPlaylist,
+                          song: widget.song,
+                          onChanged: (add) {
+                            if (add) {
+                              music.addToPlaylist(pl.id, widget.song);
+                              _showFeedback(
+                                context,
+                                'Đã thêm vào "${pl.name}"',
+                              );
+                            } else {
+                              music.removeFromPlaylist(pl.id, widget.song.id);
+                              _showFeedback(
+                                context,
+                                'Đã xóa khỏi "${pl.name}"',
+                              );
+                            }
+                          },
+                        );
+                      },
                     ),
-                  ),
-                ],
-              ),
-            )
-                : filtered.isEmpty
-                ? Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              child: Text(
-                'Không tìm thấy danh sách nào.',
-                style: GoogleFonts.outfit(
-                  color: c.textTertiary,
-                ),
-              ),
-            )
-                : ListView.builder(
-              shrinkWrap: true,
-              padding: const EdgeInsets.only(bottom: 24),
-              itemCount: filtered.length,
-              itemBuilder: (_, i) {
-                final pl = filtered[i];
-                final inPlaylist =
-                pl.songs.any((s) => s.id == widget.song.id);
-                return _PlaylistCheckTile(
-                  playlist: pl,
-                  checked: inPlaylist,
-                  song: widget.song,
-                  onChanged: (add) {
-                    if (add) {
-                      music.addToPlaylist(pl.id, widget.song);
-                      _showFeedback(
-                          context, 'Đã thêm vào "${pl.name}"');
-                    } else {
-                      music.removeFromPlaylist(
-                          pl.id, widget.song.id);
-                      _showFeedback(
-                          context, 'Đã xóa khỏi "${pl.name}"');
-                    }
-                  },
-                );
-              },
-            ),
           ),
         ],
       ),
@@ -252,17 +251,12 @@ class _AddToPlaylistSheetState extends State<AddToPlaylistSheet> {
     // Không close sheet — giống YouTube, user có thể thêm vào nhiều playlist
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          message,
-          style: GoogleFonts.outfit(fontSize: 13),
-        ),
+        content: Text(message, style: GoogleFonts.outfit(fontSize: 13)),
         duration: Duration(seconds: 2),
         backgroundColor: c.surfaceElevated,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 80),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
@@ -272,67 +266,68 @@ class _AddToPlaylistSheetState extends State<AddToPlaylistSheet> {
     final ctrl = TextEditingController();
     showDialog(
       context: context,
-      builder: (dialogCtx) => AlertDialog(
-        backgroundColor: c.card,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Text(
-          'Tạo danh sách mới',
-          style: GoogleFonts.outfit(
-            color: c.textPrimary,
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-          ),
-        ),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          style: GoogleFonts.outfit(color: c.textPrimary),
-          decoration: InputDecoration(
-            hintText: 'Tên danh sách…',
-            hintStyle: GoogleFonts.outfit(color: c.textDisabled),
-            filled: true,
-            fillColor: c.surfaceElevated,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide.none,
+      builder:
+          (dialogCtx) => AlertDialog(
+            backgroundColor: c.card,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: c.primary, width: 1),
-            ),
-          ),
-          onSubmitted: (_) => _doCreate(dialogCtx, ctrl, music),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogCtx),
-            child: Text(
-              'Hủy',
-              style: GoogleFonts.outfit(color: c.textTertiary),
-            ),
-          ),
-          TextButton(
-            onPressed: () => _doCreate(dialogCtx, ctrl, music),
-            child: Text(
-              'Tạo & Thêm',
+            title: Text(
+              'Tạo danh sách mới',
               style: GoogleFonts.outfit(
-                color: c.primary,
+                color: c.textPrimary,
                 fontWeight: FontWeight.w600,
+                fontSize: 16,
               ),
             ),
+            content: TextField(
+              controller: ctrl,
+              autofocus: true,
+              style: GoogleFonts.outfit(color: c.textPrimary),
+              decoration: InputDecoration(
+                hintText: 'Tên danh sách…',
+                hintStyle: GoogleFonts.outfit(color: c.textDisabled),
+                filled: true,
+                fillColor: c.surfaceElevated,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: c.primary, width: 1),
+                ),
+              ),
+              onSubmitted: (_) => _doCreate(dialogCtx, ctrl, music),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogCtx),
+                child: Text(
+                  'Hủy',
+                  style: GoogleFonts.outfit(color: c.textTertiary),
+                ),
+              ),
+              TextButton(
+                onPressed: () => _doCreate(dialogCtx, ctrl, music),
+                child: Text(
+                  'Tạo & Thêm',
+                  style: GoogleFonts.outfit(
+                    color: c.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
   void _doCreate(
-      BuildContext dialogCtx,
-      TextEditingController ctrl,
-      MusicProvider music,
-      ) {
+    BuildContext dialogCtx,
+    TextEditingController ctrl,
+    MusicProvider music,
+  ) {
     final name = ctrl.text.trim();
     if (name.isEmpty) return;
     final pl = music.createPlaylist(name);
@@ -361,10 +356,10 @@ class _CreateNewButton extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: c.primary.withOpacity(0.45),
+              color: c.primary.withValues(alpha: 0.45),
               width: 1,
             ),
-            color: c.primary.withOpacity(0.06),
+            color: c.primary.withValues(alpha: 0.06),
           ),
           child: Row(
             children: [
@@ -373,13 +368,9 @@ class _CreateNewButton extends StatelessWidget {
                 height: 38,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: c.primary.withOpacity(0.18),
+                  color: c.primary.withValues(alpha: 0.18),
                 ),
-                child: Icon(
-                  Icons.add_rounded,
-                  color: c.primary,
-                  size: 22,
-                ),
+                child: Icon(Icons.add_rounded, color: c.primary, size: 22),
               ),
               const SizedBox(width: 14),
               Text(
@@ -416,8 +407,7 @@ class _PlaylistCheckTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.appColors;
     return ListTile(
-      contentPadding:
-      const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
       onTap: () => onChanged(!checked),
       leading: _PlaylistMiniCover(playlist: playlist),
       title: Text(
@@ -430,10 +420,7 @@ class _PlaylistCheckTile extends StatelessWidget {
       ),
       subtitle: Text(
         '${playlist.songCount} bài hát',
-        style: GoogleFonts.outfit(
-          fontSize: 12,
-          color: c.textTertiary,
-        ),
+        style: GoogleFonts.outfit(fontSize: 12, color: c.textTertiary),
       ),
       trailing: _AnimatedCheckbox(checked: checked),
     );
@@ -462,9 +449,10 @@ class _AnimatedCheckbox extends StatelessWidget {
           width: 1.5,
         ),
       ),
-      child: checked
-          ? const Icon(Icons.check_rounded, color: Colors.white, size: 16)
-          : null,
+      child:
+          checked
+              ? const Icon(Icons.check_rounded, color: Colors.white, size: 16)
+              : null,
     );
   }
 }
@@ -484,9 +472,7 @@ class _PlaylistMiniCover extends StatelessWidget {
         height: 46,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
-          gradient: LinearGradient(
-            colors: [c.primary, c.secondary],
-          ),
+          gradient: LinearGradient(colors: [c.primary, c.secondary]),
         ),
         child: const Icon(
           Icons.playlist_play_rounded,

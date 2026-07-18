@@ -4,9 +4,7 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 
-import '../../../providers/music_provider.dart';
 import '../../../screens/onboarding_screen.dart';
 import '../../../theme/app_colors.dart';
 import 'analyze_screen_bridge.dart';
@@ -60,23 +58,28 @@ class _DownloaderGatewayScreenState extends State<DownloaderGatewayScreen>
   }
 
   void _goToDownloader() {
-    Navigator.of(context).push(PageRouteBuilder(
-      pageBuilder: (_, anim, __) => const AnalyzeScreenBridge(),
-      transitionDuration: const Duration(milliseconds: 350),
-      transitionsBuilder: (_, anim, __, child) => SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(1.0, 0.0),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
-        child: child,
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (_, anim, __) => const AnalyzeScreenBridge(),
+        transitionDuration: const Duration(milliseconds: 350),
+        transitionsBuilder:
+            (_, anim, __, child) => SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1.0, 0.0),
+                end: Offset.zero,
+              ).animate(
+                CurvedAnimation(parent: anim, curve: Curves.easeOutCubic),
+              ),
+              child: child,
+            ),
       ),
-    ));
+    );
   }
 
   void _goToRescan() {
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => const OnboardingScreen(),
-    ));
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const OnboardingScreen()));
   }
 
   @override
@@ -170,20 +173,18 @@ class _NetworkStatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isOnline
-        ? const Color(0xFF34C759)
-        : const Color(0xFFFF3B30);
+    final color = isOnline ? const Color(0xFF34C759) : const Color(0xFFFF3B30);
     final label = isOnline ? 'Đang kết nối mạng' : 'Không có mạng';
-    final icon  = isOnline ? Icons.wifi_rounded : Icons.wifi_off_rounded;
+    final icon = isOnline ? Icons.wifi_rounded : Icons.wifi_off_rounded;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 400),
       curve: Curves.easeInOut,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withOpacity(0.3), width: 0.8),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 0.8),
       ),
       child: Row(
         children: [
@@ -192,7 +193,7 @@ class _NetworkStatusCard extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
+              color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 20),
@@ -216,7 +217,7 @@ class _NetworkStatusCard extends StatelessWidget {
                       : 'Kết nối Wi-Fi hoặc dữ liệu di động để tiếp tục',
                   style: GoogleFonts.outfit(
                     fontSize: 12,
-                    color: color.withOpacity(0.8),
+                    color: color.withValues(alpha: 0.8),
                     fontWeight: FontWeight.w300,
                   ),
                 ),
@@ -232,7 +233,7 @@ class _NetworkStatusCard extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: color.withOpacity(0.5),
+                  color: color.withValues(alpha: 0.5),
                   blurRadius: 6,
                   spreadRadius: 1,
                 ),
@@ -284,7 +285,8 @@ class _InfoCard extends StatelessWidget {
           const SizedBox(height: 10),
           _InfoRow(
             icon: Icons.download_rounded,
-            text: 'File tải về được lưu vào thư mục Downloads (Có thể tùy chỉnh) trên thiết bị.',
+            text:
+                'File tải về được lưu vào thư mục Downloads (Có thể tùy chỉnh) trên thiết bị.',
           ),
           const SizedBox(height: 8),
           _InfoRow(
@@ -320,9 +322,7 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = highlight
-        ? const Color(0xFFFF9500)
-        : AppColors.textTertiary;
+    final color = highlight ? const Color(0xFFFF9500) : AppColors.textTertiary;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -336,8 +336,7 @@ class _InfoRow extends StatelessWidget {
               fontSize: 12,
               color: color,
               height: 1.5,
-              fontWeight:
-              highlight ? FontWeight.w500 : FontWeight.w300,
+              fontWeight: highlight ? FontWeight.w500 : FontWeight.w300,
             ),
           ),
         ),
@@ -383,9 +382,10 @@ class _GatewayButtonState extends State<_GatewayButton>
       vsync: this,
       duration: const Duration(milliseconds: 120),
     );
-    _scale = Tween(begin: 1.0, end: 0.97).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
+    _scale = Tween(
+      begin: 1.0,
+      end: 0.97,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -400,32 +400,37 @@ class _GatewayButtonState extends State<_GatewayButton>
       duration: const Duration(milliseconds: 300),
       opacity: widget.enabled ? 1.0 : 0.45,
       child: GestureDetector(
-        onTapDown:  widget.enabled ? (_) => _ctrl.forward()  : null,
-        onTapUp:    widget.enabled ? (_) async {
-          await _ctrl.reverse();
-          widget.onTap();
-        } : null,
+        onTapDown: widget.enabled ? (_) => _ctrl.forward() : null,
+        onTapUp:
+            widget.enabled
+                ? (_) async {
+                  await _ctrl.reverse();
+                  widget.onTap();
+                }
+                : null,
         onTapCancel: widget.enabled ? () => _ctrl.reverse() : null,
         child: ScaleTransition(
           scale: _scale,
           child: Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              gradient: widget.enabled
-                  ? widget.gradient
-                  : const LinearGradient(
-                colors: [Color(0xFF2A2A2A), Color(0xFF222222)],
-              ),
+              gradient:
+                  widget.enabled
+                      ? widget.gradient
+                      : const LinearGradient(
+                        colors: [Color(0xFF2A2A2A), Color(0xFF222222)],
+                      ),
               borderRadius: BorderRadius.circular(16),
-              boxShadow: widget.enabled
-                  ? [
-                BoxShadow(
-                  color: AppColors.primary.withOpacity(0.25),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ]
-                  : null,
+              boxShadow:
+                  widget.enabled
+                      ? [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.25),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ]
+                      : null,
             ),
             child: Row(
               children: [
@@ -433,7 +438,7 @@ class _GatewayButtonState extends State<_GatewayButton>
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.18),
+                    color: Colors.white.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(widget.icon, color: Colors.white, size: 24),
@@ -458,7 +463,7 @@ class _GatewayButtonState extends State<_GatewayButton>
                             : (widget.disabledReason ?? widget.subtitle),
                         style: GoogleFonts.outfit(
                           fontSize: 12,
-                          color: Colors.white.withOpacity(0.75),
+                          color: Colors.white.withValues(alpha: 0.75),
                           fontWeight: FontWeight.w300,
                         ),
                       ),

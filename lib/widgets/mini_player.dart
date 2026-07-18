@@ -6,7 +6,6 @@ import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
 import '../providers/player_provider.dart';
 import '../services/audio_handler.dart';
-import '../theme/app_colors.dart';
 import '../screens/now_playing_screen.dart';
 
 class MiniPlayer extends StatelessWidget {
@@ -57,7 +56,7 @@ class MiniPlayer extends StatelessWidget {
           border: Border.all(color: c.border, width: 0.5),
           boxShadow: [
             BoxShadow(
-              color: c.primary.withOpacity(0.08),
+              color: c.primary.withValues(alpha: 0.08),
               blurRadius: 20,
               offset: const Offset(0, 4),
             ),
@@ -156,11 +155,7 @@ class _CloseButton extends StatelessWidget {
               color: c.surfaceElevated,
               border: Border.all(color: c.border, width: 0.5),
             ),
-            child: Icon(
-              Icons.close_rounded,
-              color: c.textDisabled,
-              size: 14,
-            ),
+            child: Icon(Icons.close_rounded, color: c.textDisabled, size: 14),
           ),
         ),
       ),
@@ -175,40 +170,44 @@ class _CloseButton extends StatelessWidget {
     final c = context.appColors;
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: c.card,
-        shape:
-        RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Dừng phát nhạc?',
-          style: TextStyle(
-            color: c.textPrimary,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        content: Text(
-          'Hàng chờ hiện tại sẽ bị xóa.',
-          style: TextStyle(color: c.textTertiary, fontSize: 14),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('Hủy',
-                style: TextStyle(color: c.textTertiary)),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              context.read<PlayerProvider>().stopAndClear();
-            },
-            child: Text('Dừng',
-                style: TextStyle(
+      builder:
+          (ctx) => AlertDialog(
+            backgroundColor: c.card,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Text(
+              'Dừng phát nhạc?',
+              style: TextStyle(
+                color: c.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            content: Text(
+              'Hàng chờ hiện tại sẽ bị xóa.',
+              style: TextStyle(color: c.textTertiary, fontSize: 14),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Hủy', style: TextStyle(color: c.textTertiary)),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  context.read<PlayerProvider>().stopAndClear();
+                },
+                child: Text(
+                  'Dừng',
+                  style: TextStyle(
                     color: c.tertiary,
-                    fontWeight: FontWeight.w600)),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 }
@@ -296,7 +295,8 @@ class _SmartPlayPauseButton extends StatelessWidget {
       stream: player.processingStateStream,
       builder: (context, snap) {
         final processingState = snap.data ?? ProcessingState.idle;
-        final isLoading = processingState == ProcessingState.loading ||
+        final isLoading =
+            processingState == ProcessingState.loading ||
             processingState == ProcessingState.buffering;
 
         return GestureDetector(
@@ -311,32 +311,32 @@ class _SmartPlayPauseButton extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: isLoading
-                  ? c.primary.withOpacity(0.5)
-                  : c.primary,
+              color: isLoading ? c.primary.withValues(alpha: 0.5) : c.primary,
               shape: BoxShape.circle,
             ),
-            child: isLoading
-                ? const Padding(
-              padding: EdgeInsets.all(8),
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
-              ),
-            )
-                : AnimatedSwitcher(
-              duration: const Duration(milliseconds: 150),
-              transitionBuilder: (child, anim) =>
-                  ScaleTransition(scale: anim, child: child),
-              child: Icon(
-                player.isPlaying
-                    ? Icons.pause_rounded
-                    : Icons.play_arrow_rounded,
-                key: ValueKey(player.isPlaying),
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
+            child:
+                isLoading
+                    ? const Padding(
+                      padding: EdgeInsets.all(8),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                    : AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 150),
+                      transitionBuilder:
+                          (child, anim) =>
+                              ScaleTransition(scale: anim, child: child),
+                      child: Icon(
+                        player.isPlaying
+                            ? Icons.pause_rounded
+                            : Icons.play_arrow_rounded,
+                        key: ValueKey(player.isPlaying),
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
           ),
         );
       },
@@ -367,9 +367,13 @@ class _ControlButtonState extends State<_ControlButton>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 120));
-    _scale = Tween(begin: 1.0, end: 0.85)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+      vsync: this,
+      duration: const Duration(milliseconds: 120),
+    );
+    _scale = Tween(
+      begin: 1.0,
+      end: 0.85,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -393,8 +397,7 @@ class _ControlButtonState extends State<_ControlButton>
         scale: _scale,
         child: Padding(
           padding: const EdgeInsets.all(6),
-          child: Icon(widget.icon,
-              color: c.textSecondary, size: widget.size),
+          child: Icon(widget.icon, color: c.textSecondary, size: widget.size),
         ),
       ),
     );
@@ -420,22 +423,21 @@ class _MiniProgressBar extends StatelessWidget {
         final progress = dur > 0 ? (pos / dur).clamp(0.0, 1.0) : 0.0;
 
         return LayoutBuilder(
-          builder: (_, constraints) => Container(
-            height: 2,
-            width: constraints.maxWidth,
-            color: c.divider,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 500),
-                width: constraints.maxWidth * progress,
+          builder:
+              (_, constraints) => Container(
                 height: 2,
-                decoration: BoxDecoration(
-                  gradient: c.primaryGradient,
+                width: constraints.maxWidth,
+                color: c.divider,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 500),
+                    width: constraints.maxWidth * progress,
+                    height: 2,
+                    decoration: BoxDecoration(gradient: c.primaryGradient),
+                  ),
                 ),
               ),
-            ),
-          ),
         );
       },
     );

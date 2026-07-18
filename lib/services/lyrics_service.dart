@@ -62,7 +62,7 @@ class LyricsService {
 
   /// Cache key dựa trên title + artist (lowercase, normalized).
   String _cacheKey(String title, String artist) {
-    final clean = (s) => s.toLowerCase().replaceAll(RegExp(r'[^\w]'), '_');
+    String clean(String s) => s.toLowerCase().replaceAll(RegExp(r'[^\w]'), '_');
     return '${clean(artist)}__${clean(title)}';
   }
 
@@ -80,7 +80,9 @@ class LyricsService {
     required String artist,
     int? durationSeconds,
   }) async {
-    debugPrint('🎵 [Lyrics] Fetching: "$title" - "$artist" (duration: ${durationSeconds}s)');
+    debugPrint(
+      '🎵 [Lyrics] Fetching: "$title" - "$artist" (duration: ${durationSeconds}s)',
+    );
 
     // 1. Check cache
     try {
@@ -89,7 +91,9 @@ class LyricsService {
         debugPrint('📦 [Lyrics] Cache hit: ${file.path}');
         final cached = await _loadFromCache(file);
         if (cached != null) {
-          debugPrint('✅ [Lyrics] Loaded from cache: ${cached.type} (${cached.lines.length} lines)');
+          debugPrint(
+            '✅ [Lyrics] Loaded from cache: ${cached.type} (${cached.lines.length} lines)',
+          );
           return cached;
         }
       } else {
@@ -107,7 +111,9 @@ class LyricsService {
         durationSeconds: durationSeconds,
       );
 
-      debugPrint('🔍 [Lyrics] API result: ${result.type} (${result.lines.length} lines)');
+      debugPrint(
+        '🔍 [Lyrics] API result: ${result.type} (${result.lines.length} lines)',
+      );
 
       if (result.hasLyrics) {
         try {
@@ -163,7 +169,9 @@ class LyricsService {
         .timeout(_timeout);
 
     debugPrint('📡 [Lyrics] HTTP ${response.statusCode}');
-    debugPrint('📄 [Lyrics] Response body: ${response.body.length > 500 ? response.body.substring(0, 500) + "..." : response.body}');
+    debugPrint(
+      '📄 [Lyrics] Response body: ${response.body.length > 500 ? '${response.body.substring(0, 500)}...' : response.body}',
+    );
 
     if (response.statusCode == 404) {
       debugPrint('🔴 [Lyrics] 404 - Not found on LRCLIB');
@@ -177,8 +185,12 @@ class LyricsService {
 
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     debugPrint('🔑 [Lyrics] JSON keys: ${json.keys.toList()}');
-    debugPrint('   syncedLyrics: ${json['syncedLyrics'] != null ? "có (${(json['syncedLyrics'] as String).length} chars)" : "null"}');
-    debugPrint('   plainLyrics:  ${json['plainLyrics']  != null ? "có (${(json['plainLyrics']  as String).length} chars)" : "null"}');
+    debugPrint(
+      '   syncedLyrics: ${json['syncedLyrics'] != null ? "có (${(json['syncedLyrics'] as String).length} chars)" : "null"}',
+    );
+    debugPrint(
+      '   plainLyrics:  ${json['plainLyrics'] != null ? "có (${(json['plainLyrics'] as String).length} chars)" : "null"}',
+    );
 
     return _parseApiResponse(json);
   }
@@ -191,7 +203,9 @@ class LyricsService {
       final lines = parseLrc(syncedRaw);
       debugPrint('🎼 [Lyrics] Parsed synced: ${lines.length} lines');
       if (lines.isNotEmpty) return LyricsResult.synced(lines);
-      debugPrint('⚠️ [Lyrics] parseLrc returned 0 lines — raw sample:\n${syncedRaw.substring(0, syncedRaw.length.clamp(0, 200))}');
+      debugPrint(
+        '⚠️ [Lyrics] parseLrc returned 0 lines — raw sample:\n${syncedRaw.substring(0, syncedRaw.length.clamp(0, 200))}',
+      );
     }
 
     if (plainRaw != null && plainRaw.trim().isNotEmpty) {
@@ -225,9 +239,7 @@ class LyricsService {
       final seconds = int.parse(match.group(2)!);
       // Centiseconds có thể 2 hoặc 3 chữ số
       final csRaw = match.group(3)!;
-      final cs = csRaw.length == 3
-          ? int.parse(csRaw)
-          : int.parse(csRaw) * 10;
+      final cs = csRaw.length == 3 ? int.parse(csRaw) : int.parse(csRaw) * 10;
 
       final time = Duration(
         minutes: minutes,
@@ -264,39 +276,43 @@ class LyricsService {
     final typeStr = json['type'] as String?;
     final rawLines = json['lines'] as List<dynamic>? ?? [];
 
-    final lines = rawLines.map((e) {
-      final map = e as Map<String, dynamic>;
-      final timeMs = map['timeMs'] as int?;
-      final text = map['text'] as String? ?? '';
-      return LyricLine(
-        text: text,
-        time: timeMs != null ? Duration(milliseconds: timeMs) : null,
-      );
-    }).toList();
+    final lines =
+        rawLines.map((e) {
+          final map = e as Map<String, dynamic>;
+          final timeMs = map['timeMs'] as int?;
+          final text = map['text'] as String? ?? '';
+          return LyricLine(
+            text: text,
+            time: timeMs != null ? Duration(milliseconds: timeMs) : null,
+          );
+        }).toList();
 
     if (lines.isEmpty) return LyricsResult.notFound();
 
     return switch (typeStr) {
       'synced' => LyricsResult.synced(lines),
-      'plain'  => LyricsResult.plain(lines),
-      _        => null,
+      'plain' => LyricsResult.plain(lines),
+      _ => null,
     };
   }
 
   Future<void> _writeCache(
-      String title,
-      String artist,
-      LyricsResult result,
-      ) async {
+    String title,
+    String artist,
+    LyricsResult result,
+  ) async {
     final file = await _cacheFile(title, artist);
     final json = {
       'type': result.isSynced ? 'synced' : 'plain',
-      'lines': result.lines
-          .map((l) => {
-        'text': l.text,
-        if (l.time != null) 'timeMs': l.time!.inMilliseconds,
-      })
-          .toList(),
+      'lines':
+          result.lines
+              .map(
+                (l) => {
+                  'text': l.text,
+                  if (l.time != null) 'timeMs': l.time!.inMilliseconds,
+                },
+              )
+              .toList(),
     };
     await file.writeAsString(jsonEncode(json));
   }
