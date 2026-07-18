@@ -7,6 +7,7 @@ import '../providers/player_provider.dart';
 import '../theme/app_colors_data.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/mini_player.dart';
+import '../widgets/bottom_nav_style_selector_sheet.dart';
 import '../widgets/theme_selector_sheet.dart';
 import 'hidden_songs_screen.dart';
 import 'onboarding_screen.dart';
@@ -276,6 +277,25 @@ class _SettingsSheetState extends State<_SettingsSheet> {
               Navigator.pop(context);
 
               ThemeSelectorSheet.show(widget.parentContext);
+            },
+            colors: c,
+          ),
+
+          const SizedBox(height: 8),
+
+          _SettingsTappableRow(
+            icon: Icons.auto_awesome_rounded,
+            iconColor: c.secondary,
+            label: 'Đồ họa',
+            subtitle: themeProvider.bottomNavStyle.label,
+            trailing: Icon(
+              Icons.chevron_right_rounded,
+              color: c.textDisabled,
+              size: 20,
+            ),
+            onTap: () {
+              Navigator.pop(context);
+              BottomNavStyleSelectorSheet.show(widget.parentContext);
             },
             colors: c,
           ),

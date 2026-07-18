@@ -89,3 +89,10 @@
 - Dùng Kotlin `lazy(LazyThreadSafetyMode.SYNCHRONIZED)` cho `ytdlp_bridge` thay vì khởi tạo trong `configureFlutterEngine`; downloader call đầu tiên chịu init cost, các call đồng thời dùng chung một initializer và module được cache sau khi thành công.
 - Giữ lazy property trong `MainActivity` thay vì thêm service/package mới vì lifecycle hiện tại đã gắn MethodChannel với activity; exception khởi tạo tiếp tục được map qua error code hiện có của từng method.
 - Giữ regression test ở mức architectural invariant vì repo chưa có Android unit-test harness; test chứng minh cold-start setup không tham chiếu Python, nhưng không thay thế Macrobenchmark/runtime validation.
+
+## [Phase 1] - 2026-07-19 01:16
+- Giữ đúng hai lựa chọn user-facing `Bình thường`/`Xịn xò`; `Xịn xò` khóa `GlassQuality.premium` và `MaskingQuality.high`, không đưa minimal/standard vào settings theo xác nhận của user.
+- Mở rộng `ThemeProvider` hiện có thay vì thêm state management/service mới: cùng provider sở hữu preference đồ họa và `visualRevision`, nhờ đó đổi bottom nav dùng chung loading transition với đổi bộ màu mà không restart app.
+- Tách `AppBottomNavigation` thành widget presentation riêng; bản thường là code hiện tại được di chuyển nguyên hành vi, bản glass dùng API công khai `GlassTabBar.bottom` của package 0.22.1, còn `HomeScreen` tiếp tục sở hữu index/navigation.
+- Chỉ tab đang focus truyền `label` cho `GlassTab`; các tab còn lại giữ `semanticLabel`, nên Liquid Glass vẫn khớp contract icon + text khi focus và không làm giảm accessibility.
+- Không bật adaptive quality vì user yêu cầu Premium cố định; đổi lại cần device profiling trước khi khẳng định runtime mượt trên máy yếu.

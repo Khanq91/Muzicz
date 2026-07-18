@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 import '../models/song_item.dart';
 import '../providers/music_provider.dart';
 import '../providers/player_provider.dart';
+import '../providers/theme_provider.dart';
+import '../widgets/app_bottom_navigation.dart';
 import '../widgets/mini_player.dart';
 import '../widgets/music_list_tile.dart';
 import 'library_screen.dart';
@@ -51,9 +53,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: _BottomNav(
+      bottomNavigationBar: AppBottomNavigation(
         currentIndex: _currentIndex,
         onTap: (i) => setState(() => _currentIndex = i),
+        style: context.watch<ThemeProvider>().bottomNavStyle,
       ),
     );
   }
@@ -244,136 +247,6 @@ class _ScanButton extends StatelessWidget {
                   );
                 },
               ),
-    );
-  }
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// Bottom Navigation
-// ════════════════════════════════════════════════════════════════════════════
-
-class _BottomNav extends StatelessWidget {
-  const _BottomNav({required this.currentIndex, required this.onTap});
-  final int currentIndex;
-  final void Function(int) onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
-    final c = context.appColors;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20, 0, 20, 12 + bottomPadding),
-      child: Container(
-        decoration: BoxDecoration(
-          color: c.card,
-          borderRadius: BorderRadius.circular(26),
-          border: Border.all(color: c.border, width: 0.5),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.30),
-              blurRadius: 24,
-              offset: const Offset(0, 6),
-            ),
-            BoxShadow(
-              color: c.primary.withValues(alpha: 0.06),
-              blurRadius: 32,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _NavItem(
-              icon: Icons.home_rounded,
-              label: 'Home',
-              active: currentIndex == 0,
-              onTap: () => onTap(0),
-            ),
-            _NavItem(
-              icon: Icons.language_rounded,
-              label: 'Trực tuyến',
-              active: currentIndex == 1,
-              onTap: () => onTap(1),
-            ),
-            _NavItem(
-              icon: Icons.library_music_rounded,
-              label: 'Thư viện',
-              active: currentIndex == 2,
-              onTap: () => onTap(2),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    required this.active,
-    required this.onTap,
-  });
-  final IconData icon;
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.appColors;
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutCubic,
-        padding: EdgeInsets.symmetric(
-          horizontal: active ? 16 : 14,
-          vertical: 10,
-        ),
-        decoration: BoxDecoration(
-          color:
-              active ? c.primary.withValues(alpha: 0.14) : Colors.transparent,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedScale(
-              scale: active ? 1.08 : 1.0,
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeOutBack,
-              child: Icon(
-                icon,
-                color: active ? c.primary : c.textTertiary,
-                size: 22,
-              ),
-            ),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 260),
-              curve: Curves.easeOutCubic,
-              child:
-                  active
-                      ? Padding(
-                        padding: const EdgeInsets.only(left: 7),
-                        child: Text(
-                          label,
-                          style: GoogleFonts.outfit(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: c.primary,
-                          ),
-                        ),
-                      )
-                      : const SizedBox.shrink(),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

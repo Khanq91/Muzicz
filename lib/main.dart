@@ -12,9 +12,11 @@ import 'screens/splash_screen.dart';
 import 'services/audio_handler.dart';
 import 'providers/lyrics_provider.dart';
 import 'package:just_audio_background/just_audio_background.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await LiquidGlassWidgets.initialize();
 
   await JustAudioBackground.init(
     androidNotificationChannelId: 'com.muziczz.muziczz.channel.audio',
@@ -42,10 +44,12 @@ Future<void> main() async {
   final audioHandler = MuzicAudioHandler();
   // runApp(MuzicApp(audioHandler: audioHandler));
   runApp(
-    ProviderScope(
-      child: ChangeNotifierProvider(
-        create: (_) => ThemeProvider(),
-        child: MuzicApp(audioHandler: audioHandler),
+    LiquidGlassWidgets.wrap(
+      child: ProviderScope(
+        child: ChangeNotifierProvider(
+          create: (_) => ThemeProvider(),
+          child: MuzicApp(audioHandler: audioHandler),
+        ),
       ),
     ),
   );

@@ -135,3 +135,11 @@
 - [x] Hoàn tất START-02 về mặt code: chuyển Chaquopy/module sang lazy init đồng bộ ở downloader call đầu tiên; debug APK build pass và tăng app version từ `1.0.0+5` lên `1.0.0+6`.
 - [x] Kiểm chứng cuối: targeted test pass 1/1, full suite pass 26/26, analyzer 0 issue; format-check giữ baseline 24/70 file sẽ đổi và không ghi source.
 - [ ] Chưa có Macrobenchmark/Perfetto hoặc device test cold start/downloader-first-use, nên chưa định lượng latency. Bước tiếp theo: đo START-02 trên Android device hoặc xử lý START-01 parallel/minimum splash như issue Phase 4 độc lập.
+
+## [Phase 1] - 2026-07-19 01:16
+- [x] Đọc plan Liquid Glass, memory, skill Flutter UI và toàn bộ code/test liên quan bottom navigation, settings, theme persistence, root initialization và Android manifest; baseline analyzer 0 issue, full suite pass 26/26.
+- [x] Thêm lựa chọn `Đồ họa` gồm `Bình thường` và `Xịn xò`; lưu `bottom_nav_style` bằng `SharedPreferences` và áp dụng ngay qua loading transition hiện có.
+- [x] Tách bottom navigation khỏi `home_screen.dart`: bản thường giữ nguyên presentation/behavior, bản xịn dùng `GlassTabBar.bottom` với `GlassQuality.premium` và `MaskingQuality.high`; cả hai giữ 3 tab và chỉ tab focus hiện text.
+- [x] Khởi tạo/wrap `liquid_glass_widgets` 0.22.1, bật Impeller trong Android manifest, thêm 4 regression test và tăng version `1.0.0+6` → `1.0.0+7`.
+- [x] Kiểm chứng cuối: targeted test pass 4/4, full suite pass 30/30, analyzer 0 issue và debug APK build thành công; format-check không ghi source còn 22/74 file baseline lệch formatter.
+- [ ] Chưa kiểm tra shader Premium, animation kéo tab và frame timing trên thiết bị Android thật. Bước tiếp theo: manual switch Bình thường ↔ Xịn xò ở dark/AMOLED/light và profile raster frame trong lúc scroll/chuyển tab.

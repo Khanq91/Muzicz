@@ -107,3 +107,11 @@
 - Debug APK build pass; vẫn còn cảnh báo sẵn có về Gradle 8.10.2, AGP 8.7.0, Kotlin 2.0.0 và migration Built-in Kotlin. Không nâng toolchain trong START-02.
 - Final `dart format --output=none --set-exit-if-changed .` exit 1 với 24/70 file baseline sẽ đổi; test mới đã được format riêng, không format hàng loạt ngoài phạm vi. Analyzer cuối sạch và full suite pass 26/26.
 - Chưa chạy app/Macrobenchmark/Perfetto trên Android device; thay đổi chỉ loại Python init khỏi cold-start code path theo structural test, chưa chứng minh số mili-giây cải thiện hoặc first-use downloader runtime.
+
+## [Phase 1] - 2026-07-19 01:16
+- `.skill/flutter-taste/SKILL.md` tham chiếu `references/liquid-glass.md` nhưng file không tồn tại; dùng `plan/LIQUID_GLASS_UI_PLAN-package_liquid_glass_widgets.md` đã được user cung cấp và source package 0.22.1 làm nguồn thay thế.
+- `scripts/analyze_codex.bat` không tồn tại; tiếp tục dùng script thực tế `scripts/flutter_analyze.bat` và đọc `audit/flutter_analyze.txt` theo memory các session trước.
+- Analyzer/formatter trong sandbox tiếp tục chờ Flutter SDK/cache; dừng đúng wrapper của session và chạy ngoài sandbox theo workaround đã xác nhận, không kill IDE hay sửa cache.
+- Final format-check exit 1 vì 22/74 file legacy sẽ đổi; lệnh dùng `--output=none`, các file mới/chỉnh sửa trong scope đã được format riêng và không format hàng loạt source ngoài phạm vi.
+- Debug APK build thành công nhưng còn cảnh báo sẵn có về Gradle 8.10.2, AGP 8.7.0, Kotlin 2.0.0 và Built-in Kotlin migration; không nâng toolchain trong issue UI này.
+- Chưa chạy app trên thiết bị thật nên chưa xác nhận chất lượng shader Premium, haptic/drag animation, light-theme contrast hoặc frame budget; automated test chỉ xác nhận cấu hình widget, persistence và navigation callback.

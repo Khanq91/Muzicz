@@ -17,18 +17,27 @@ enum AppThemeMode {
   final String label;
 
   AppColorsData get colors => switch (this) {
-    AppThemeMode.dark   => AppColorPresets.dark,
+    AppThemeMode.dark => AppColorPresets.dark,
     AppThemeMode.amoled => AppColorPresets.amoled,
-    AppThemeMode.light  => AppColorPresets.light,
+    AppThemeMode.light => AppColorPresets.light,
   };
 
   IconData get icon => switch (this) {
-    AppThemeMode.dark   => Icons.nights_stay_rounded,
+    AppThemeMode.dark => Icons.nights_stay_rounded,
     AppThemeMode.amoled => Icons.dark_mode_rounded,
-    AppThemeMode.light  => Icons.wb_sunny_rounded,
+    AppThemeMode.light => Icons.wb_sunny_rounded,
   };
 
   bool get isDark => this != AppThemeMode.light;
+}
+
+enum BottomNavStyle {
+  normal('normal', 'Bình thường'),
+  fancy('fancy', 'Xịn xò');
+
+  const BottomNavStyle(this.key, this.label);
+  final String key;
+  final String label;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -36,6 +45,7 @@ enum AppThemeMode {
 // ════════════════════════════════════════════════════════════════════════════
 class ThemeProvider extends ChangeNotifier {
   static const _prefKey = 'app_theme_mode';
+  static const _bottomNavStylePrefKey = 'bottom_nav_style';
 
   ThemeProvider() {
     _loadSaved();
@@ -43,6 +53,12 @@ class ThemeProvider extends ChangeNotifier {
 
   AppThemeMode _mode = AppThemeMode.dark;
   AppThemeMode get mode => _mode;
+
+  BottomNavStyle _bottomNavStyle = BottomNavStyle.normal;
+  BottomNavStyle get bottomNavStyle => _bottomNavStyle;
+
+  int _visualRevision = 0;
+  int get visualRevision => _visualRevision;
 
   bool _isSwitching = false;
   bool get isSwitching => _isSwitching;
@@ -63,6 +79,7 @@ class ThemeProvider extends ChangeNotifier {
     await Future.delayed(const Duration(milliseconds: 16));
 
     _mode = mode;
+    _visualRevision++;
     _syncSystemUI(mode);
     notifyListeners();
 
@@ -75,31 +92,68 @@ class ThemeProvider extends ChangeNotifier {
     await prefs.setString(_prefKey, mode.key);
   }
 
+  Future<void> setBottomNavStyle(BottomNavStyle style) async {
+    if (_bottomNavStyle == style) return;
+
+    _isSwitching = true;
+    notifyListeners();
+
+    await Future.delayed(const Duration(milliseconds: 16));
+
+    _bottomNavStyle = style;
+    _visualRevision++;
+    notifyListeners();
+
+    await Future.delayed(const Duration(milliseconds: 320));
+    _isSwitching = false;
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_bottomNavStylePrefKey, style.key);
+  }
+
   /// Toggle nhanh qua 3 mode
   Future<void> cycleTheme() async {
-    final next = AppThemeMode.values[(_mode.index + 1) % AppThemeMode.values.length];
+    final next =
+        AppThemeMode.values[(_mode.index + 1) % AppThemeMode.values.length];
     await setTheme(next);
   }
 
   /// Đồng bộ thanh status bar / navigation bar với theme mới
   void _syncSystemUI(AppThemeMode mode) {
     final isDark = mode.isDark;
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-      systemNavigationBarColor: Colors.transparent,
-      systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness:
+            isDark ? Brightness.light : Brightness.dark,
+      ),
+    );
   }
 
   Future<void> _loadSaved() async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString(_prefKey);
     if (saved != null) {
-      final found = AppThemeMode.values.where((m) => m.key == saved).firstOrNull;
+      final found =
+          AppThemeMode.values.where((m) => m.key == saved).firstOrNull;
       if (found != null && found != _mode) {
         _mode = found;
         _syncSystemUI(_mode);
+        notifyListeners();
+      }
+    }
+
+    final savedBottomNavStyle = prefs.getString(_bottomNavStylePrefKey);
+    if (savedBottomNavStyle != null) {
+      final found =
+          BottomNavStyle.values
+              .where((style) => style.key == savedBottomNavStyle)
+              .firstOrNull;
+      if (found != null && found != _bottomNavStyle) {
+        _bottomNavStyle = found;
         notifyListeners();
       }
     }

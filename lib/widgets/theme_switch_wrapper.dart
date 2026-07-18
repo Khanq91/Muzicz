@@ -15,7 +15,7 @@ class _ThemeSwitchWrapperState extends State<ThemeSwitchWrapper>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   late final Animation<double> _opacity;
-  AppThemeMode? _lastMode;
+  int? _lastVisualRevision;
 
   @override
   void initState() {
@@ -31,13 +31,14 @@ class _ThemeSwitchWrapperState extends State<ThemeSwitchWrapper>
   void didChangeDependencies() {
     super.didChangeDependencies();
     final themeProvider = context.read<ThemeProvider>();
-    final currentMode = themeProvider.mode;
+    final currentVisualRevision = themeProvider.visualRevision;
 
-    // Khi mode thay đổi → chạy flash overlay
-    if (_lastMode != null && _lastMode != currentMode) {
+    // Khi một lựa chọn đồ họa thay đổi → chạy flash overlay
+    if (_lastVisualRevision != null &&
+        _lastVisualRevision != currentVisualRevision) {
       _runFlash();
     }
-    _lastMode = currentMode;
+    _lastVisualRevision = currentVisualRevision;
   }
 
   Future<void> _runFlash() async {
@@ -62,12 +63,14 @@ class _ThemeSwitchWrapperState extends State<ThemeSwitchWrapper>
         // Overlay đen mờ fade-in/out khi switch theme
         AnimatedBuilder(
           animation: _opacity,
-          builder: (_, __) => _opacity.value > 0
-              ? Opacity(
-            opacity: _opacity.value * 0.45,
-            child: const ModalBarrier(color: Colors.black),
-          )
-              : const SizedBox.shrink(),
+          builder:
+              (_, __) =>
+                  _opacity.value > 0
+                      ? Opacity(
+                        opacity: _opacity.value * 0.45,
+                        child: const ModalBarrier(color: Colors.black),
+                      )
+                      : const SizedBox.shrink(),
         ),
       ],
     );
