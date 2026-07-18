@@ -61,3 +61,10 @@
 - `dart format --output=none --set-exit-if-changed .` cuối vẫn exit 1 với đúng 26 file baseline; file MethodChannel test mới đã được format riêng, không tăng số file lệch chuẩn.
 - Cancellation trong giai đoạn yt-dlp/ffmpeg post-process phụ thuộc thời điểm postprocessor hook trả quyền điều khiển; nếu không dừng trong 15 giây, native trả `stopped=false` và UI giữ task active thay vì báo hủy sai.
 - Chưa chạy Android device/network profiler, chưa xác nhận partial-file cleanup và traffic dừng ngoài runtime thật. Task-scoped progress vẫn chưa triển khai; concurrency tiếp tục bị giới hạn ở 1.
+
+## [Phase 2] - 2026-07-18 23:09
+- Regression test trước sửa fail đúng dự kiến vì `getProgress` nhận `arguments = null`; đây là bằng chứng contract thiếu task identity, không phải lỗi môi trường.
+- Flutter/Dart command trong sandbox tiếp tục treo do SDK/cache; chạy ngoài sandbox hoàn tất. Không kill tiến trình IDE hoặc sửa SDK/cache ngoài repo.
+- Lần format riêng `ytdlp_service.dart` tạo mechanical diff và một lint do file vốn lệch formatter; đã loại toàn bộ formatting noise, chỉ giữ thay đổi protocol. Final formatter check vẫn được kỳ vọng fail theo baseline các file chưa format.
+- Debug APK build pass sau 144,5 giây. Build vẫn cảnh báo Gradle 8.10.2, AGP 8.7.0, Kotlin 2.0.0 sắp hết hỗ trợ và Kotlin incremental cache khác root `C:`/`D:`; fallback build thành công, không nâng toolchain trong issue này.
+- Chưa chạy app trên Android device: chưa xác nhận progress card thực tế, hai native download song song, polling rate hoặc ảnh hưởng performance. Không tuyên bố downloader đã nhanh hơn; thay đổi chỉ loại bỏ nguồn cross-wire progress trong protocol.

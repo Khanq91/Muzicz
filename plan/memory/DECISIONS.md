@@ -54,3 +54,9 @@
 - Dedupe cancel lặp theo task ID và giữ concurrency = 1; nếu native không dừng trong 15 giây hoặc Dart không nhận ACK trong 20 giây, task vẫn active để tránh khởi động task kế tiếp khi operation cũ còn chạy.
 - Chọn cooperative flag trong yt-dlp progress/postprocessor hook thay vì chỉ cancel Kotlin coroutine, vì cancel coroutine không ngắt lời gọi Python blocking.
 - Cleanup giới hạn theo filename đã được hook ghi nhận và chỉ xóa artifact tạm; chấp nhận có thể còn artifact không được hook quan sát để tránh xóa nhầm file hoàn chỉnh của user.
+
+## [Phase 2] - 2026-07-18 23:09
+- Dùng `Map<taskId, progress>` được bảo vệ bằng cùng lock của task tracking thay cho `_progress` global; snapshot trả bản sao để polling không đọc dict đang bị hook cập nhật.
+- Xóa progress entry trong `_clear_task_tracking` cùng cancel/file state để không giữ dữ liệu task đã kết thúc; response download vẫn là source-of-truth cho trạng thái terminal nên không cần giữ progress sau completion.
+- Giữ `maxConcurrentDownloads = 1` dù protocol đã task-scoped: automated test chứng minh contract và mapping độc lập nhưng chưa chứng minh hai Chaquopy download song song an toàn/runtime tốt trên thiết bị thật.
+- Không thay public `DownloadGateway`, package hoặc UI; task identity chỉ được bổ sung trong MethodChannel/Python protocol nội bộ.

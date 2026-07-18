@@ -82,3 +82,10 @@
 - [x] Cleanup chỉ nhắm file tạm `.part`, `.ytdl` và fragment cùng basename đã quan sát; không xóa output hoàn chỉnh hoặc quét cả thư mục.
 - [x] Targeted test pass 5/5, MethodChannel test pass 2/2, full suite pass 8/8, analyzer 0 issue và release APK build pass.
 - [ ] Phase 2 còn task-scoped progress; cần device test cancel khi download/merge và xác nhận traffic/file growth dừng trong timeout trước khi tuyên bố runtime hoàn tất.
+
+## [Phase 2] - 2026-07-18 23:09
+- [x] Đọc lại toàn bộ Dart/Kotlin/Python và test liên quan DL-02; baseline analyzer 0 issue, full suite pass 8/8.
+- [x] Thêm regression test hai stream có progress 25%/75%; test đỏ trước sửa vì `getProgress` không có arguments/task ID và xanh sau sửa.
+- [x] Truyền `taskId` qua Dart → Kotlin → Python; thay `_progress` global bằng map task-scoped có lock và cleanup khi task kết thúc.
+- [x] Targeted service test pass 3/3, full suite pass 9/9, analyzer 0 issue, Python compile check pass và debug APK build pass.
+- [ ] Concurrency production tiếp tục giữ ở 1; chưa đo hai native download đồng thời, polling rate, traffic hoặc progress card trên Android device. Bước tiếp theo: device validation Phase 2 trước khi cân nhắc mở lại concurrency, hoặc quay về Phase 0 tạo harness cho PLAY-01 theo thứ tự kế hoạch.

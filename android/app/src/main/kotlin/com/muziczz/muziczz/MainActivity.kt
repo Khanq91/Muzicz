@@ -172,9 +172,14 @@ class MainActivity : AudioServiceFragmentActivity() {
 
                     // ── yt-dlp: poll progress ─────────────────────────────────
                     "getProgress" -> {
+                        val taskId = call.argument<String>("taskId") ?: ""
+                        if (taskId.isEmpty()) {
+                            result.error("PROGRESS_ERROR", "Missing taskId", null)
+                            return@setMethodCallHandler
+                        }
                         activityScope.launch {
                             try {
-                                val res = module.callAttr("get_progress").toString()
+                                val res = module.callAttr("get_progress", taskId).toString()
                                 withContext(Dispatchers.Main) { result.success(res) }
                             } catch (e: Exception) {
                                 withContext(Dispatchers.Main) {

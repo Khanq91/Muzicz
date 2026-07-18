@@ -7,19 +7,38 @@ import os
 import threading
 from yt_dlp.utils import DownloadCancelled
 
-# ─── Global progress state ───────────────────────────────────────────────────
-_progress = {
-    "status": "idle",
-    "percent": 0.0,
-    "speed": "",
-    "eta": "",
-    "filename": "",
-    "error": "",
-}
-
+# ─── Task-scoped download state ──────────────────────────────────────────────
+_progress_by_task = {}
 _cancel_events = {}
 _task_files = {}
 _task_lock = threading.Lock()
+
+
+def _new_progress():
+    return {
+        "status": "idle",
+        "percent": 0.0,
+        "speed": "",
+        "eta": "",
+        "filename": "",
+        "error": "",
+    }
+
+
+def _set_task_progress(task_id: str, progress):
+    with _task_lock:
+        _progress_by_task[task_id] = progress
+
+
+def _update_task_progress(task_id: str, **updates):
+    with _task_lock:
+        progress = _progress_by_task.setdefault(task_id, _new_progress())
+        progress.update(updates)
+
+
+def _task_progress_snapshot(task_id: str):
+    with _task_lock:
+        return dict(_progress_by_task.get(task_id, _new_progress()))
 
 
 def _cancel_event_for(task_id: str):
@@ -70,20 +89,15 @@ def _clear_task_tracking(task_id: str):
     with _task_lock:
         _cancel_events.pop(task_id, None)
         _task_files.pop(task_id, None)
+        _progress_by_task.pop(task_id, None)
 
-def get_progress():
-    return json.dumps(_progress)
 
-def reset_progress():
-    global _progress
-    _progress = {
-        "status": "idle",
-        "percent": 0.0,
-        "speed": "",
-        "eta": "",
-        "filename": "",
-        "error": "",
-    }
+def get_progress(task_id: str):
+    return json.dumps(_task_progress_snapshot(task_id))
+
+
+def reset_progress(task_id: str):
+    _set_task_progress(task_id, _new_progress())
 
 
 # ─── JSON helper ─────────────────────────────────────────────────────────────
@@ -175,7 +189,6 @@ def analyze(url: str) -> str:
 # ─── Download ─────────────────────────────────────────────────────────────────
 def _make_progress_hook(task_id: str, cancel_event):
     def hook(d):
-        global _progress
         if cancel_event.is_set():
             raise DownloadCancelled("Download cancelled by user")
 
@@ -188,26 +201,29 @@ def _make_progress_hook(task_id: str, cancel_event):
             total      = d.get("total_bytes") or d.get("total_bytes_estimate") or 1
             percent    = round(downloaded / total * 100, 1) if total else 0.0
 
-            _progress = {
+            _set_task_progress(task_id, {
                 "status":   "downloading",
                 "percent":  percent,
                 "speed":    d.get("_speed_str", "").strip(),
                 "eta":      d.get("_eta_str", "").strip(),
                 "filename": filename,
                 "error":    "",
-            }
+            })
 
         elif status == "finished":
             filename = d.get("filename", "")
             print(f"[YTDLP_BRIDGE] hook: finished → filename={filename}")
-            _progress["status"]   = "finished"
-            _progress["percent"]  = 100.0
-            _progress["filename"] = filename
+            _update_task_progress(
+                task_id,
+                status="finished",
+                percent=100.0,
+                filename=filename,
+            )
 
         elif status == "error":
-            _progress["status"] = "error"
-            _progress["error"]  = str(d.get("error", "Unknown error"))
-            print(f"[YTDLP_BRIDGE] hook: error → {_progress['error']}")
+            error = str(d.get("error", "Unknown error"))
+            _update_task_progress(task_id, status="error", error=error)
+            print(f"[YTDLP_BRIDGE] hook: error → {error}")
 
     return hook
 
@@ -230,7 +246,7 @@ def download(task_id: str, url: str, format_id: str, output_path: str = "") -> s
     print(f"[YTDLP_BRIDGE]   format_id = {format_id}")
     print(f"[YTDLP_BRIDGE]   output_path = {output_path}")
 
-    reset_progress()
+    reset_progress(task_id)
     cancel_event = _cancel_event_for(task_id)
 
     if not output_path:
@@ -318,8 +334,9 @@ def download(task_id: str, url: str, format_id: str, output_path: str = "") -> s
                     filename = merged_filename
 
             # Fallback sang progress hook
-            if not os.path.isfile(filename) and _progress.get("filename") and os.path.isfile(_progress["filename"]):
-                filename = _progress["filename"]
+            progress = _task_progress_snapshot(task_id)
+            if not os.path.isfile(filename) and progress.get("filename") and os.path.isfile(progress["filename"]):
+                filename = progress["filename"]
 
             # Fallback lấy file từ info nếu yt-dlp trả về
             if not os.path.isfile(filename) and "requested_downloads" in info:
@@ -353,17 +370,16 @@ def download(task_id: str, url: str, format_id: str, output_path: str = "") -> s
             return json.dumps(result)
 
     except DownloadCancelled:
-        _progress["status"] = "cancelled"
+        _update_task_progress(task_id, status="cancelled")
         return json.dumps({"success": False, "cancelled": True})
     except Exception as e:
         if cancel_event.is_set():
-            _progress["status"] = "cancelled"
+            _update_task_progress(task_id, status="cancelled")
             return json.dumps({"success": False, "cancelled": True})
         print(f"[YTDLP_BRIDGE] Exception: {e}")
         import traceback
         traceback.print_exc()
-        _progress["status"] = "error"
-        _progress["error"]  = str(e)
+        _update_task_progress(task_id, status="error", error=str(e))
         return json.dumps({"success": False, "error": str(e)})
     finally:
         if cancel_event.is_set():

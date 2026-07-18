@@ -177,7 +177,10 @@ class YtdlpService implements DownloadGateway {
         return;
       }
       try {
-        final jsonStr = await _channel.invokeMethod<String>('getProgress');
+        final jsonStr = await _channel.invokeMethod<String>(
+          'getProgress',
+          {'taskId': task.id},
+        );
         if (jsonStr == null || controller.isClosed) return;
 
         final data   = json.decode(jsonStr) as Map<String, dynamic>;
