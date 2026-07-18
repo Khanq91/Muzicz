@@ -4,9 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/video_info.dart';
 import '../services/ytdlp_service.dart';
 
+final analyzeGatewayProvider = Provider<AnalyzeGateway>(
+  (ref) => YtdlpService.instance,
+);
+
 // ── State ──────────────────────────────────────────────────
 
 enum AnalyzeStatus { idle, loading, success, error }
+
+const _notProvided = Object();
 
 class AnalyzeState {
   final AnalyzeStatus status;
@@ -33,15 +39,21 @@ class AnalyzeState {
 
   AnalyzeState copyWith({
     AnalyzeStatus? status,
-    VideoInfo? videoInfo,
-    String? errorMessage,
+    Object? videoInfo = _notProvided,
+    Object? errorMessage = _notProvided,
     String? currentUrl,
     String? detectedPlatform,
   }) {
     return AnalyzeState(
       status: status ?? this.status,
-      videoInfo: videoInfo ?? this.videoInfo,
-      errorMessage: errorMessage ?? this.errorMessage,
+      videoInfo:
+          identical(videoInfo, _notProvided)
+              ? this.videoInfo
+              : videoInfo as VideoInfo?,
+      errorMessage:
+          identical(errorMessage, _notProvided)
+              ? this.errorMessage
+              : errorMessage as String?,
       currentUrl: currentUrl ?? this.currentUrl,
       detectedPlatform: detectedPlatform ?? this.detectedPlatform,
     );
@@ -51,28 +63,40 @@ class AnalyzeState {
 // ── Notifier ───────────────────────────────────────────────
 
 class AnalyzeNotifier extends Notifier<AnalyzeState> {
+  int _requestRevision = 0;
+
   @override
   AnalyzeState build() => const AnalyzeState();
 
   /// Gọi khi user thay đổi nội dung TextField
   void onUrlChanged(String url) {
+    if (url == state.currentUrl) return;
+
+    _requestRevision++;
     final platform = _detectPlatform(url);
     state = state.copyWith(
       currentUrl: url,
       detectedPlatform: platform,
-      // Reset error nếu user đang sửa
-      status: state.hasError ? AnalyzeStatus.idle : null,
+      status: AnalyzeStatus.idle,
+      videoInfo: null,
+      errorMessage: null,
     );
   }
 
   /// Gọi khi user nhấn nút Analyze
   Future<void> analyze() async {
     final url = state.currentUrl.trim();
-    if (url.isEmpty) return;
+    if (url.isEmpty || state.isLoading) return;
 
-    state = state.copyWith(status: AnalyzeStatus.loading);
+    final requestRevision = ++_requestRevision;
+    state = state.copyWith(
+      status: AnalyzeStatus.loading,
+      videoInfo: null,
+      errorMessage: null,
+    );
 
-    final result = await YtdlpService.instance.analyze(url);
+    final result = await ref.read(analyzeGatewayProvider).analyze(url);
+    if (requestRevision != _requestRevision) return;
 
     switch (result) {
       case AnalyzeSuccess(:final info):
@@ -92,6 +116,7 @@ class AnalyzeNotifier extends Notifier<AnalyzeState> {
 
   /// Reset về idle (khi user xóa URL hoặc quay lại)
   void reset() {
+    _requestRevision++;
     state = const AnalyzeState();
   }
 
@@ -118,5 +143,6 @@ class AnalyzeNotifier extends Notifier<AnalyzeState> {
 
 // ── Provider ───────────────────────────────────────────────
 
-final analyzeProvider =
-    NotifierProvider<AnalyzeNotifier, AnalyzeState>(AnalyzeNotifier.new);
+final analyzeProvider = NotifierProvider<AnalyzeNotifier, AnalyzeState>(
+  AnalyzeNotifier.new,
+);

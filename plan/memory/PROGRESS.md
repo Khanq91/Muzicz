@@ -120,3 +120,11 @@
 - [x] Targeted LIFE-01 test pass 3/3, full suite pass 22/22, analyzer 0 issue; tăng app version từ `1.0.0+3` lên `1.0.0+4`.
 - [x] Final format-check không ghi file vẫn exit 1 do baseline 25/68 file; giảm một file so với session trước và không format hàng loạt.
 - [ ] Chưa manual open/close downloader + airplane-mode loop hoặc thoát khi download đang chạy trên Android device. Bước tiếp theo: xác nhận manual LIFE-01, sau đó tạo harness STATE-01 như issue độc lập.
+
+## [Phase 0] - 2026-07-19 00:38
+- [x] Đọc lại finding STATE-01, toàn bộ notifier, analyze screen, gateway/model và test liên quan; baseline analyzer 0 issue, full suite pass 22/22.
+- [x] Thêm `AnalyzeGateway` seam và 3 regression test; trước sửa test đỏ đúng ở stale result, response đảo thứ tự và duplicate submit.
+- [x] Hoàn tất STATE-01: URL thay đổi xóa result/error, nullable `copyWith` dùng sentinel, duplicate loading request bị chặn và revision token loại response cũ.
+- [x] Targeted test sau sửa pass 3/3; full suite pass 25/25; analyzer cuối 0 issue; tăng app version từ `1.0.0+4` lên `1.0.0+5`.
+- [x] Final format-check không ghi file exit 1 với baseline 24/69 file sẽ đổi; không format hàng loạt ngoài phạm vi.
+- [ ] Chưa manual analyze A/B với mạng thật. Bước tiếp theo: chuyển sang Phase 4 theo kế hoạch, bắt đầu bằng measurement START-01/START-02 trong issue riêng.

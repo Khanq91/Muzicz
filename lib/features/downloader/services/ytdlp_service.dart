@@ -13,7 +13,6 @@ import '../models/download_task.dart';
 sealed class AnalyzeResult {
   const AnalyzeResult();
 }
-
 class AnalyzeSuccess extends AnalyzeResult {
   final VideoInfo info;
   const AnalyzeSuccess(this.info);
@@ -65,7 +64,11 @@ abstract interface class DownloadGateway {
   Future<ExtractAudioResult> extractAudioNative({required String inputPath});
 }
 
-class YtdlpService implements DownloadGateway {
+abstract interface class AnalyzeGateway {
+  Future<AnalyzeResult> analyze(String url);
+}
+
+class YtdlpService implements AnalyzeGateway, DownloadGateway {
   YtdlpService._();
   static final YtdlpService instance = YtdlpService._();
 
@@ -73,6 +76,7 @@ class YtdlpService implements DownloadGateway {
 
   // ── Analyze ───────────────────────────────────────────────
 
+  @override
   Future<AnalyzeResult> analyze(String url) async {
     final trimmed = url.trim();
     if (trimmed.isEmpty) return const AnalyzeFailure('URL không được để trống');

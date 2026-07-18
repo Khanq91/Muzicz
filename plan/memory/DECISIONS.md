@@ -79,3 +79,8 @@
 - Dùng `ProviderScope` duy nhất ở app root thay vì giữ container theo route; downloader state và network provider vì thế sống theo app lifecycle, không bị orphan khi pop feature.
 - Cho `networkServiceProvider` tạo và dispose một `NetworkService` mới theo container thay vì cố làm singleton đã đóng có thể tái sử dụng; seam callback chỉ ở biên Connectivity để test, không thay state management hay package.
 - Mở downloader bằng named route trên navigator gốc và truyền `RouteSettings` vào `PageRouteBuilder`; đây giữ predicate back-stack hiện tại trong khi loại nested `MaterialApp`.
+
+## [Phase 0] - 2026-07-19 00:38
+- Dùng `AnalyzeGateway` rất nhỏ tại biên MethodChannel để test orchestration mà không thay package, public native protocol hoặc state management hiện tại.
+- Mỗi lần URL/reset/analyze tăng revision; chỉ response có revision hiện hành được commit. Cách này không hủy native request nhưng ngăn response đến muộn làm sai UI với chi phí và phạm vi nhỏ.
+- Xóa result/error ngay khi chuỗi URL thực sự thay đổi và dùng sentinel cho field nullable trong `copyWith`; tradeoff là card cũ biến mất khi user sửa typo, đổi lại UI không bao giờ ghép URL mới với metadata cũ.

@@ -94,3 +94,10 @@
 - Lần format targeted trong sandbox timeout do SDK/telemetry; chạy `dart --suppress-analytics format` ngoài sandbox cho đúng 5 file trong issue. Không format hàng loạt repo.
 - Final `dart format --output=none --set-exit-if-changed .` exit 1 với 25/68 file baseline sẽ đổi; lệnh không ghi file. Analyzer cuối 0 issue và full suite pass 22/22.
 - Automated test chỉ xác nhận ownership/recreate và route contract trong Dart; chưa chạy open/close/airplane-mode loop, back stack thật hoặc download đang chạy trên Android device, nên chưa tuyên bố runtime flow đã được xác nhận hoàn toàn.
+
+## [Phase 0] - 2026-07-19 00:38
+- Analyzer baseline trong sandbox tiếp tục chờ Flutter SDK/cache quá 50 giây; đã dừng đúng wrapper của session và chạy lại ngoài sandbox thành công với 0 issue. Không kill tiến trình IDE hoặc sửa SDK/cache.
+- Targeted regression trước sửa fail đúng cả 3 case STATE-01; đây là bằng chứng orchestration ở Dart, không phải lỗi môi trường.
+- Formatter targeted ban đầu làm lộ mechanical diff lớn trong `ytdlp_service.dart` vốn lệch baseline; đã loại toàn bộ formatting noise và chỉ giữ seam/annotation thuộc issue.
+- Chưa chạy Android device/network thật nên chưa xác nhận UX khi request native A vẫn tiếp tục chạy nền sau khi URL đổi; revision guard chỉ đảm bảo response cũ không được commit vào UI.
+- Final format-check exit 1 với 24/69 file baseline sẽ đổi; analyzer cuối tại `audit/flutter_analyze.txt` sạch và full suite pass 25/25.
