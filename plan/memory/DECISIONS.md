@@ -39,3 +39,8 @@
 - Giữ Python 3.13 và ABI intent hiện có (`arm64-v8a`, `x86_64`), dùng `clear()` + `addAll()` theo migration của Flutter 3.35+; không hạ Python để giữ `armeabi-v7a` vì cấu hình repo đã chủ động loại ABI này.
 - Không nâng Gradle 8.10.2, AGP 8.7.0 hoặc Kotlin trong cùng fix build; đây là migration dependency có matrix/rủi ro riêng và các phiên bản hiện tại vẫn build thành công.
 - Loại hai flag `android.builtInKotlin=false`/`android.newDsl=false` mà Flutter migrator tự thêm khi build local để không trộn mutation generated ngoài phạm vi vào diff.
+
+## [Phase 1] - 2026-07-18 22:30
+- Chọn containment `maxConcurrentDownloads = 1` vì protocol hiện không truyền task ID và Python chỉ có một progress state; giảm throughput là tradeoff có chủ đích để ngăn progress cross-wire mà không đổi ba layer trong cùng issue.
+- Giữ full task-scoped progress/cancellation cho Phase 2; không thêm task ID nửa vời ở Dart khi Kotlin/Python chưa cùng hỗ trợ.
+- Dùng fake gateway có completion điều khiển được để test cả giới hạn concurrency lẫn việc queue tự start task kế tiếp, thay vì chỉ assert một constant.

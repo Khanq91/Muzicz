@@ -40,3 +40,12 @@
 - Build vẫn cảnh báo Flutter sắp bỏ Gradle 8.10.2, AGP 8.7.0 và Kotlin hiện dụng; ngoài ra app/plugin cần migration Built-in Kotlin. Không dùng flag skip validation để che cảnh báo.
 - Formatter cuối vẫn exit 1 với 26 Dart file baseline sẽ đổi; chạy `--output=none` nên không ghi source và không format hàng loạt trong fix Gradle này.
 - APK được xác minh local trên Windows, chưa xác nhận workflow Ubuntu/GitHub Actions đã xanh cho đến khi rerun CI.
+
+## [Phase 0] - 2026-07-18 22:30
+- Analyzer/test gọi trong sandbox timeout 120 giây trước khi tạo output; analyzer user chạy thủ công và các lệnh chạy ngoài sandbox hoàn tất bình thường. Không kill tiến trình Dart/Java của IDE; workaround là chạy Flutter/Dart ngoài sandbox.
+- Regression test DL-02 trước sửa fail đúng dự kiến: expected một native start nhưng ghi nhận hai task start đồng thời. Đây là bằng chứng orchestration, chưa phải phép đo runtime/device.
+
+## [Phase 1] - 2026-07-18 22:30
+- `dart format --output=none --set-exit-if-changed .` vẫn exit 1 với 26 file baseline sẽ đổi; giữ diff constant chỉ ở dòng containment và không format hàng loạt ngoài phạm vi.
+- Chưa chạy app/device thật, chưa quan sát hai download có tốc độ khác nhau và chưa đo throughput trước/sau. Chỉ xác nhận containment bằng fake gateway; không tuyên bố downloader đã được tối ưu runtime.
+- Full test pass 4/4 và analyzer run cuối tại `audit/flutter_analyze.txt` exit 0 với 0 error/warning/info.

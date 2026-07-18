@@ -54,3 +54,13 @@
 - [x] Sửa `defaultConfig.ndk` bằng `abiFilters.clear()` rồi chỉ thêm `arm64-v8a` và `x86_64`; không đổi Python/package hoặc nâng Gradle toolchain.
 - [x] `flutter build apk --release --no-pub` exit 0, tạo APK 80.706.719 byte; kiểm tra archive chỉ có `arm64-v8a`, `x86_64`. Analyzer 0 issue và test pass 3/3.
 - [ ] Chưa rerun GitHub Actions trên Linux; bước tiếp theo là push/rerun workflow và xử lý nâng Gradle/AGP/Kotlin ở issue độc lập trước khi Flutter bỏ hỗ trợ phiên bản hiện tại.
+
+## [Phase 0] - 2026-07-18 22:30
+- [x] Đọc lại code Dart/Kotlin/Python liên quan DL-02 và xác nhận 10 download cùng poll một `_progress` global, mỗi download mới còn reset state này.
+- [x] Thêm regression harness điều khiển completion của fake gateway; test trước sửa fail vì hai task cùng start khi protocol progress chưa có task ID.
+- [ ] Phase 0 còn thiếu harness DL-03, PLAY-01, LIFE-01 và STATE-01; chưa có profile/device baseline 1/2/10 download.
+
+## [Phase 1] - 2026-07-18 22:30
+- [x] Hoàn tất containment DL-02: đặt `maxConcurrentDownloads = 1`; task tiếp theo chỉ start sau event finished của task hiện tại.
+- [x] Cập nhật DL-01 regression để vẫn chứng minh mỗi task start đúng một lần trong queue tuần tự; targeted test pass 3/3, full suite pass 4/4, analyzer 0 issue.
+- [ ] Chưa triển khai progress/cancellation task-scoped; throughput bị giới hạn có chủ đích. Bước tiếp theo: tạo harness DL-03 trong Phase 0 trước khi thiết kế cancellation xuyên native ở Phase 2.

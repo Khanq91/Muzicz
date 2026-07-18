@@ -26,9 +26,14 @@ void main() {
     await notifier.enqueue(info: _video('one'), format: _format);
     await notifier.enqueue(info: _video('two'), format: _format);
 
+    expect(gateway.startedTaskIds, hasLength(1));
+
+    await gateway.complete(gateway.startedTaskIds.single);
+    await Future<void>.delayed(Duration.zero);
+
     expect(gateway.startedTaskIds, hasLength(2));
     expect(gateway.startedTaskIds.toSet(), hasLength(2));
-    expect(container.read(downloadProvider).activeTasks, hasLength(2));
+    expect(container.read(downloadProvider).activeTasks, hasLength(1));
     expect(container.read(downloadProvider).queuedTasks, isEmpty);
   });
 
@@ -49,6 +54,36 @@ void main() {
     final task = container.read(downloadProvider).tasks.single;
     expect(task.status, DownloadStatus.error);
     expect(task.errorMessage, contains('start failed'));
+  });
+
+  test('global progress protocol runs only one download at a time', () async {
+    final gateway = _RecordingDownloadGateway();
+    final container = ProviderContainer(
+      overrides: [
+        downloadGatewayProvider.overrideWithValue(gateway),
+        downloadOutputDirectoryProvider.overrideWithValue('/downloads'),
+      ],
+    );
+    addTearDown(() {
+      container.dispose();
+      gateway.dispose();
+    });
+
+    await container
+        .read(downloadProvider.notifier)
+        .enqueueBatch(infos: [_video('one'), _video('two')], format: _format);
+
+    expect(gateway.startedTaskIds, hasLength(1));
+    expect(container.read(downloadProvider).activeTasks, hasLength(1));
+    expect(container.read(downloadProvider).queuedTasks, hasLength(1));
+
+    await gateway.complete(gateway.startedTaskIds.single);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(gateway.startedTaskIds, hasLength(2));
+    expect(gateway.startedTaskIds.toSet(), hasLength(2));
+    expect(container.read(downloadProvider).activeTasks, hasLength(1));
+    expect(container.read(downloadProvider).queuedTasks, isEmpty);
   });
 }
 
@@ -72,12 +107,16 @@ VideoInfo _video(String id) => VideoInfo(
 class _RecordingDownloadGateway implements DownloadGateway {
   final List<String> startedTaskIds = [];
   final List<StreamController<DownloadTask>> _controllers = [];
+  final Map<String, DownloadTask> _tasks = {};
+  final Map<String, StreamController<DownloadTask>> _controllersByTask = {};
 
   @override
   Stream<DownloadTask> download(DownloadTask task, {String? outputDir}) {
     startedTaskIds.add(task.id);
     final controller = StreamController<DownloadTask>();
     _controllers.add(controller);
+    _tasks[task.id] = task;
+    _controllersByTask[task.id] = controller;
     return controller.stream;
   }
 
@@ -86,9 +125,16 @@ class _RecordingDownloadGateway implements DownloadGateway {
     required String inputPath,
   }) async => const ExtractAudioResult(success: true);
 
+  Future<void> complete(String taskId) async {
+    final task = _tasks[taskId]!;
+    final controller = _controllersByTask[taskId]!;
+    controller.add(task.copyWith(status: DownloadStatus.done, progress: 1));
+    await controller.close();
+  }
+
   void dispose() {
     for (final controller in _controllers) {
-      controller.close();
+      if (!controller.isClosed) controller.close();
     }
   }
 }

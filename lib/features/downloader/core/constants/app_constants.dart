@@ -8,8 +8,9 @@ class AppConstants {
   static const String ytdlpBinaryName = 'libytdlp.so';
 
   // ── Download ───────────────────────────────────────────
-  /// Số lượng download chạy song song tối đa
-  static const int maxConcurrentDownloads = 10;
+  /// Progress native hiện dùng một state global, nên chỉ chạy tuần tự.
+  /// Có thể tăng lại sau khi progress/cancellation được scope theo task ID.
+  static const int maxConcurrentDownloads = 1;
 
   /// Timeout phân tích URL (giây)
   static const int analyzeTimeoutSeconds = 30;
