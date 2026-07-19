@@ -195,9 +195,51 @@ void main() {
     expect(identical(provider.neverPlayed, neverPlayed), isFalse);
     expect(identical(provider.randomMix, randomMix), isTrue);
   });
+
+  test(
+    'derived library groups reuse sorted snapshots until songs change',
+    () async {
+      final songs = _songs(5000, folderCount: 25);
+      final provider = MusicProvider(
+        scanner: _RecordingMusicScanner(songs: songs),
+      );
+      await provider.init();
+      await provider.scanMusic();
+
+      final albums = provider.sortedAlbumGroups;
+      final artists = provider.sortedArtistGroups;
+      final folders = provider.sortedFolderGroups;
+
+      expect(albums.length, 10);
+      expect(artists.length, 20);
+      expect(folders.length, 25);
+      expect(
+        albums.map((entry) => entry.key),
+        orderedEquals(albums.map((entry) => entry.key).toList()..sort()),
+      );
+      expect(
+        artists.map((entry) => entry.key),
+        orderedEquals(artists.map((entry) => entry.key).toList()..sort()),
+      );
+      expect(
+        folders.map((entry) => entry.key),
+        orderedEquals(folders.map((entry) => entry.key).toList()..sort()),
+      );
+
+      await provider.toggleFavorite(songs.first.id);
+      expect(identical(provider.sortedAlbumGroups, albums), isTrue);
+      expect(identical(provider.sortedArtistGroups, artists), isTrue);
+      expect(identical(provider.sortedFolderGroups, folders), isTrue);
+
+      await provider.hideSongFromLibrary(songs.first);
+      expect(identical(provider.sortedAlbumGroups, albums), isFalse);
+      expect(identical(provider.sortedArtistGroups, artists), isFalse);
+      expect(identical(provider.sortedFolderGroups, folders), isFalse);
+    },
+  );
 }
 
-List<SongItem> _songs(int count) => List.generate(
+List<SongItem> _songs(int count, {int folderCount = 1}) => List.generate(
   count,
   (index) => SongItem(
     id: index,
@@ -206,7 +248,10 @@ List<SongItem> _songs(int count) => List.generate(
     album: 'Album ${index % 10}',
     albumId: index % 10,
     artistId: index % 20,
-    data: '/music/$index.mp3',
+    data:
+        folderCount == 1
+            ? '/music/$index.mp3'
+            : '/music/folder ${index % folderCount}/$index.mp3',
     duration: 60000 + index,
     dateAdded: DateTime(2026, 1, 1).add(Duration(minutes: index)),
   ),

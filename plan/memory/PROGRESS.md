@@ -194,3 +194,10 @@
 - [x] Debounce Home/Library search 160 ms, cache normalized search text, memoize filter/sort/smart snapshots và invalidate chọn lọc khi library, metadata, favorite hoặc play tracking đổi; Random Mix ổn định qua notify không liên quan.
 - [x] Targeted test pass 6/6; tăng version `1.0.1+12` → `1.0.1+13`; final analyzer 0 issue và full suite pass 48/48.
 - [ ] Format-check không ghi source còn 16/81 file legacy sẽ đổi; chưa có DevTools/device profile 1k/5k/10k nên chỉ xác nhận loại recomputation/allocation theo contract test. Bước tiếp theo: đo search/frame/allocation trên thiết bị hoặc xử lý derived album/artist/folder rebuild như issue Phase 4 riêng.
+
+## [Phase 4] - 2026-07-19 17:04
+- [x] Đọc lại derived library path trong `MusicProvider`, `MusicScanner`, `LibraryScreen`, model và test; baseline analyzer 0 issue, full suite pass 48/48.
+- [x] Thêm regression dataset giả 5.000 bài; trước sửa test đỏ vì chưa có snapshot sorted album/artist/folder, sau sửa xác nhận snapshot giữ identity qua favorite notify và invalidated khi library đổi.
+- [x] Group/sort album, artist và folder đúng một lần cho mỗi library revision; Library tab count và content dùng chung snapshot thay vì copy/sort/quét lại trong mỗi build, không đổi presentation hoặc navigation.
+- [x] Targeted test pass 7/7; tăng version `1.0.1+13` → `1.0.1+14`; final analyzer 0 issue và full suite pass 49/49.
+- [ ] Format-check không ghi source giữ baseline 16/81 file legacy sẽ đổi; chưa có DevTools/device profile nên chưa đo CPU, allocation hoặc frame time. Phase 4 còn acceptance runtime trên dataset 1k/5k/10k; bước tiếp theo là device profile/cold-warm validation, hoặc bắt đầu Phase 5 bằng UI-01 như issue riêng khi có chỉ đạo.

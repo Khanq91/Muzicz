@@ -26,9 +26,19 @@ class MusicProvider extends ChangeNotifier {
 
   Map<String, List<SongItem>> _albumMap = {};
   Map<String, List<SongItem>> get albumMap => _albumMap;
+  List<MapEntry<String, List<SongItem>>> _sortedAlbumGroups = const [];
+  List<MapEntry<String, List<SongItem>>> get sortedAlbumGroups =>
+      _sortedAlbumGroups;
 
   Map<String, List<SongItem>> _artistMap = {};
   Map<String, List<SongItem>> get artistMap => _artistMap;
+  List<MapEntry<String, List<SongItem>>> _sortedArtistGroups = const [];
+  List<MapEntry<String, List<SongItem>>> get sortedArtistGroups =>
+      _sortedArtistGroups;
+
+  List<MapEntry<String, List<SongItem>>> _sortedFolderGroups = const [];
+  List<MapEntry<String, List<SongItem>>> get sortedFolderGroups =>
+      _sortedFolderGroups;
 
   List<PlaylistItem> _playlists = [];
   List<PlaylistItem> get playlists => _playlists;
@@ -207,10 +217,7 @@ class MusicProvider extends ChangeNotifier {
       // Apply overrides
       final overrides = _storage.metaOverrides;
       songs = songs.map((song) => _applyOverride(song, overrides)).toList();
-      _replaceAllSongs(songs);
-
-      _albumMap = await _scanner.groupByAlbum(_allSongs);
-      _artistMap = await _scanner.groupByArtist(_allSongs);
+      await _replaceAllSongs(songs);
 
       await _storage.markScannedOnce();
       await _storage.markFirstRunDone();
@@ -366,17 +373,15 @@ class MusicProvider extends ChangeNotifier {
     await _storage.saveMetaOverride(songId, title, artist);
 
     final overrides = _storage.metaOverrides;
-    _replaceAllSongs(_allSongs.map((song) => _applyOverride(song, overrides)));
-    _albumMap = await _scanner.groupByAlbum(_allSongs);
-    _artistMap = await _scanner.groupByArtist(_allSongs);
+    await _replaceAllSongs(
+      _allSongs.map((song) => _applyOverride(song, overrides)),
+    );
     notifyListeners();
   }
 
   Future<void> hideSongFromLibrary(SongItem song) async {
     await _storage.hideSong(song.id, song.title, song.artist, song.data);
-    _replaceAllSongs(_allSongs.where((item) => item.id != song.id));
-    _albumMap = await _scanner.groupByAlbum(_allSongs);
-    _artistMap = await _scanner.groupByArtist(_allSongs);
+    await _replaceAllSongs(_allSongs.where((item) => item.id != song.id));
     for (final pl in _playlists) {
       pl.removeSong(song.id);
     }
@@ -393,9 +398,9 @@ class MusicProvider extends ChangeNotifier {
       }
     }
     final hiddenIds = songs.map((s) => s.id).toSet();
-    _replaceAllSongs(_allSongs.where((song) => !hiddenIds.contains(song.id)));
-    _albumMap = await _scanner.groupByAlbum(_allSongs);
-    _artistMap = await _scanner.groupByArtist(_allSongs);
+    await _replaceAllSongs(
+      _allSongs.where((song) => !hiddenIds.contains(song.id)),
+    );
     await _persistPlaylists();
     notifyListeners();
   }
@@ -435,7 +440,7 @@ class MusicProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _replaceAllSongs(Iterable<SongItem> songs) {
+  Future<void> _replaceAllSongs(Iterable<SongItem> songs) async {
     _allSongs = songs.toList();
     _libraryRevision += 1;
     _normalizedSearchText = {
@@ -448,6 +453,32 @@ class MusicProvider extends ChangeNotifier {
     _libraryFilterCache = null;
     _librarySortCache.clear();
     _invalidateSmartListCaches();
+    await _rebuildLibraryGroups();
+  }
+
+  Future<void> _rebuildLibraryGroups() async {
+    _albumMap = await _scanner.groupByAlbum(_allSongs);
+    _artistMap = await _scanner.groupByArtist(_allSongs);
+    final folderMap = <String, List<SongItem>>{};
+    for (final song in _allSongs) {
+      final parts = song.data.split('/');
+      parts.removeLast();
+      final folderName = parts.isNotEmpty ? parts.last : 'Root';
+      folderMap.putIfAbsent(folderName, () => []).add(song);
+    }
+
+    _sortedAlbumGroups = _sortedGroups(_albumMap);
+    _sortedArtistGroups = _sortedGroups(_artistMap);
+    _sortedFolderGroups = _sortedGroups(folderMap);
+  }
+
+  List<MapEntry<String, List<SongItem>>> _sortedGroups(
+    Map<String, List<SongItem>> groups,
+  ) {
+    final entries =
+        groups.entries.toList()
+          ..sort((left, right) => left.key.compareTo(right.key));
+    return List.unmodifiable(entries);
   }
 
   void _invalidateSmartListCaches() {

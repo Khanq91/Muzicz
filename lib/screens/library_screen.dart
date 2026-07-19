@@ -780,16 +780,6 @@ class _LibraryTabBar extends StatelessWidget {
   final TabController tabCtrl;
   final MusicProvider music;
 
-  int _getFolderCount() {
-    final folderSet = <String>{};
-    for (final s in music.allSongs) {
-      final parts = s.data.split('/');
-      parts.removeLast();
-      folderSet.add(parts.isNotEmpty ? parts.last : 'Root');
-    }
-    return folderSet.length;
-  }
-
   @override
   Widget build(BuildContext context) {
     return TabBar(
@@ -799,9 +789,9 @@ class _LibraryTabBar extends StatelessWidget {
       tabs: [
         _CountTab(label: 'Bài hát', count: music.allSongs.length),
         _CountTab(label: 'DS Phát', count: music.playlists.length),
-        _CountTab(label: 'Album', count: music.albumMap.length),
-        _CountTab(label: 'Nghệ sĩ', count: music.artistMap.length),
-        _CountTab(label: 'Thư mục', count: _getFolderCount()),
+        _CountTab(label: 'Album', count: music.sortedAlbumGroups.length),
+        _CountTab(label: 'Nghệ sĩ', count: music.sortedArtistGroups.length),
+        _CountTab(label: 'Thư mục', count: music.sortedFolderGroups.length),
       ],
     );
   }
@@ -946,8 +936,7 @@ class _AlbumsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final music = context.watch<MusicProvider>();
-    final albums =
-        music.albumMap.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
+    final albums = music.sortedAlbumGroups;
     final c = context.appColors;
 
     if (albums.isEmpty) {
@@ -1046,9 +1035,7 @@ class _ArtistsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final music = context.watch<MusicProvider>();
-    final artists =
-        music.artistMap.entries.toList()
-          ..sort((a, b) => a.key.compareTo(b.key));
+    final artists = music.sortedArtistGroups;
     final c = context.appColors;
     if (artists.isEmpty) {
       return _EmptyState(
@@ -1140,16 +1127,7 @@ class _FoldersTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.appColors;
     final music = context.watch<MusicProvider>();
-    final folderMap = <String, List<SongItem>>{};
-    for (final s in music.allSongs) {
-      final parts = s.data.split('/');
-      parts.removeLast();
-      final folderName = parts.isNotEmpty ? parts.last : 'Root';
-      folderMap.putIfAbsent(folderName, () => []).add(s);
-    }
-
-    final folders =
-        folderMap.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
+    final folders = music.sortedFolderGroups;
 
     if (folders.isEmpty) {
       return _EmptyState(

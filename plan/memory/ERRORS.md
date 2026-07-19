@@ -161,3 +161,9 @@
 - Flutter analyzer/test trong sandbox timeout 120 giây do SDK/cache ngoài workspace; chạy ngoài sandbox thành công. Lần gọi Dart executable trực tiếp format được file nhưng exit 1 vì telemetry ngoài workspace bị từ chối; dùng `--suppress-analytics` ngoài sandbox cho final check.
 - Regression trước sửa đỏ đúng: query cuối xuất hiện ngay thay vì sau debounce và smart snapshot không giữ identity. Đây là bằng chứng recomputation/allocation theo code contract, không phải runtime benchmark.
 - Final format-check không ghi source exit 1 với 16/81 file legacy sẽ đổi; final analyzer 0 issue và full suite pass 48/48. Chưa có thiết bị/DevTools nên chưa đo CPU, GC hoặc frame time trên library 1k/5k/10k và không tuyên bố mức tăng tốc định lượng.
+
+## [Phase 4] - 2026-07-19 17:04
+- Repo vẫn không có `AGENTS.md` hoặc `scripts/analyze_codex.bat`; lần gọi tên script được yêu cầu fail `CommandNotFoundException`, sau đó dùng script thực `scripts/flutter_analyze.bat` và đọc `audit/flutter_analyze.txt`.
+- Batch analyzer trong sandbox timeout ở `flutter --version` và chỉ ghi log header; chạy ngoài sandbox thành công. Skill `.skill/flutter-taste/SKILL.md` tiếp tục trỏ tới tài liệu Liquid Glass không tồn tại, nhưng issue không chỉnh glass/presentation nên dùng fallback không thêm visual mới.
+- Regression trước sửa đỏ ở compile-time vì `MusicProvider` chưa cung cấp sorted album/artist/folder snapshot; sau sửa targeted pass 7/7 và chứng minh snapshot identity/invalidation trên 5.000 bài.
+- Final format-check không ghi source exit 1 với baseline 16/81 file legacy sẽ đổi; analyzer 0 issue và full suite pass 49/49. Chưa có thiết bị/DevTools nên chưa đo CPU, allocation hoặc frame time và không tuyên bố mức tăng tốc runtime định lượng.

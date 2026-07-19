@@ -136,3 +136,9 @@
 - Chọn debounce 160 ms, nằm trong khoảng 120–200 ms của audit; query rỗng commit ngay để Clear không có độ trễ, còn timer được cancel khi query đổi hoặc provider dispose.
 - Normalize title/artist/album một lần khi library revision đổi và cache snapshot theo query/sort; smart list dùng unmodifiable snapshot để caller không thể làm bẩn cache.
 - Invalidate chọn lọc: scan/meta/hide xóa toàn bộ derived cache, favorite chỉ xóa favorites, play tracking chỉ xóa recently/most/never played. Random Mix chỉ đổi khi library đổi để không tự shuffle bởi notify không liên quan.
+
+## [Phase 4] - 2026-07-19 17:04
+- Giữ `albumMap`/`artistMap` hiện có để không phá public API; bổ sung sorted snapshot trong `MusicProvider` cho Library UI thay vì chuyển state management hoặc tạo repository mới.
+- Rebuild cả album, artist và folder tại một điểm `_replaceAllSongs`, vì scan, metadata edit và hide đều đi qua library revision này; notify favorite/history/search không làm lại grouping/sorting.
+- Dùng cùng folder snapshot cho tab count và folder list để tránh hai lần quét độc lập nhưng giữ nguyên quy tắc tên folder hiện tại và thứ tự alphabet, nên business behavior/navigation không đổi.
+- Không trộn `context.select`/Selector của PERF-02 vào issue này: snapshot loại work thực tế trong build, còn thu hẹp widget rebuild cần widget test và profile riêng để tránh UI stale do selector thiếu field.
