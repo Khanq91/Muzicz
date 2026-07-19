@@ -179,3 +179,11 @@
 - [x] Thêm test giữ hidden entries cũ khi merge; targeted test pass 4/4; tăng version `1.0.1+10` → `1.0.1+11`.
 - [x] Final analyzer 0 issue và full suite pass 44/44; format-check không ghi source giữ baseline 17/80 file legacy sẽ đổi.
 - [ ] Đang ở Phase 4; bước tiếp theo là xử lý hydrate/cache typed collections hoặc debounce/memoize derived lists như issue độc lập.
+
+## [Phase 4] - 2026-07-19 16:07
+- [x] Đọc lại PERF-03, toàn bộ `StorageService`, `MusicProvider`, model và test/call site liên quan; xác nhận mỗi getter typed collection vẫn đọc và `jsonDecode` lại từ SharedPreferences.
+- [x] Thêm regression test hydrate-once và corrupt-storage; trước sửa cả hai đỏ bằng `FormatException` khi getter decode raw JSON.
+- [x] Hydrate/cache `recentlyPlayedIds`, `playCounts`, `favoriteIds`, `metaOverrides` và `hiddenSongs` trong `init`; mọi mutation persist thành công rồi mới commit cache typed.
+- [x] Targeted test pass 6/6; tăng version `1.0.1+11` → `1.0.1+12`.
+- [x] Final analyzer 0 issue và full suite pass 46/46; format-check không ghi source giữ baseline 17/81 file legacy sẽ đổi.
+- [ ] Đang ở Phase 4; bước tiếp theo là debounce/memoize search/sort/smart lists như issue độc lập, kèm dataset 1k/5k/10k nếu có thiết bị/profile harness.

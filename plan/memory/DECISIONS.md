@@ -125,3 +125,8 @@
 - Chọn một API batch `StorageService.hideSongs(List<SongItem>)` tại đúng biên persistence thay vì cache/song repository mới; phạm vi này loại write amplification mà không đổi state management hoặc schema.
 - Batch đọc hidden map một lần và ghi một lần, đồng thời giữ merge với entries cũ; storage write hoàn tất trước khi provider mutate library/playlist để tránh in-memory state đi trước persistence khi write ném lỗi.
 - Giữ `hideSong`/`unhideSong` cho luồng đơn lẻ và không gom các persistence finding khác vào session này; PERF-03 typed cache và derived-list memoization để issue Phase 4 riêng.
+
+## [Phase 4] - 2026-07-19 16:07
+- Hydrate năm collection JSON thường dùng đúng một lần trong `StorageService.init` và giữ typed cache, thay vì thêm repository/state-management mới; `isFavorite` giờ là lookup `Set` trực tiếp cho từng tile.
+- Getter trả unmodifiable view để caller không thể sửa cache mà bỏ qua persistence. Mutation tạo candidate copy, await `SharedPreferences.setString`, rồi mới thay nội dung cache để giữ disk/in-memory nhất quán khi write thất bại.
+- JSON collection hỏng fallback về collection rỗng theo cùng hướng tolerant đã có ở playlists; không tự xóa raw data để còn khả năng chẩn đoán/khôi phục và không thêm migration schema trong issue performance này.

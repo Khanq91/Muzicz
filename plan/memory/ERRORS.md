@@ -148,3 +148,10 @@
 - Targeted formatter làm lộ mechanical diff legacy trong `music_provider.dart`; đã loại formatting noise và chỉ giữ functional line gọi batch. Không format hàng loạt ngoài phạm vi.
 - Chưa đo elapsed/bytes ghi SharedPreferences trên thiết bị thật; automated metric chỉ chứng minh số storage operation giảm từ N xuống 1 và output persisted không mất entries cũ, chưa đủ để tuyên bố runtime nhanh hơn bao nhiêu.
 - Final format-check không ghi source exit 1 với baseline 17/80 file legacy sẽ đổi; final analyzer 0 issue và full suite pass 44/44.
+
+## [Phase 4] - 2026-07-19 16:07
+- Repo không có `AGENTS.md` và `scripts/analyze_codex.bat`; không tạo hướng dẫn mới vì không có rule repo-specific cần bổ sung, tiếp tục dùng `scripts/flutter_analyze.bat` và đọc `audit/flutter_analyze.txt`.
+- Hai regression test trước sửa fail đúng bằng `FormatException`: getter vẫn decode raw JSON sau init và dữ liệu collection hỏng không có error boundary. Đây là bằng chứng code-path, không phải lỗi môi trường.
+- Typed cache giả định một `StorageService` owner trong app; source hiện chỉ tạo instance qua root `MusicProvider`. Nếu sau này có nhiều writer/process cùng sửa SharedPreferences, cần explicit refresh/synchronization thay vì dựa vào getter đọc raw mỗi lần.
+- Chưa đo CPU/allocation trên library 1k/5k/10k; automated test chỉ xác nhận getter không phụ thuộc raw JSON sau hydration và corrupt data không crash. Chưa tuyên bố mức cải thiện runtime định lượng.
+- Final format-check không ghi source exit 1 với baseline 17/81 file legacy sẽ đổi; final analyzer 0 issue và full suite pass 46/46.
