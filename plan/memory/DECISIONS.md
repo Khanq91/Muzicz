@@ -120,3 +120,8 @@
 - Đặt `MusicProvider.scanMusic` làm owner duy nhất của permission trong flow refresh; truyền `ensurePermission: false` xuống scanner sau khi quyền đã được xác nhận để không lặp platform call.
 - Normal refresh chỉ query MediaStore và không deep-scan root shared storage. Cách này giảm công việc I/O có thể tránh được; tradeoff là file chưa được MediaStore index cần một action manual riêng hoặc scan đúng path khi downloader hoàn tất.
 - Giữ `ensurePermission = true` làm mặc định của `MusicScanner.scanSongs` để không phá caller độc lập/public behavior; constructor injection chỉ là seam additive phục vụ regression test.
+
+## [Phase 4] - 2026-07-19 15:53
+- Chọn một API batch `StorageService.hideSongs(List<SongItem>)` tại đúng biên persistence thay vì cache/song repository mới; phạm vi này loại write amplification mà không đổi state management hoặc schema.
+- Batch đọc hidden map một lần và ghi một lần, đồng thời giữ merge với entries cũ; storage write hoàn tất trước khi provider mutate library/playlist để tránh in-memory state đi trước persistence khi write ném lỗi.
+- Giữ `hideSong`/`unhideSong` cho luồng đơn lẻ và không gom các persistence finding khác vào session này; PERF-03 typed cache và derived-list memoization để issue Phase 4 riêng.

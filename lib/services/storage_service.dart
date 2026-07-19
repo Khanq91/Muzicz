@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/playlist_item.dart';
+import '../models/song_item.dart';
 
 class StorageService {
   static const _keyFirstRun = 'first_run';
@@ -174,6 +175,22 @@ class StorageService {
   ) async {
     final map = hiddenSongs;
     map[songId] = {'title': title, 'artist': artist, 'data': data};
+    await _prefs.setString(
+      _keyHiddenSongs,
+      jsonEncode(map.map((k, v) => MapEntry(k.toString(), v))),
+    );
+  }
+
+  Future<void> hideSongs(List<SongItem> songs) async {
+    if (songs.isEmpty) return;
+    final map = hiddenSongs;
+    for (final song in songs) {
+      map[song.id] = {
+        'title': song.title,
+        'artist': song.artist,
+        'data': song.data,
+      };
+    }
     await _prefs.setString(
       _keyHiddenSongs,
       jsonEncode(map.map((k, v) => MapEntry(k.toString(), v))),

@@ -277,8 +277,8 @@ class MusicProvider extends ChangeNotifier {
 
   /// Bulk hide — rescan 1 lần thay vì N lần
   Future<void> hideSongsFromLibrary(List<SongItem> songs) async {
+    await _storage.hideSongs(songs);
     for (final song in songs) {
-      await _storage.hideSong(song.id, song.title, song.artist, song.data);
       for (final pl in _playlists) {
         pl.removeSong(song.id);
       }

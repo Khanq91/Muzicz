@@ -171,3 +171,11 @@
 - [x] Refresh thường chỉ query MediaStore: provider sở hữu permission request và `scanSongs` không còn gọi deep `scanMedia('/storage/emulated/0')`; giữ tham số mặc định để caller độc lập vẫn có thể tự bảo đảm quyền.
 - [x] Thêm guard test bảo vệ normal refresh khỏi deep scan; targeted pass 2/2, full suite pass 42/42, analyzer 0 issue; tăng version `1.0.0+9` → `1.0.0+10`.
 - [ ] Chưa có Android device/Perfetto để đo permission/platform-call count và scan I/O thực; file ngoài app chưa được MediaStore index có thể chưa xuất hiện ngay. Bước tiếp theo: device validation API 24/29/33/35 và thiết kế manual deep-rescan hoặc scan đúng file vừa tạo như issue riêng.
+
+## [Phase 4] - 2026-07-19 15:53
+- [x] Đọc lại PERF-07, toàn bộ `MusicProvider`, `StorageService`, model và test scan hiện có; baseline analyzer 0 issue, full suite pass 42/42.
+- [x] Thêm regression metric cho batch 100 bài; trước sửa test đỏ vì tạo 100 single storage calls thay vì một batch operation.
+- [x] Thêm `StorageService.hideSongs`: hydrate hidden map một lần, merge cả batch và persist một lần; provider chỉ cập nhật library/playlist sau khi storage hoàn tất.
+- [x] Thêm test giữ hidden entries cũ khi merge; targeted test pass 4/4; tăng version `1.0.1+10` → `1.0.1+11`.
+- [x] Final analyzer 0 issue và full suite pass 44/44; format-check không ghi source giữ baseline 17/80 file legacy sẽ đổi.
+- [ ] Đang ở Phase 4; bước tiếp theo là xử lý hydrate/cache typed collections hoặc debounce/memoize derived lists như issue độc lập.

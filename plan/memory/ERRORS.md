@@ -141,3 +141,10 @@
 - Regression test trước sửa fail đúng với `permissionRequests = 2`; đây là bằng chứng duplicate permission orchestration. Guard test đầu fail vì helper bắt nhầm `{` của named parameters, đã sửa parser tìm `async {`; không phải lỗi production.
 - Targeted formatter tạo mechanical diff trong phần legacy của `music_provider.dart`; đã loại noise và chỉ giữ seam/scan change. Final format-check không ghi source vẫn exit 1 với baseline 17/80 file sẽ đổi.
 - Final analyzer 0 issue và full suite pass 42/42. `adb devices` không có thiết bị kết nối, nên chưa đo scan duration/I/O hoặc xác nhận file chưa-index trên runtime; thay đổi chỉ loại deep-scan và duplicate permission call khỏi code path, chưa chứng minh mức cải thiện định lượng.
+
+## [Phase 4] - 2026-07-19 15:53
+- `scripts/analyze_codex.bat` vẫn không tồn tại; dùng script repo `scripts/flutter_analyze.bat`. Baseline analyzer trong sandbox treo do SDK/cache ngoài workspace, dừng đúng process của session và chạy ngoài sandbox thành công với 0 issue.
+- Regression PERF-07 trước sửa fail đúng với `singleHideCalls = 100`; đây là bằng chứng write amplification ở orchestration, không phải lỗi môi trường.
+- Targeted formatter làm lộ mechanical diff legacy trong `music_provider.dart`; đã loại formatting noise và chỉ giữ functional line gọi batch. Không format hàng loạt ngoài phạm vi.
+- Chưa đo elapsed/bytes ghi SharedPreferences trên thiết bị thật; automated metric chỉ chứng minh số storage operation giảm từ N xuống 1 và output persisted không mất entries cũ, chưa đủ để tuyên bố runtime nhanh hơn bao nhiêu.
+- Final format-check không ghi source exit 1 với baseline 17/80 file legacy sẽ đổi; final analyzer 0 issue và full suite pass 44/44.

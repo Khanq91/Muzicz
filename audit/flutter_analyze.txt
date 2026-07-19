@@ -1,13 +1,13 @@
 ============================================================
 Flutter Analyze Report
 ============================================================
-Run ID       : c4624c2b-03fb-44cc-ba72-4ca9d7558a14
-Generated At : 2026-07-19 15:21:59
+Run ID       : 91bb9540-f78a-4603-a599-31f8b7d36fb6
+Generated At : 2026-07-19 15:55:15
 Computer     : LAPTOP-J44MMRC9
 User         : chikh
 Working Dir  : D:\program\data\flutterDev\project\Muzicz
 Git Branch   : main
-Git Commit   : 4f32b6f
+Git Commit   : fd8f16d
 Log File     : audit\flutter_analyze.txt
 Command      : flutter analyze --no-pub
 ------------------------------------------------------------
@@ -31,13 +31,13 @@ BEGIN FLUTTER ANALYZE
 ============================================================
 
 Analyzing Muzicz...                                             
-No issues found! (ran in 4.1s)
+No issues found! (ran in 4.9s)
 
 ============================================================
 END FLUTTER ANALYZE
 ============================================================
-Finished At : 2026-07-19 15:22:08
-Duration    : 9.04s
+Finished At : 2026-07-19 15:55:25
+Duration    : 9.92s
 Exit Code   : 0
 Status      : SUCCESS
 ------------------------------------------------------------
