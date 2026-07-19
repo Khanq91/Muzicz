@@ -14,10 +14,15 @@ class MusicScanner {
 
   final OnAudioQuery _audioQuery;
   final WebmAudioGateway _webmAudioGateway;
+  bool _permissionPermanentlyDenied = false;
+
+  bool get permissionPermanentlyDenied => _permissionPermanentlyDenied;
 
   /// Yêu cầu quyền đọc nhạc — xử lý đúng cho Android 13+ (READ_MEDIA_AUDIO)
   /// và Android ≤ 12 (READ_EXTERNAL_STORAGE).
   Future<bool> requestPermission() async {
+    _permissionPermanentlyDenied = false;
+
     // Bước 1: Thử qua on_audio_query (thường đủ trên mọi phiên bản)
     final alreadyGranted = await _audioQuery.permissionsStatus();
     if (alreadyGranted) {
@@ -44,10 +49,9 @@ class MusicScanner {
       final storageStatus = await Permission.storage.request();
       if (storageStatus.isGranted) return true;
 
-      // Người dùng từ chối vĩnh viễn → mở App Settings
       if (audioStatus.isPermanentlyDenied ||
           storageStatus.isPermanentlyDenied) {
-        await openAppSettings();
+        _permissionPermanentlyDenied = true;
       }
     }
 

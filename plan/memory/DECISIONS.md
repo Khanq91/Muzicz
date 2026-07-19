@@ -142,3 +142,10 @@
 - Rebuild cả album, artist và folder tại một điểm `_replaceAllSongs`, vì scan, metadata edit và hide đều đi qua library revision này; notify favorite/history/search không làm lại grouping/sorting.
 - Dùng cùng folder snapshot cho tab count và folder list để tránh hai lần quét độc lập nhưng giữ nguyên quy tắc tên folder hiện tại và thứ tự alphabet, nên business behavior/navigation không đổi.
 - Không trộn `context.select`/Selector của PERF-02 vào issue này: snapshot loại work thực tế trong build, còn thu hẹp widget rebuild cần widget test và profile riêng để tránh UI stale do selector thiếu field.
+
+## [Phase 5] - 2026-07-19 18:06
+- Giữ `LibraryStatus` hiện có làm source of truth cho onboarding thay vì thêm state machine hoặc package mới; local state chỉ giữ scan-in-flight và timer navigation, nên UI không thể tự suy diễn failure thành success.
+- `MusicScanner` không tự mở App Settings khi permanent-denied. Scanner chỉ ghi nhận trạng thái, `MusicProvider` expose getter additive và onboarding hiển thị CTA chủ động; cách này tránh navigation hệ thống bất ngờ và giữ quyền giải thích/retry cho UI.
+- Chỉ permanent denial mới hiện `Mở cài đặt`; denial thường ưu tiên `Thử lại`. Error dùng thông báo chung vì provider hiện không expose exception, tránh mở rộng error model ngoài UI-01.
+- Dùng `FilledButton` cho Retry, `OutlinedButton` cho Settings, token màu app/`ColorScheme.error` và live-region semantics theo skill Flutter nội bộ; giữ nguyên presentation, business behavior và navigation success hiện có.
+- Thay `Future.delayed` điều hướng bằng `Timer` có owner/cancel trong widget và guard `LibraryStatus.done`; tradeoff là vẫn giữ delay success 2 giây để không đổi UX, nhưng không còn callback navigation sau dispose.

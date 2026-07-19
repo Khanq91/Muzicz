@@ -20,6 +20,7 @@ class MusicProvider extends ChangeNotifier {
 
   LibraryStatus _status = LibraryStatus.idle;
   LibraryStatus get status => _status;
+  bool get permissionPermanentlyDenied => _scanner.permissionPermanentlyDenied;
 
   List<SongItem> _allSongs = [];
   List<SongItem> get allSongs => _allSongs;

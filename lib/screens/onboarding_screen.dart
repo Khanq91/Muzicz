@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import '../providers/music_provider.dart';
 import 'home_screen.dart';
@@ -49,9 +51,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   late final Animation<double> _pulseScale;
   late final Animation<double> _pulseOpacity;
 
-  bool _scanDone = false;
-  int _songCount = 0;
-  int _artistCount = 0;
+  Timer? _navigationTimer;
+  bool _scanInFlight = false;
   String _randomText = '';
 
   @override
@@ -84,37 +85,50 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) => _startScan());
   }
 
-  Future<void> _startScan() async {
+  Future<void> _startScan({bool showIntroDelay = true}) async {
+    if (_scanInFlight) return;
+    _navigationTimer?.cancel();
+    _scanInFlight = true;
+
     final musicProvider = context.read<MusicProvider>();
+    _resultCtrl.reset();
+    _progressCtrl.reset();
+    if (!_pulseCtrl.isAnimating) _pulseCtrl.repeat(reverse: true);
+    setState(() {});
 
     // Simulate a minimum progress animation for UX feel
-    _progressCtrl.animateTo(0.3, duration: const Duration(milliseconds: 800));
-
-    await Future.delayed(const Duration(seconds: 5));
-    await musicProvider.scanMusic();
-
-    _progressCtrl.animateTo(
-      1.0,
-      duration: const Duration(milliseconds: 600),
-      curve: Curves.easeOut,
+    unawaited(
+      _progressCtrl.animateTo(0.3, duration: const Duration(milliseconds: 800)),
     );
 
-    await Future.delayed(const Duration(milliseconds: 300));
-
+    if (showIntroDelay) await Future.delayed(const Duration(seconds: 5));
+    if (!mounted) return;
+    await musicProvider.scanMusic();
     if (!mounted) return;
 
-    setState(() {
-      _scanDone = true;
-      _songCount = musicProvider.allSongs.length;
-      _artistCount = musicProvider.artistMap.length;
-    });
-
+    _scanInFlight = false;
     _pulseCtrl.stop();
-    _resultCtrl.forward();
+    setState(() {});
 
-    await Future.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
+    if (musicProvider.status == LibraryStatus.done) {
+      await _progressCtrl.animateTo(
+        1.0,
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeOut,
+      );
+      if (!mounted || musicProvider.status != LibraryStatus.done) return;
+      _resultCtrl.forward();
+      _navigationTimer = Timer(const Duration(seconds: 2), _navigateHome);
+    } else {
+      _progressCtrl.stop();
+    }
+  }
 
+  void _navigateHome() {
+    if (!mounted ||
+        context.read<MusicProvider>().status != LibraryStatus.done) {
+      return;
+    }
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         pageBuilder: (_, anim, __) => const HomeScreen(),
@@ -127,6 +141,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   @override
   void dispose() {
+    _navigationTimer?.cancel();
     _pulseCtrl.dispose();
     _progressCtrl.dispose();
     _resultCtrl.dispose();
@@ -136,6 +151,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
+    final music = context.watch<MusicProvider>();
     return Scaffold(
       backgroundColor: c.background,
       body: SafeArea(
@@ -190,18 +206,14 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               // Random text
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 400),
-                child:
-                    _scanDone
-                        ? _ResultWidget(
-                          songCount: _songCount,
-                          artistCount: _artistCount,
-                          animation: _resultCtrl,
-                        )
-                        : _ScanningText(randomText: _randomText),
+                child: _buildStatus(music),
               ),
               const Spacer(flex: 2),
               // Progress bar
-              _AnimatedProgressBar(controller: _progressCtrl),
+              if (music.status == LibraryStatus.idle ||
+                  music.status == LibraryStatus.scanning ||
+                  music.status == LibraryStatus.done)
+                _AnimatedProgressBar(controller: _progressCtrl),
               const SizedBox(height: 48),
             ],
           ),
@@ -209,10 +221,41 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       ),
     );
   }
+
+  Widget _buildStatus(MusicProvider music) {
+    return switch (music.status) {
+      LibraryStatus.done => _ResultWidget(
+        key: const ValueKey('scan-result'),
+        songCount: music.allSongs.length,
+        artistCount: music.artistMap.length,
+        animation: _resultCtrl,
+      ),
+      LibraryStatus.permissionDenied => _ScanFailure(
+        key: const ValueKey('permission-denied'),
+        icon: Icons.library_music_outlined,
+        title: 'Cần quyền truy cập nhạc',
+        message: 'Muzicz cần quyền đọc tệp âm thanh để tìm nhạc trên thiết bị.',
+        onRetry: () => _startScan(showIntroDelay: false),
+        onOpenSettings:
+            music.permissionPermanentlyDenied ? openAppSettings : null,
+      ),
+      LibraryStatus.error => _ScanFailure(
+        key: const ValueKey('scan-error'),
+        icon: Icons.error_outline_rounded,
+        title: 'Không thể quét thư viện',
+        message: 'Đã có lỗi khi đọc thư viện nhạc. Hãy thử lại.',
+        onRetry: () => _startScan(showIntroDelay: false),
+      ),
+      LibraryStatus.idle || LibraryStatus.scanning => _ScanningText(
+        key: const ValueKey('scanning'),
+        randomText: _randomText,
+      ),
+    };
+  }
 }
 
 class _ScanningText extends StatelessWidget {
-  const _ScanningText({required this.randomText});
+  const _ScanningText({super.key, required this.randomText});
   final String randomText;
 
   @override
@@ -255,6 +298,7 @@ class _ScanningText extends StatelessWidget {
 
 class _ResultWidget extends StatelessWidget {
   const _ResultWidget({
+    super.key,
     required this.songCount,
     required this.artistCount,
     required this.animation,
@@ -318,6 +362,72 @@ class _ResultWidget extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ScanFailure extends StatelessWidget {
+  const _ScanFailure({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.message,
+    required this.onRetry,
+    this.onOpenSettings,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+  final VoidCallback onRetry;
+  final Future<bool> Function()? onOpenSettings;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.appColors;
+    final errorColor = Theme.of(context).colorScheme.error;
+    return Semantics(
+      liveRegion: true,
+      child: Column(
+        children: [
+          Icon(icon, color: errorColor, size: 42),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.outfit(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: c.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.outfit(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              color: c.textSecondary,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 24),
+          FilledButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Thử lại'),
+          ),
+          if (onOpenSettings != null) ...[
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: onOpenSettings,
+              icon: const Icon(Icons.settings_outlined),
+              label: const Text('Mở cài đặt'),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

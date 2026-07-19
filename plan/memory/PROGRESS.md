@@ -201,3 +201,10 @@
 - [x] Group/sort album, artist và folder đúng một lần cho mỗi library revision; Library tab count và content dùng chung snapshot thay vì copy/sort/quét lại trong mỗi build, không đổi presentation hoặc navigation.
 - [x] Targeted test pass 7/7; tăng version `1.0.1+13` → `1.0.1+14`; final analyzer 0 issue và full suite pass 49/49.
 - [ ] Format-check không ghi source giữ baseline 16/81 file legacy sẽ đổi; chưa có DevTools/device profile nên chưa đo CPU, allocation hoặc frame time. Phase 4 còn acceptance runtime trên dataset 1k/5k/10k; bước tiếp theo là device profile/cold-warm validation, hoặc bắt đầu Phase 5 bằng UI-01 như issue riêng khi có chỉ đạo.
+
+## [Phase 5] - 2026-07-19 18:06
+- [x] Đọc lại UI-01, toàn bộ onboarding/provider/scanner và test liên quan; baseline analyzer 0 issue, full suite pass 49/49.
+- [x] Hoàn tất UI-01: onboarding render theo `LibraryStatus`, chỉ success mới hiện số lượng và điều hướng Home; permission denied/error giữ người dùng tại chỗ với Retry, permanent denial có CTA Settings chủ động.
+- [x] Bỏ việc service tự mở Settings, expose permanent-denial state tối thiểu; chặn scan request chồng và sở hữu/cancel timer điều hướng khi dispose.
+- [x] Regression test đỏ trước sửa ở false-success và timer lifecycle; sau sửa targeted pass 4/4, full suite pass 53/53, analyzer 0 issue; tăng version `1.0.1+14` → `1.0.1+15`.
+- [ ] Format-check không ghi source giữ baseline 16/82 file legacy sẽ đổi. Chưa manual deny/retry/permanent-deny/return-from-Settings trên Android thật; bước tiếp theo là device validation UI-01, sau đó xử lý UI-02 text scale như issue Phase 5 độc lập.

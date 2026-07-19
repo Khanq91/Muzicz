@@ -167,3 +167,11 @@
 - Batch analyzer trong sandbox timeout ở `flutter --version` và chỉ ghi log header; chạy ngoài sandbox thành công. Skill `.skill/flutter-taste/SKILL.md` tiếp tục trỏ tới tài liệu Liquid Glass không tồn tại, nhưng issue không chỉnh glass/presentation nên dùng fallback không thêm visual mới.
 - Regression trước sửa đỏ ở compile-time vì `MusicProvider` chưa cung cấp sorted album/artist/folder snapshot; sau sửa targeted pass 7/7 và chứng minh snapshot identity/invalidation trên 5.000 bài.
 - Final format-check không ghi source exit 1 với baseline 16/81 file legacy sẽ đổi; analyzer 0 issue và full suite pass 49/49. Chưa có thiết bị/DevTools nên chưa đo CPU, allocation hoặc frame time và không tuyên bố mức tăng tốc runtime định lượng.
+
+## [Phase 5] - 2026-07-19 18:06
+- Repo vẫn không có `AGENTS.md` hoặc `scripts/analyze_codex.bat`; không tạo rule mới khi chưa có repo-specific instruction cần bổ sung và dùng script thực `scripts/flutter_analyze.bat`, log tại `audit/flutter_analyze.txt`.
+- Baseline analyzer/test ghép trong sandbox timeout 120 giây khi script dừng ở `flutter --version` do SDK/cache ngoài workspace; chạy lại ngoài sandbox thành công. Không kill các Dart process cũ vì không xác định ownership.
+- Regression trước sửa đỏ đúng ở permission denied và scanner exception vẫn thiếu failure UI; success test còn phát hiện timer điều hướng 2 giây không được cancel khi dispose. Sau sửa timer có owner và test không còn pending callback.
+- Lượt full test đầu sau sửa fail do matcher `textContaining('bài hát')` trùng ngẫu nhiên với quote onboarding, không phải lỗi production; đổi assertion sang key trạng thái `scan-result`, targeted pass 4/4 và full suite pass 53/53.
+- Final format-check không ghi source exit 1 với 16/82 file legacy sẽ đổi; analyzer 0 issue. Chưa có Android device nên chưa xác nhận permission prompt OEM/API, mở Settings thực, return/resume và navigation Home bằng thao tác tay.
+- Onboarding vẫn giữ intro delay 5 giây có sẵn trước lần scan đầu; không thay trong UI-01 để tránh trộn performance/UX timing vào issue error-state. Cần đánh giá riêng bằng device flow nếu tiếp tục Phase 5 polish.
