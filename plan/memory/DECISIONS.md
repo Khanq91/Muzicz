@@ -109,3 +109,9 @@
 - Dùng `MediaStore.Files` + `MediaMetadataRetriever` cho WebM fallback thay vì duyệt recursive filesystem; chỉ ứng viên `.webm` chịu metadata I/O và malformed file không làm fail toàn scan.
 - Ưu tiên record `on_audio_query` khi trùng path vì record đó có MediaStore album/artist ID đầy đủ; fallback dùng negative synthetic ID và metadata trong container.
 - Xin `READ_MEDIA_VIDEO` best-effort trên Android 13+ vì WebM có thể bị phân loại `video/webm`; từ chối quyền này không chặn thư viện audio thông thường.
+
+## [Phase 4] - 2026-07-19 15:06
+- Dùng `AppStartupService` làm seam orchestration nhỏ thay vì đưa thêm state management: minimum splash, storage init và destination có thể test độc lập trong khi `SplashScreen` giữ nguyên navigation/presentation.
+- Chọn minimum splash 1,3 giây vì khớp thời điểm hai animation hiện tại hoàn tất (logo bắt đầu ở 200 ms, text ở 600 ms); đây là ngưỡng UX, không phải kết quả benchmark.
+- Với returning user, start scan ngay sau storage init nhưng không await trước Home; Home dùng `LibraryStatus.scanning && allSongs.isEmpty` để hiện loading thay vì empty state. Tradeoff là scan vẫn tiêu thụ I/O sau navigation, cần Perfetto/device measurement trước khi đánh giá frame/runtime.
+- Mở rộng `scanMusic` catch bao quanh cả permission request để background scan luôn kết thúc bằng state `permissionDenied` hoặc `error`, không tạo unhandled async error.

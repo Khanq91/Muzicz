@@ -94,14 +94,14 @@ class MusicProvider extends ChangeNotifier {
     _lastNotifiedCount = 0;
     notifyListeners();
 
-    final hasPermission = await _scanner.requestPermission();
-    if (!hasPermission) {
-      _status = LibraryStatus.permissionDenied;
-      notifyListeners();
-      return;
-    }
-
     try {
+      final hasPermission = await _scanner.requestPermission();
+      if (!hasPermission) {
+        _status = LibraryStatus.permissionDenied;
+        notifyListeners();
+        return;
+      }
+
       _allSongs = await _scanner.scanSongs(
         onProgress: (count) {
           _scanCount = count;

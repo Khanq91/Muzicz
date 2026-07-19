@@ -3,11 +3,17 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:provider/provider.dart';
 import '../providers/music_provider.dart';
+import '../services/app_startup_service.dart';
 import 'welcome_screen.dart';
 import 'home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  const SplashScreen({
+    super.key,
+    this.startupService = const AppStartupService(),
+  });
+
+  final AppStartupService startupService;
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -66,27 +72,16 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _startSequence() async {
+    final startup = widget.startupService.initialize(
+      context.read<MusicProvider>(),
+    );
+
     await Future.delayed(const Duration(milliseconds: 200));
-    _logoCtrl.forward();
+    if (mounted) _logoCtrl.forward();
     await Future.delayed(const Duration(milliseconds: 400));
-    _textCtrl.forward();
-    await Future.delayed(const Duration(milliseconds: 4000));
-    // _navigate();
-    await _navigate();
-  }
+    if (mounted) _textCtrl.forward();
 
-  Future<void> _navigate() async {
-    final musicProvider = context.read<MusicProvider>();
-
-    await musicProvider.init();
-
-    if (!musicProvider.isFirstRun) {
-      if (musicProvider.allSongs.isEmpty) {
-        await musicProvider.scanMusic();
-      } else {
-        musicProvider.scanMusic();
-      }
-    }
+    final destination = await startup;
 
     if (!mounted) return;
 
@@ -94,7 +89,7 @@ class _SplashScreenState extends State<SplashScreen>
       PageRouteBuilder(
         pageBuilder:
             (_, anim, __) =>
-                musicProvider.isFirstRun
+                destination == AppStartupDestination.welcome
                     ? const WelcomeScreen()
                     : const HomeScreen(),
         transitionDuration: const Duration(milliseconds: 600),

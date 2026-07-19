@@ -157,3 +157,10 @@
 - [x] Merge theo path không phân biệt hoa thường, ưu tiên metadata từ `on_audio_query`, dùng synthetic ID ổn định cho fallback và giữ scan audio thường khi quyền video bị từ chối.
 - [x] Thêm MethodChannel mapping/merge regression test; native scanner compile trong debug APK.
 - [ ] Chưa quét file WebM thật trên API 24/29/33/35 hoặc SD card; bước tiếp theo sau device validation downloader là kiểm tra audio-only và video+audio WebM, duplicate và permission denied.
+
+## [Phase 4] - 2026-07-19 15:06
+- [x] Đọc lại START-01, toàn bộ splash/provider/scanner/storage/Home/onboarding và test liên quan; baseline analyzer 0 issue, full suite pass 37/37.
+- [x] Bỏ chuỗi chờ cố định 4,6 giây: storage init và minimum splash 1,3 giây chạy song song; returning user bắt đầu scan sau init nhưng navigation Home không chờ scan hoàn tất, first-run vẫn đi Welcome và không tự scan.
+- [x] Home hiển thị loading state có live-region semantics khi initial scan chưa có bài; permission/request exception được map về `LibraryStatus.error` thay vì thành unhandled background future.
+- [x] Thêm 3 regression test cho first-run, background scan và slow init; targeted pass 3/3, full suite pass 40/40, analyzer 0 issue; tăng version `1.0.0+8` → `1.0.0+9`.
+- [ ] Chưa có Android device/Macrobenchmark/Perfetto để đo process start → first Home frame hoặc scan duration. Bước tiếp theo: đo cold/warm startup và kiểm tra loading/error/permission flow thực, sau đó xử lý deep scan mặc định/permission ownership như issue Phase 4 riêng.

@@ -94,6 +94,10 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
 
   @override
   Widget build(BuildContext context) {
+    final music = context.watch<MusicProvider>();
+    final isInitialScan =
+        music.status == LibraryStatus.scanning && music.allSongs.isEmpty;
+
     return CustomScrollView(
       controller: _scrollCtrl,
       physics: const BouncingScrollPhysics(),
@@ -117,6 +121,11 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
         if (_searchActive)
           _SearchResultsSliver(
             onSongTap: (songs, song) => _playSong(songs, song),
+          )
+        else if (isInitialScan)
+          const SliverFillRemaining(
+            hasScrollBody: false,
+            child: _InitialLibraryLoadingState(),
           )
         else ...[
           SliverToBoxAdapter(
@@ -204,6 +213,48 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
               ),
               child: child,
             ),
+      ),
+    );
+  }
+}
+
+class _InitialLibraryLoadingState extends StatelessWidget {
+  const _InitialLibraryLoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.appColors;
+    return Semantics(
+      key: const ValueKey('initial-library-loading'),
+      liveRegion: true,
+      label: 'Đang tải thư viện nhạc',
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 28,
+                height: 28,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: c.primary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Đang tải thư viện nhạc…',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.outfit(
+                  color: c.textSecondary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

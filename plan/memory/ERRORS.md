@@ -128,3 +128,10 @@
 ## [Phase 4] - 2026-07-19 14:21
 - WebM đã có trong whitelist cũ; root cause nằm trước filter vì `on_audio_query` phụ thuộc `MediaStore.Audio`. Fallback native compile/test mapping nhưng chưa có file/device thật để xác nhận OEM MediaStore trả `DATA` và metadata nhất quán.
 - Quyền video có thể bị user từ chối hoặc policy phân loại khác theo API/OEM; scan bắt lỗi và trả danh sách rỗng để không làm hỏng kết quả audio chính.
+
+## [Phase 4] - 2026-07-19 15:06
+- `scripts/analyze_codex.bat` không tồn tại; dùng script repo `scripts/flutter_analyze.bat`, script này vẫn ghi `audit/flutter_analyze.txt` theo yêu cầu.
+- Analyzer baseline trong sandbox timeout 120 giây ngay tại `flutter --version` do SDK/cache ngoài workspace; chạy lại ngoài sandbox thành công với 0 issue. Không kill nhóm Dart process cũ vì không xác định chắc ownership.
+- Formatter targeted làm thay đổi cơ học các đoạn legacy trong `music_provider.dart`; đã loại formatting noise và chỉ giữ thay đổi error boundary thuộc START-01.
+- Final `dart format --output=none --set-exit-if-changed .` không ghi source và exit 1 vì 17/79 file legacy sẽ đổi; không format hàng loạt ngoài phạm vi.
+- Final analyzer sạch và full suite pass 40/40. Chưa chạy Android device/Macrobenchmark/Perfetto nên chỉ xác nhận đã loại fixed 4,6 giây và scan-await khỏi code path; chưa có bằng chứng định lượng startup latency, initial-frame smoothness hoặc permission UX runtime.
