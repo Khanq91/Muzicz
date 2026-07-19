@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../models/song_item.dart';
 import '../models/playlist_item.dart';
@@ -5,6 +7,8 @@ import '../services/music_scanner.dart';
 import '../services/storage_service.dart';
 
 enum LibraryStatus { idle, scanning, done, error, permissionDenied }
+
+enum LibrarySongSort { title, recentlyAdded, duration }
 
 class MusicProvider extends ChangeNotifier {
   MusicProvider({MusicScanner? scanner, StorageService? storage})
@@ -36,6 +40,27 @@ class MusicProvider extends ChangeNotifier {
 
   String _homeSearchQuery = '';
   String _librarySearchQuery = '';
+  Timer? _homeSearchTimer;
+  Timer? _librarySearchTimer;
+
+  static const _searchDebounceDuration = Duration(milliseconds: 160);
+
+  int _libraryRevision = 0;
+  Map<int, String> _normalizedSearchText = const {};
+  String? _homeFilterCacheQuery;
+  int _homeFilterCacheRevision = -1;
+  List<SongItem>? _homeFilterCache;
+  String? _libraryFilterCacheQuery;
+  int _libraryFilterCacheRevision = -1;
+  List<SongItem>? _libraryFilterCache;
+  final Map<LibrarySongSort, List<SongItem>> _librarySortCache = {};
+
+  List<SongItem>? _recentlyAddedCache;
+  List<SongItem>? _recentlyPlayedCache;
+  List<SongItem>? _mostPlayedCache;
+  List<SongItem>? _favoritesCache;
+  List<SongItem>? _neverPlayedCache;
+  List<SongItem>? _randomMixCache;
 
   String get homeSearchQuery => _homeSearchQuery;
   String get librarySearchQuery => _librarySearchQuery;
@@ -44,13 +69,33 @@ class MusicProvider extends ChangeNotifier {
   String get searchQuery => _homeSearchQuery;
 
   void setHomeSearchQuery(String q) {
-    _homeSearchQuery = q.toLowerCase().trim();
-    notifyListeners();
+    final query = q.toLowerCase().trim();
+    _homeSearchTimer?.cancel();
+    _homeSearchTimer = null;
+    if (query == _homeSearchQuery) return;
+    if (query.isEmpty) {
+      _commitHomeSearchQuery(query);
+      return;
+    }
+    _homeSearchTimer = Timer(_searchDebounceDuration, () {
+      _homeSearchTimer = null;
+      _commitHomeSearchQuery(query);
+    });
   }
 
   void setLibrarySearchQuery(String q) {
-    _librarySearchQuery = q.toLowerCase().trim();
-    notifyListeners();
+    final query = q.toLowerCase().trim();
+    _librarySearchTimer?.cancel();
+    _librarySearchTimer = null;
+    if (query == _librarySearchQuery) return;
+    if (query.isEmpty) {
+      _commitLibrarySearchQuery(query);
+      return;
+    }
+    _librarySearchTimer = Timer(_searchDebounceDuration, () {
+      _librarySearchTimer = null;
+      _commitLibrarySearchQuery(query);
+    });
   }
 
   Future<void> unhideSong(int songId) async {
@@ -61,17 +106,53 @@ class MusicProvider extends ChangeNotifier {
   // Deprecated
   void setSearchQuery(String q) => setHomeSearchQuery(q);
 
-  List<SongItem> get filteredSongs => _filterSongs(_homeSearchQuery);
+  List<SongItem> get filteredSongs {
+    if (_homeSearchQuery.isEmpty) return _allSongs;
+    if (_homeFilterCacheQuery == _homeSearchQuery &&
+        _homeFilterCacheRevision == _libraryRevision) {
+      return _homeFilterCache!;
+    }
+    final result = _filterSongs(_homeSearchQuery);
+    _homeFilterCacheQuery = _homeSearchQuery;
+    _homeFilterCacheRevision = _libraryRevision;
+    return _homeFilterCache = List.unmodifiable(result);
+  }
 
-  List<SongItem> get libraryFilteredSongs => _filterSongs(_librarySearchQuery);
+  List<SongItem> get libraryFilteredSongs {
+    if (_librarySearchQuery.isEmpty) return _allSongs;
+    if (_libraryFilterCacheQuery == _librarySearchQuery &&
+        _libraryFilterCacheRevision == _libraryRevision) {
+      return _libraryFilterCache!;
+    }
+    final result = _filterSongs(_librarySearchQuery);
+    _libraryFilterCacheQuery = _librarySearchQuery;
+    _libraryFilterCacheRevision = _libraryRevision;
+    return _libraryFilterCache = List.unmodifiable(result);
+  }
 
   List<SongItem> _filterSongs(String query) {
-    if (query.isEmpty) return _allSongs;
-    return _allSongs.where((s) {
-      return s.title.toLowerCase().contains(query) ||
-          s.artist.toLowerCase().contains(query) ||
-          s.album.toLowerCase().contains(query);
-    }).toList();
+    return _allSongs
+        .where((song) => _normalizedSearchText[song.id]!.contains(query))
+        .toList();
+  }
+
+  List<SongItem> librarySongsSortedBy(LibrarySongSort sort) {
+    return _librarySortCache.putIfAbsent(sort, () {
+      final songs = [...libraryFilteredSongs];
+      switch (sort) {
+        case LibrarySongSort.title:
+          songs.sort((a, b) => a.title.compareTo(b.title));
+        case LibrarySongSort.recentlyAdded:
+          songs.sort(
+            (a, b) => (b.dateAdded ?? DateTime(0)).compareTo(
+              a.dateAdded ?? DateTime(0),
+            ),
+          );
+        case LibrarySongSort.duration:
+          songs.sort((a, b) => b.duration.compareTo(a.duration));
+      }
+      return List.unmodifiable(songs);
+    });
   }
 
   bool get isFirstRun => _storage.isFirstRun;
@@ -82,6 +163,7 @@ class MusicProvider extends ChangeNotifier {
   Future<void> init() async {
     await _storage.init();
     _playlists = _storage.playlists;
+    _invalidateSmartListCaches();
     notifyListeners();
   }
 
@@ -106,7 +188,7 @@ class MusicProvider extends ChangeNotifier {
         return;
       }
 
-      _allSongs = await _scanner.scanSongs(
+      var songs = await _scanner.scanSongs(
         ensurePermission: false,
         onProgress: (count) {
           _scanCount = count;
@@ -120,13 +202,14 @@ class MusicProvider extends ChangeNotifier {
 
       // Filter hidden
       final hidden = _storage.hiddenSongIds;
-      _allSongs = _allSongs.where((s) => !hidden.contains(s.id)).toList();
+      songs = songs.where((song) => !hidden.contains(song.id)).toList();
 
       // Apply overrides
       final overrides = _storage.metaOverrides;
-      _allSongs = _allSongs.map((s) => _applyOverride(s, overrides)).toList();
+      songs = songs.map((song) => _applyOverride(song, overrides)).toList();
+      _replaceAllSongs(songs);
 
-      _albumMap  = await _scanner.groupByAlbum(_allSongs);
+      _albumMap = await _scanner.groupByAlbum(_allSongs);
       _artistMap = await _scanner.groupByArtist(_allSongs);
 
       await _storage.markScannedOnce();
@@ -142,41 +225,59 @@ class MusicProvider extends ChangeNotifier {
   // ── Smart Lists ───────────────────────────────────────────────────────────
 
   List<SongItem> get recentlyAdded {
-    final sorted = [..._allSongs]
-      ..sort((a, b) =>
-          (b.dateAdded ?? DateTime(0)).compareTo(a.dateAdded ?? DateTime(0)));
-    return sorted.take(20).toList();
+    final cached = _recentlyAddedCache;
+    if (cached != null) return cached;
+    final sorted = [..._allSongs]..sort(
+      (a, b) =>
+          (b.dateAdded ?? DateTime(0)).compareTo(a.dateAdded ?? DateTime(0)),
+    );
+    return _recentlyAddedCache = List.unmodifiable(sorted.take(20));
   }
 
   List<SongItem> get recentlyPlayed {
+    final cached = _recentlyPlayedCache;
+    if (cached != null) return cached;
     final ids = _storage.recentlyPlayedIds;
     final map = {for (final s in _allSongs) s.id: s};
-    return ids.map((id) => map[id]).whereType<SongItem>().take(20).toList();
+    return _recentlyPlayedCache = List.unmodifiable(
+      ids.map((id) => map[id]).whereType<SongItem>().take(20),
+    );
   }
 
   List<SongItem> get mostPlayed {
+    final cached = _mostPlayedCache;
+    if (cached != null) return cached;
     final counts = _storage.playCounts;
     final sorted = [..._allSongs]
       ..sort((a, b) => (counts[b.id] ?? 0).compareTo(counts[a.id] ?? 0));
-    return sorted.where((s) => (counts[s.id] ?? 0) > 0).take(20).toList();
+    return _mostPlayedCache = List.unmodifiable(
+      sorted.where((song) => (counts[song.id] ?? 0) > 0).take(20),
+    );
   }
 
   List<SongItem> get favorites {
+    final cached = _favoritesCache;
+    if (cached != null) return cached;
     final ids = _storage.favoriteIds;
-    return _allSongs.where((s) => ids.contains(s.id)).toList();
+    return _favoritesCache = List.unmodifiable(
+      _allSongs.where((song) => ids.contains(song.id)),
+    );
   }
 
   List<SongItem> get neverPlayed {
+    final cached = _neverPlayedCache;
+    if (cached != null) return cached;
     final counts = _storage.playCounts;
-    return _allSongs
-        .where((s) => (counts[s.id] ?? 0) == 0)
-        .take(30)
-        .toList();
+    return _neverPlayedCache = List.unmodifiable(
+      _allSongs.where((song) => (counts[song.id] ?? 0) == 0).take(30),
+    );
   }
 
   List<SongItem> get randomMix {
+    final cached = _randomMixCache;
+    if (cached != null) return cached;
     final list = [..._allSongs]..shuffle();
-    return list.take(20).toList();
+    return _randomMixCache = List.unmodifiable(list.take(20));
   }
 
   // ── Favorites ─────────────────────────────────────────────────────────────
@@ -185,6 +286,7 @@ class MusicProvider extends ChangeNotifier {
 
   Future<void> toggleFavorite(int songId) async {
     await _storage.toggleFavorite(songId);
+    _favoritesCache = null;
     notifyListeners();
   }
 
@@ -233,40 +335,47 @@ class MusicProvider extends ChangeNotifier {
   Future<void> onSongPlayed(int songId) async {
     await _storage.addRecentlyPlayed(songId);
     await _storage.incrementPlayCount(songId);
+    _recentlyPlayedCache = null;
+    _mostPlayedCache = null;
+    _neverPlayedCache = null;
     notifyListeners();
   }
 
-  SongItem _applyOverride(SongItem song, Map<int, Map<String, String>> overrides) {
+  SongItem _applyOverride(
+    SongItem song,
+    Map<int, Map<String, String>> overrides,
+  ) {
     final o = overrides[song.id];
     if (o == null) return song;
     return SongItem(
-      id:       song.id,
-      title:    o['title']  ?? song.title,
-      artist:   o['artist'] ?? song.artist,
-      album:    song.album,
-      albumId:  song.albumId,
+      id: song.id,
+      title: o['title'] ?? song.title,
+      artist: o['artist'] ?? song.artist,
+      album: song.album,
+      albumId: song.albumId,
       artistId: song.artistId,
-      data:     song.data,
+      data: song.data,
       duration: song.duration,
-      size:     song.size,
-      track:    song.track,
+      size: song.size,
+      track: song.track,
       dateAdded: song.dateAdded,
     );
   }
+
   Future<void> updateSongMeta(int songId, String title, String artist) async {
     await _storage.saveMetaOverride(songId, title, artist);
 
     final overrides = _storage.metaOverrides;
-    _allSongs = _allSongs.map((s) => _applyOverride(s, overrides)).toList();
-    _albumMap  = await _scanner.groupByAlbum(_allSongs);
+    _replaceAllSongs(_allSongs.map((song) => _applyOverride(song, overrides)));
+    _albumMap = await _scanner.groupByAlbum(_allSongs);
     _artistMap = await _scanner.groupByArtist(_allSongs);
     notifyListeners();
   }
 
   Future<void> hideSongFromLibrary(SongItem song) async {
     await _storage.hideSong(song.id, song.title, song.artist, song.data);
-    _allSongs = _allSongs.where((s) => s.id != song.id).toList();
-    _albumMap  = await _scanner.groupByAlbum(_allSongs);
+    _replaceAllSongs(_allSongs.where((item) => item.id != song.id));
+    _albumMap = await _scanner.groupByAlbum(_allSongs);
     _artistMap = await _scanner.groupByArtist(_allSongs);
     for (final pl in _playlists) {
       pl.removeSong(song.id);
@@ -284,7 +393,7 @@ class MusicProvider extends ChangeNotifier {
       }
     }
     final hiddenIds = songs.map((s) => s.id).toSet();
-    _allSongs = _allSongs.where((s) => !hiddenIds.contains(s.id)).toList();
+    _replaceAllSongs(_allSongs.where((song) => !hiddenIds.contains(song.id)));
     _albumMap = await _scanner.groupByAlbum(_allSongs);
     _artistMap = await _scanner.groupByArtist(_allSongs);
     await _persistPlaylists();
@@ -296,11 +405,15 @@ class MusicProvider extends ChangeNotifier {
     if (songIds.isEmpty) return;
     final allFav = songIds.every((id) => _storage.isFavorite(id));
     await _storage.setBulkFavoriteStatus(songIds, !allFav);
+    _favoritesCache = null;
     notifyListeners();
   }
 
   /// Thêm nhiều bài vào playlist — bài đã có bị bỏ qua
-  Future<void> bulkAddToPlaylist(String playlistId, List<SongItem> songs) async {
+  Future<void> bulkAddToPlaylist(
+    String playlistId,
+    List<SongItem> songs,
+  ) async {
     final pl = _playlists.firstWhere((p) => p.id == playlistId);
     for (final song in songs) {
       pl.addSong(song);
@@ -309,4 +422,47 @@ class MusicProvider extends ChangeNotifier {
     await _persistPlaylists();
   }
 
+  void _commitHomeSearchQuery(String query) {
+    _homeSearchQuery = query;
+    _homeFilterCache = null;
+    notifyListeners();
+  }
+
+  void _commitLibrarySearchQuery(String query) {
+    _librarySearchQuery = query;
+    _libraryFilterCache = null;
+    _librarySortCache.clear();
+    notifyListeners();
+  }
+
+  void _replaceAllSongs(Iterable<SongItem> songs) {
+    _allSongs = songs.toList();
+    _libraryRevision += 1;
+    _normalizedSearchText = {
+      for (final song in _allSongs)
+        song.id:
+            '${song.title}\u0000${song.artist}\u0000${song.album}'
+                .toLowerCase(),
+    };
+    _homeFilterCache = null;
+    _libraryFilterCache = null;
+    _librarySortCache.clear();
+    _invalidateSmartListCaches();
+  }
+
+  void _invalidateSmartListCaches() {
+    _recentlyAddedCache = null;
+    _recentlyPlayedCache = null;
+    _mostPlayedCache = null;
+    _favoritesCache = null;
+    _neverPlayedCache = null;
+    _randomMixCache = null;
+  }
+
+  @override
+  void dispose() {
+    _homeSearchTimer?.cancel();
+    _librarySearchTimer?.cancel();
+    super.dispose();
+  }
 }

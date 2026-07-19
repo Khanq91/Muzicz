@@ -130,3 +130,9 @@
 - Hydrate năm collection JSON thường dùng đúng một lần trong `StorageService.init` và giữ typed cache, thay vì thêm repository/state-management mới; `isFavorite` giờ là lookup `Set` trực tiếp cho từng tile.
 - Getter trả unmodifiable view để caller không thể sửa cache mà bỏ qua persistence. Mutation tạo candidate copy, await `SharedPreferences.setString`, rồi mới thay nội dung cache để giữ disk/in-memory nhất quán khi write thất bại.
 - JSON collection hỏng fallback về collection rỗng theo cùng hướng tolerant đã có ở playlists; không tự xóa raw data để còn khả năng chẩn đoán/khôi phục và không thêm migration schema trong issue performance này.
+
+## [Phase 4] - 2026-07-19 16:50
+- Giữ derived state trong `MusicProvider` thay vì thêm package/repository hoặc state management mới; provider đã sở hữu library revision và mọi mutation cần thiết để invalidate cache đúng chỗ.
+- Chọn debounce 160 ms, nằm trong khoảng 120–200 ms của audit; query rỗng commit ngay để Clear không có độ trễ, còn timer được cancel khi query đổi hoặc provider dispose.
+- Normalize title/artist/album một lần khi library revision đổi và cache snapshot theo query/sort; smart list dùng unmodifiable snapshot để caller không thể làm bẩn cache.
+- Invalidate chọn lọc: scan/meta/hide xóa toàn bộ derived cache, favorite chỉ xóa favorites, play tracking chỉ xóa recently/most/never played. Random Mix chỉ đổi khi library đổi để không tự shuffle bởi notify không liên quan.

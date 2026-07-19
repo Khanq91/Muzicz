@@ -187,3 +187,10 @@
 - [x] Targeted test pass 6/6; tăng version `1.0.1+11` → `1.0.1+12`.
 - [x] Final analyzer 0 issue và full suite pass 46/46; format-check không ghi source giữ baseline 17/81 file legacy sẽ đổi.
 - [ ] Đang ở Phase 4; bước tiếp theo là debounce/memoize search/sort/smart lists như issue độc lập, kèm dataset 1k/5k/10k nếu có thiết bị/profile harness.
+
+## [Phase 4] - 2026-07-19 16:50
+- [x] Đọc lại PERF-03, toàn bộ `MusicProvider`, `StorageService`, `SongItem`, Home/Library call site, tile và test liên quan; baseline analyzer 0 issue, full suite pass 46/46.
+- [x] Thêm regression trên dataset giả 5.000 bài; trước sửa test đỏ vì query commit ngay và smart getter cấp phát snapshot mới ở mỗi lần đọc.
+- [x] Debounce Home/Library search 160 ms, cache normalized search text, memoize filter/sort/smart snapshots và invalidate chọn lọc khi library, metadata, favorite hoặc play tracking đổi; Random Mix ổn định qua notify không liên quan.
+- [x] Targeted test pass 6/6; tăng version `1.0.1+12` → `1.0.1+13`; final analyzer 0 issue và full suite pass 48/48.
+- [ ] Format-check không ghi source còn 16/81 file legacy sẽ đổi; chưa có DevTools/device profile 1k/5k/10k nên chỉ xác nhận loại recomputation/allocation theo contract test. Bước tiếp theo: đo search/frame/allocation trên thiết bị hoặc xử lý derived album/artist/folder rebuild như issue Phase 4 riêng.

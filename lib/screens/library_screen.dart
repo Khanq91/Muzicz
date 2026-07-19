@@ -870,33 +870,16 @@ class _SongsTab extends StatelessWidget {
   final void Function(SongItem)? onEnterSelect;
   final void Function(SongItem)? onToggleSelect;
 
-  List<SongItem> _sorted(List<SongItem> songs) {
-    final list = [...songs];
-    switch (sortType) {
-      case SortType.az:
-        list.sort((a, b) => a.title.compareTo(b.title));
-      case SortType.recentlyAdded:
-        list.sort(
-          (a, b) => (b.dateAdded ?? DateTime(0)).compareTo(
-            a.dateAdded ?? DateTime(0),
-          ),
-        );
-      case SortType.duration:
-        list.sort((a, b) => b.duration.compareTo(a.duration));
-    }
-    return list;
-  }
-
   @override
   Widget build(BuildContext context) {
     final music = context.watch<MusicProvider>();
     final player = context.watch<PlayerProvider>();
     final c = context.appColors;
-    final songs = _sorted(
-      music.librarySearchQuery.isEmpty
-          ? music.allSongs
-          : music.libraryFilteredSongs,
-    );
+    final songs = music.librarySongsSortedBy(switch (sortType) {
+      SortType.az => LibrarySongSort.title,
+      SortType.recentlyAdded => LibrarySongSort.recentlyAdded,
+      SortType.duration => LibrarySongSort.duration,
+    });
 
     if (songs.isEmpty) {
       return _EmptyState(

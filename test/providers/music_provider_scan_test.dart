@@ -102,7 +102,115 @@ void main() {
       'data': '/one.mp3',
     });
   });
+
+  testWidgets('search applies only the final query after debounce', (
+    tester,
+  ) async {
+    final songs = _songs(5000);
+    final provider = MusicProvider(
+      scanner: _RecordingMusicScanner(songs: songs),
+    );
+    await provider.init();
+    await provider.scanMusic();
+    var notifications = 0;
+    provider.addListener(() => notifications += 1);
+
+    provider.setHomeSearchQuery('Song 4');
+    provider.setHomeSearchQuery('Song 49');
+    provider.setHomeSearchQuery('Song 499');
+
+    expect(provider.homeSearchQuery, isEmpty);
+    expect(notifications, 0);
+    await tester.pump(const Duration(milliseconds: 159));
+    expect(provider.homeSearchQuery, isEmpty);
+
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(provider.homeSearchQuery, 'song 499');
+    expect(notifications, 1);
+    expect(provider.filteredSongs.map((song) => song.id), [
+      499,
+      4990,
+      4991,
+      4992,
+      4993,
+      4994,
+      4995,
+      4996,
+      4997,
+      4998,
+      4999,
+    ]);
+
+    provider.setLibrarySearchQuery('Song 12');
+    await tester.pump(const Duration(milliseconds: 160));
+    final sorted = provider.librarySongsSortedBy(LibrarySongSort.duration);
+    expect(
+      identical(
+        provider.librarySongsSortedBy(LibrarySongSort.duration),
+        sorted,
+      ),
+      isTrue,
+    );
+    expect(sorted.first.id, 1299);
+  });
+
+  test('derived song lists reuse stable snapshots until invalidated', () async {
+    SharedPreferences.setMockInitialValues({
+      'recently_played': jsonEncode([30, 20, 10]),
+      'play_count': jsonEncode({'10': 3, '20': 2}),
+      'favorites': jsonEncode([10, 20]),
+    });
+    final provider = MusicProvider(
+      scanner: _RecordingMusicScanner(songs: _songs(100)),
+    );
+    await provider.init();
+    await provider.scanMusic();
+
+    final recentlyAdded = provider.recentlyAdded;
+    final recentlyPlayed = provider.recentlyPlayed;
+    final mostPlayed = provider.mostPlayed;
+    final favorites = provider.favorites;
+    final neverPlayed = provider.neverPlayed;
+    final randomMix = provider.randomMix;
+    final sorted = provider.librarySongsSortedBy(LibrarySongSort.title);
+
+    expect(identical(provider.recentlyAdded, recentlyAdded), isTrue);
+    expect(identical(provider.recentlyPlayed, recentlyPlayed), isTrue);
+    expect(identical(provider.mostPlayed, mostPlayed), isTrue);
+    expect(identical(provider.favorites, favorites), isTrue);
+    expect(identical(provider.neverPlayed, neverPlayed), isTrue);
+    expect(identical(provider.randomMix, randomMix), isTrue);
+    expect(
+      identical(provider.librarySongsSortedBy(LibrarySongSort.title), sorted),
+      isTrue,
+    );
+
+    await provider.toggleFavorite(30);
+    expect(identical(provider.favorites, favorites), isFalse);
+    expect(identical(provider.randomMix, randomMix), isTrue);
+
+    await provider.onSongPlayed(30);
+    expect(identical(provider.recentlyPlayed, recentlyPlayed), isFalse);
+    expect(identical(provider.mostPlayed, mostPlayed), isFalse);
+    expect(identical(provider.neverPlayed, neverPlayed), isFalse);
+    expect(identical(provider.randomMix, randomMix), isTrue);
+  });
 }
+
+List<SongItem> _songs(int count) => List.generate(
+  count,
+  (index) => SongItem(
+    id: index,
+    title: 'Song $index',
+    artist: 'Artist ${index % 20}',
+    album: 'Album ${index % 10}',
+    albumId: index % 10,
+    artistId: index % 20,
+    data: '/music/$index.mp3',
+    duration: 60000 + index,
+    dateAdded: DateTime(2026, 1, 1).add(Duration(minutes: index)),
+  ),
+);
 
 String _methodBody(String source, String methodName) {
   final declaration = source.indexOf('$methodName(');
@@ -130,6 +238,9 @@ String _methodBody(String source, String methodName) {
 }
 
 class _RecordingMusicScanner extends MusicScanner {
+  _RecordingMusicScanner({this.songs = const []});
+
+  final List<SongItem> songs;
   int permissionRequests = 0;
   int scanCalls = 0;
   bool? lastEnsurePermission;
@@ -149,7 +260,7 @@ class _RecordingMusicScanner extends MusicScanner {
     lastEnsurePermission = ensurePermission;
     if (ensurePermission) await requestPermission();
     onProgress?.call(0);
-    return const [];
+    return songs;
   }
 }
 

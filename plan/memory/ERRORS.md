@@ -155,3 +155,9 @@
 - Typed cache giả định một `StorageService` owner trong app; source hiện chỉ tạo instance qua root `MusicProvider`. Nếu sau này có nhiều writer/process cùng sửa SharedPreferences, cần explicit refresh/synchronization thay vì dựa vào getter đọc raw mỗi lần.
 - Chưa đo CPU/allocation trên library 1k/5k/10k; automated test chỉ xác nhận getter không phụ thuộc raw JSON sau hydration và corrupt data không crash. Chưa tuyên bố mức cải thiện runtime định lượng.
 - Final format-check không ghi source exit 1 với baseline 17/81 file legacy sẽ đổi; final analyzer 0 issue và full suite pass 46/46.
+
+## [Phase 4] - 2026-07-19 16:50
+- Repo vẫn không có `AGENTS.md` hoặc `scripts/analyze_codex.bat`; dùng script thực `scripts/flutter_analyze.bat`. Skill `.skill/flutter-taste/SKILL.md` tham chiếu tài liệu Liquid Glass không tồn tại, nhưng issue không chỉnh glass/widget presentation nên không chặn phạm vi.
+- Flutter analyzer/test trong sandbox timeout 120 giây do SDK/cache ngoài workspace; chạy ngoài sandbox thành công. Lần gọi Dart executable trực tiếp format được file nhưng exit 1 vì telemetry ngoài workspace bị từ chối; dùng `--suppress-analytics` ngoài sandbox cho final check.
+- Regression trước sửa đỏ đúng: query cuối xuất hiện ngay thay vì sau debounce và smart snapshot không giữ identity. Đây là bằng chứng recomputation/allocation theo code contract, không phải runtime benchmark.
+- Final format-check không ghi source exit 1 với 16/81 file legacy sẽ đổi; final analyzer 0 issue và full suite pass 48/48. Chưa có thiết bị/DevTools nên chưa đo CPU, GC hoặc frame time trên library 1k/5k/10k và không tuyên bố mức tăng tốc định lượng.
