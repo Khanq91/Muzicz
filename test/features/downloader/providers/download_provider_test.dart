@@ -15,6 +15,7 @@ void main() {
       overrides: [
         downloadGatewayProvider.overrideWithValue(gateway),
         downloadOutputDirectoryProvider.overrideWithValue('/downloads'),
+        downloadDispatchLimitProvider.overrideWithValue(1),
       ],
     );
     addTearDown(() {
@@ -43,6 +44,7 @@ void main() {
       overrides: [
         downloadGatewayProvider.overrideWithValue(gateway),
         downloadOutputDirectoryProvider.overrideWithValue('/downloads'),
+        downloadDispatchLimitProvider.overrideWithValue(1),
       ],
     );
     addTearDown(container.dispose);
@@ -56,12 +58,13 @@ void main() {
     expect(task.errorMessage, contains('start failed'));
   });
 
-  test('global progress protocol runs only one download at a time', () async {
+  test('dispatch limit override serializes the fake gateway', () async {
     final gateway = _RecordingDownloadGateway();
     final container = ProviderContainer(
       overrides: [
         downloadGatewayProvider.overrideWithValue(gateway),
         downloadOutputDirectoryProvider.overrideWithValue('/downloads'),
+        downloadDispatchLimitProvider.overrideWithValue(1),
       ],
     );
     addTearDown(() {
@@ -94,6 +97,7 @@ void main() {
         overrides: [
           downloadGatewayProvider.overrideWithValue(gateway),
           downloadOutputDirectoryProvider.overrideWithValue('/downloads'),
+          downloadDispatchLimitProvider.overrideWithValue(1),
         ],
       );
       addTearDown(() {
@@ -135,6 +139,7 @@ void main() {
       overrides: [
         downloadGatewayProvider.overrideWithValue(gateway),
         downloadOutputDirectoryProvider.overrideWithValue('/downloads'),
+        downloadDispatchLimitProvider.overrideWithValue(1),
       ],
     );
     addTearDown(() {
@@ -159,6 +164,38 @@ void main() {
     );
     expect(container.read(downloadProvider).queuedTasks, hasLength(1));
     expect(gateway.startedTaskIds, hasLength(1));
+  });
+
+  test('restores completed tasks from the foreground service', () async {
+    final restoredTask = DownloadTask(
+      id: 'restored',
+      title: 'Restored download',
+      url: 'https://example.com/restored',
+      formatId: _format.formatId,
+      ext: _format.ext,
+      status: DownloadStatus.done,
+      progress: 1,
+      completedAt: DateTime(2026),
+    );
+    final gateway = _RestoringDownloadGateway([restoredTask]);
+    final container = ProviderContainer(
+      overrides: [
+        downloadGatewayProvider.overrideWithValue(gateway),
+        downloadOutputDirectoryProvider.overrideWithValue('/downloads'),
+        downloadDispatchLimitProvider.overrideWithValue(1),
+      ],
+    );
+    addTearDown(() {
+      container.dispose();
+      gateway.dispose();
+    });
+
+    container.read(downloadProvider);
+    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(container.read(downloadProvider).tasks, [restoredTask]);
+    expect(gateway.startedTaskIds, isEmpty);
   });
 }
 
@@ -249,4 +286,14 @@ class _ThrowingDownloadGateway implements DownloadGateway {
   Future<ExtractAudioResult> extractAudioNative({
     required String inputPath,
   }) async => const ExtractAudioResult(success: true);
+}
+
+class _RestoringDownloadGateway extends _RecordingDownloadGateway
+    implements RestorableDownloadGateway {
+  _RestoringDownloadGateway(this.restored);
+
+  final List<DownloadTask> restored;
+
+  @override
+  Future<List<DownloadTask>> restoreDownloads() async => restored;
 }

@@ -1,11 +1,9 @@
 // lib/providers/download_provider.dart
 
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
-import '../core/constants/app_constants.dart';
 import '../models/download_task.dart';
 import '../models/format_option.dart';
 import '../models/video_info.dart';
@@ -20,6 +18,10 @@ final downloadOutputDirectoryProvider = Provider<String>(
   (ref) => DownloaderStorageService.instance.downloadPath,
 );
 
+/// Dart dispatches the visible queue to the Android foreground service.
+/// The service owns the actual concurrency limit (currently one task).
+final downloadDispatchLimitProvider = Provider<int>((ref) => 64);
+
 // ── State ──────────────────────────────────────────────────
 
 class DownloadState {
@@ -33,7 +35,13 @@ class DownloadState {
 
   /// Đang xếp hàng chờ
   List<DownloadTask> get queuedTasks =>
-      tasks.where((t) => t.status == DownloadStatus.queued).toList();
+      tasks
+          .where(
+            (t) =>
+                t.status == DownloadStatus.queued ||
+                t.status == DownloadStatus.waitingToRetry,
+          )
+          .toList();
 
   /// Đã xong (done, error, cancelled)
   List<DownloadTask> get finishedTasks =>
@@ -63,11 +71,15 @@ class DownloadNotifier extends Notifier<DownloadState> {
   /// Map taskId → StreamSubscription (để cancel)
   final Map<String, StreamSubscription<DownloadTask>> _subs = {};
   final Map<String, Future<bool>> _cancellations = {};
+  var _disposed = false;
   // final Map<String, FakeProgress> _fakeMap = {};
 
   @override
   DownloadState build() {
+    _disposed = false;
+    scheduleMicrotask(_restoreDownloads);
     ref.onDispose(() {
+      _disposed = true;
       for (final sub in _subs.values) {
         sub.cancel();
       }
@@ -130,7 +142,7 @@ class DownloadNotifier extends Notifier<DownloadState> {
     final task = _findTask(taskId);
     if (task == null || !task.canCancel) return Future.value(false);
 
-    if (task.status == DownloadStatus.queued) {
+    if (task.status == DownloadStatus.queued && !_subs.containsKey(taskId)) {
       _updateTask(taskId, (t) => t.copyWith(status: DownloadStatus.cancelled));
       _processQueue();
       return Future.value(true);
@@ -171,22 +183,58 @@ class DownloadNotifier extends Notifier<DownloadState> {
     final current = state.tasks.toList();
     current.removeWhere((t) => t.id == taskId && t.status.isFinished);
     state = state.copyWith(tasks: current);
+    final gateway = ref.read(downloadGatewayProvider);
+    if (gateway is PersistentDownloadHistoryGateway) {
+      final historyGateway = gateway as PersistentDownloadHistoryGateway;
+      unawaited(historyGateway.removeFinishedDownload(taskId));
+    }
   }
 
   /// Xóa tất cả task đã xong
   void clearFinished() {
     final current = state.tasks.where((t) => !t.status.isFinished).toList();
     state = state.copyWith(tasks: current);
+    final gateway = ref.read(downloadGatewayProvider);
+    if (gateway is PersistentDownloadHistoryGateway) {
+      final historyGateway = gateway as PersistentDownloadHistoryGateway;
+      unawaited(historyGateway.clearFinishedDownloads());
+    }
   }
 
   // ── Queue management ───────────────────────────────────
 
+  Future<void> _restoreDownloads() async {
+    final gateway = ref.read(downloadGatewayProvider);
+    if (gateway is! RestorableDownloadGateway) return;
+
+    final restorableGateway = gateway as RestorableDownloadGateway;
+    final restored = await restorableGateway.restoreDownloads();
+    if (_disposed || restored.isEmpty) return;
+
+    final byId = <String, DownloadTask>{
+      for (final task in restored) task.id: task,
+      for (final task in state.tasks) task.id: task,
+    };
+    state = state.copyWith(tasks: byId.values.toList());
+
+    for (final task in restored.where((task) => !task.status.isFinished)) {
+      _updateTask(
+        task.id,
+        (current) => current.copyWith(status: DownloadStatus.queued),
+      );
+    }
+    _processQueue();
+  }
+
   void _processQueue() {
-    final activeCount = state.activeTasks.length;
-    final available = AppConstants.maxConcurrentDownloads - activeCount;
+    final available = ref.read(downloadDispatchLimitProvider) - _subs.length;
     if (available <= 0) return;
 
-    final queued = state.queuedTasks.take(available).toList();
+    final queued =
+        state.queuedTasks
+            .where((task) => !_subs.containsKey(task.id))
+            .take(available)
+            .toList();
     for (final task in queued) {
       _startDownload(task);
     }
@@ -220,10 +268,9 @@ class DownloadNotifier extends Notifier<DownloadState> {
 
     late final Stream<DownloadTask> stream;
     try {
-      stream = ref.read(downloadGatewayProvider).download(
-        task,
-        outputDir: ref.read(downloadOutputDirectoryProvider),
-      );
+      stream = ref
+          .read(downloadGatewayProvider)
+          .download(task, outputDir: ref.read(downloadOutputDirectoryProvider));
     } catch (error) {
       _updateTask(
         task.id,
@@ -247,25 +294,8 @@ class DownloadNotifier extends Notifier<DownloadState> {
         // }
 
         if (updatedTask.status == DownloadStatus.done) {
-          // ✅ Kiểm tra có cần extract audio không
-          if (_needsExtract(updatedTask) && updatedTask.outputPath != null) {
-            // Hiện fake progress trong lúc extract
-            _updateTask(
-              task.id,
-              (t) => t.copyWith(
-                status: DownloadStatus.preparing,
-                speed: 'Đang tách audio...',
-                progress: 0.95,
-              ),
-            );
-            await _extractAudio(updatedTask);
-          } else {
-            // _fakeMap[task.id]?.complete((p) {
-            //   if (!_subs.containsKey(task.id)) return;
-            //   _updateTask(task.id, (t) => t.copyWith(progress: p));
-            // });
-            // _fakeMap.remove(task.id);
-          }
+          // Audio extraction now belongs to the foreground service so it can
+          // finish even when the Flutter activity is detached.
           _subs.remove(task.id);
           _processQueue();
         } else if (updatedTask.status.isFinished) {
@@ -314,11 +344,6 @@ class DownloadNotifier extends Notifier<DownloadState> {
     _subs[task.id] = sub;
   }
 
-  bool _needsExtract(DownloadTask task) =>
-      task.formatId == '__extract_audio__' ||
-      task.formatId == '__extract_m4a__' ||
-      task.formatId == '__extract_mp3__';
-
   // Future<void> _extractAudio(DownloadTask task) async {
   //   final result = await YtdlpService.instance.extractAudioNative(
   //     inputPath: task.outputPath!,
@@ -333,45 +358,6 @@ class DownloadNotifier extends Notifier<DownloadState> {
   //     completedAt: result.success ? DateTime.now() : null,
   //   ));
   // }
-
-  Future<void> _extractAudio(DownloadTask task) async {
-    _updateTask(
-      task.id,
-      (t) => t.copyWith(
-        status: DownloadStatus.preparing,
-        speed: 'Đang tách audio...',
-        progress: 0.95,
-      ),
-    );
-
-    final result = await ref
-        .read(downloadGatewayProvider)
-        .extractAudioNative(
-      inputPath: task.outputPath!,
-    );
-
-    if (result.success) {
-      // ✅ Xóa file video gốc sau khi extract xong
-      try {
-        final original = File(task.outputPath!);
-        if (await original.exists()) await original.delete();
-      } catch (_) {
-        // Không crash nếu xóa thất bại
-      }
-    }
-
-    _updateTask(
-      task.id,
-      (t) => t.copyWith(
-        status: result.success ? DownloadStatus.done : DownloadStatus.error,
-        outputPath: result.outputPath ?? t.outputPath,
-        errorMessage: result.error,
-        speed: '',
-        progress: result.success ? 1.0 : t.progress,
-        completedAt: result.success ? DateTime.now() : null,
-      ),
-    );
-  }
 
   // Trong _startDownload(), sau khi stream báo done
   // void _startDownload(DownloadTask task) {

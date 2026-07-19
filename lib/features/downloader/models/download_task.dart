@@ -10,6 +10,9 @@ enum DownloadStatus {
   /// Đang chuẩn bị (extract binary, kiểm tra thư mục...)
   preparing,
 
+  /// Lỗi tạm thời, đang chờ backoff hoặc chờ có mạng để thử lại
+  waitingToRetry,
+
   /// Đang tải
   downloading,
 
@@ -31,6 +34,8 @@ enum DownloadStatus {
         return 'Đang xếp hàng';
       case DownloadStatus.preparing:
         return 'Chuẩn bị...';
+      case DownloadStatus.waitingToRetry:
+        return 'Chờ thử lại';
       case DownloadStatus.downloading:
         return 'Đang tải';
       case DownloadStatus.done:
@@ -140,7 +145,8 @@ class DownloadTask {
   bool get canCancel =>
       status == DownloadStatus.downloading ||
       status == DownloadStatus.queued ||
-      status == DownloadStatus.preparing;
+      status == DownloadStatus.preparing ||
+      status == DownloadStatus.waitingToRetry;
 
   @override
   bool operator ==(Object other) =>

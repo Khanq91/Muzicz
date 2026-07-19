@@ -8,9 +8,10 @@ class AppConstants {
   static const String ytdlpBinaryName = 'libytdlp.so';
 
   // ── Download ───────────────────────────────────────────
-  /// Progress native hiện dùng một state global, nên chỉ chạy tuần tự.
-  /// Có thể tăng lại sau khi progress/cancellation được scope theo task ID.
-  static const int maxConcurrentDownloads = 1;
+  /// Giới hạn thực thi được áp dụng bởi Android foreground service.
+  /// Progress/cancellation đã được scope theo task ID; giữ ở 2 cho đến khi có
+  /// benchmark thiết bị trước khi cân nhắc tăng thêm.
+  static const int maxConcurrentDownloads = 2;
 
   /// Timeout phân tích URL (giây)
   static const int analyzeTimeoutSeconds = 30;
@@ -59,8 +60,5 @@ class AppConstants {
   );
 
   /// ERROR: ...
-  static final RegExp errorRegex = RegExp(
-    r'ERROR: (.+)',
-    caseSensitive: false,
-  );
+  static final RegExp errorRegex = RegExp(r'ERROR: (.+)', caseSensitive: false);
 }

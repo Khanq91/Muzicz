@@ -2,21 +2,12 @@ package com.muziczz.muziczz
 
 import android.app.DownloadManager
 import android.content.Intent
-import android.media.MediaCodec
-import android.media.MediaExtractor
-import android.media.MediaFormat
-import android.media.MediaMuxer
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
-import com.chaquo.python.Python
-import com.chaquo.python.android.AndroidPlatform
 import kotlinx.coroutines.*
-import java.io.File
-import java.nio.ByteBuffer
-import java.util.concurrent.ConcurrentHashMap
 
 //import io.flutter.embedding.android.FlutterFragmentActivity
 import com.ryanheise.audioservice.AudioServiceFragmentActivity
@@ -27,14 +18,9 @@ class MainActivity : AudioServiceFragmentActivity() {
 
     // ── Channel dùng chung cho ytdlp feature ──────────────────────────────────
     private val YTDLP_CHANNEL = "ytdlp_channel"
+    private val MUSIC_SCANNER_CHANNEL = "music_scanner_channel"
     private val activityScope  = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    private val activeDownloadJobs = ConcurrentHashMap<String, Job>()
-    private val ytdlpModule by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
-        if (!Python.isStarted()) {
-            Python.start(AndroidPlatform(applicationContext))
-        }
-        Python.getInstance().getModule("ytdlp_bridge")
-    }
+    private val ytdlpModule get() = YtdlpPython.module(applicationContext)
 
     override fun onDestroy() {
         super.onDestroy()
@@ -99,71 +85,74 @@ class MainActivity : AudioServiceFragmentActivity() {
                         }
                     }
 
-                    // ── yt-dlp: download ──────────────────────────────────────
-                    "download" -> {
-                        val taskId   = call.argument<String>("taskId")   ?: ""
-                        val url      = call.argument<String>("url")      ?: ""
-                        val formatId = call.argument<String>("formatId") ?: "best"
-                        val outDir   = call.argument<String>("outputDir")
-                            ?: Environment.getExternalStoragePublicDirectory(
-                                Environment.DIRECTORY_DOWNLOADS
-                            ).absolutePath
-
+                    // ── yt-dlp: foreground download queue ─────────────────────
+                    "enqueueDownload" -> {
+                        val arguments = call.arguments as? Map<String, Any?> ?: emptyMap()
+                        val taskId = arguments["taskId"] as? String ?: ""
                         if (taskId.isEmpty()) {
                             result.error("DOWNLOAD_ERROR", "Missing taskId", null)
                             return@setMethodCallHandler
                         }
+                        DownloadForegroundService.enqueue(applicationContext, arguments)
+                        result.success("{\"accepted\":true}")
+                    }
 
-                        val job = activityScope.launch(start = CoroutineStart.LAZY) {
-                            try {
-                                val res = ytdlpModule.callAttr(
-                                    "download",
-                                    taskId,
-                                    url,
-                                    formatId,
-                                    outDir
-                                )
-                                    .toString()
-                                withContext(Dispatchers.Main) { result.success(res) }
-                            } catch (e: Exception) {
-                                withContext(Dispatchers.Main) {
-                                    result.error("DOWNLOAD_ERROR", e.message, null)
-                                }
-                            } finally {
-                                activeDownloadJobs.remove(taskId)
-                            }
-                        }
-                        activeDownloadJobs[taskId] = job
-                        job.start()
+                    "getDownloadTask" -> {
+                        val taskId = call.argument<String>("taskId") ?: ""
+                        result.success(
+                            DownloadForegroundService.readTask(applicationContext, taskId)
+                        )
+                    }
+
+                    "getDownloadTasks" -> {
+                        result.success(DownloadForegroundService.readTasks(applicationContext))
+                    }
+
+                    "removeFinishedDownload" -> {
+                        val taskId = call.argument<String>("taskId") ?: ""
+                        DownloadForegroundService.removeFinished(applicationContext, taskId)
+                        result.success(null)
+                    }
+
+                    "clearFinishedDownloads" -> {
+                        DownloadForegroundService.clearFinished(applicationContext)
+                        result.success(null)
                     }
 
                     // ── yt-dlp: cooperative cancellation ──────────────────────
                     "cancelDownload" -> {
                         val taskId = call.argument<String>("taskId") ?: ""
-                        val job = activeDownloadJobs[taskId]
-
-                        if (taskId.isEmpty() || job == null) {
+                        val before = DownloadForegroundService.readTask(
+                            applicationContext,
+                            taskId
+                        )
+                        val cancellable = before != null && listOf(
+                            "queued",
+                            "preparing",
+                            "downloading",
+                            "waitingToRetry",
+                        ).any { before.contains("\"status\":\"$it\"") }
+                        if (taskId.isEmpty() || !cancellable) {
                             result.success("{\"accepted\":false,\"stopped\":false}")
                             return@setMethodCallHandler
                         }
 
+                        DownloadForegroundService.cancel(applicationContext, taskId)
                         activityScope.launch {
-                            try {
-                                val accepted = ytdlpModule.callAttr("cancel_download", taskId)
-                                    .toString() == "True"
-                                val stopped = accepted && withTimeoutOrNull(15_000) {
-                                    job.join()
-                                    true
-                                } == true
-                                withContext(Dispatchers.Main) {
-                                    result.success(
-                                        "{\"accepted\":$accepted,\"stopped\":$stopped}"
+                            val stopped = withTimeoutOrNull(15_000) {
+                                while (true) {
+                                    val snapshot = DownloadForegroundService.readTask(
+                                        applicationContext,
+                                        taskId
                                     )
+                                    if (snapshot?.contains("\"status\":\"cancelled\"") == true) {
+                                        return@withTimeoutOrNull true
+                                    }
+                                    delay(100)
                                 }
-                            } catch (e: Exception) {
-                                withContext(Dispatchers.Main) {
-                                    result.error("CANCEL_ERROR", e.message, null)
-                                }
+                            } == true
+                            withContext(Dispatchers.Main) {
+                                result.success("{\"accepted\":true,\"stopped\":$stopped}")
                             }
                         }
                     }
@@ -207,7 +196,7 @@ class MainActivity : AudioServiceFragmentActivity() {
                         val outputPath = call.argument<String>("outputPath") ?: ""
                         activityScope.launch {
                             try {
-                                val success = extractAudioNative(inputPath, outputPath)
+                                val success = AudioExtractor.extractToM4a(inputPath, outputPath)
                                 withContext(Dispatchers.Main) { result.success(success) }
                             } catch (e: Exception) {
                                 withContext(Dispatchers.Main) {
@@ -220,63 +209,23 @@ class MainActivity : AudioServiceFragmentActivity() {
                     else -> result.notImplemented()
                 }
             }
-    }
 
-    // ── Tách audio track từ MP4 → M4A không re-encode ────────────────────────
-    private fun extractAudioNative(srcPath: String, dstPath: String): Boolean {
-        if (srcPath.isEmpty() || dstPath.isEmpty()) return false
-
-        val extractor = MediaExtractor()
-        var muxer: MediaMuxer? = null
-
-        try {
-            extractor.setDataSource(srcPath)
-
-            var audioTrackIndex = -1
-            for (i in 0 until extractor.trackCount) {
-                val format = extractor.getTrackFormat(i)
-                val mime   = format.getString(MediaFormat.KEY_MIME) ?: continue
-                if (mime.startsWith("audio/")) {
-                    audioTrackIndex = i
-                    break
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, MUSIC_SCANNER_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "scanWebmAudio" -> activityScope.launch {
+                        try {
+                            val songs = WebmAudioScanner.scan(applicationContext)
+                            withContext(Dispatchers.Main) { result.success(songs) }
+                        } catch (error: Exception) {
+                            withContext(Dispatchers.Main) {
+                                result.error("WEBM_SCAN_ERROR", error.message, null)
+                            }
+                        }
+                    }
+                    else -> result.notImplemented()
                 }
             }
-
-            if (audioTrackIndex < 0) return false
-
-            extractor.selectTrack(audioTrackIndex)
-            val audioFormat = extractor.getTrackFormat(audioTrackIndex)
-
-            File(dstPath).takeIf { it.exists() }?.delete()
-
-            muxer = MediaMuxer(dstPath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
-            val dstTrackIndex = muxer.addTrack(audioFormat)
-            muxer.start()
-
-            val buffer     = ByteBuffer.allocate(1 * 1024 * 1024)
-            val bufferInfo = MediaCodec.BufferInfo()
-
-            while (true) {
-                bufferInfo.offset = 0
-                bufferInfo.size   = extractor.readSampleData(buffer, 0)
-                if (bufferInfo.size < 0) break
-
-                bufferInfo.presentationTimeUs = extractor.sampleTime
-                bufferInfo.flags              = extractor.sampleFlags
-
-                muxer.writeSampleData(dstTrackIndex, buffer, bufferInfo)
-                extractor.advance()
-            }
-
-            muxer.stop()
-            return true
-
-        } catch (e: Exception) {
-            File(dstPath).takeIf { it.exists() }?.delete()
-            throw e
-        } finally {
-            try { muxer?.release() } catch (_: Exception) {}
-            extractor.release()
-        }
     }
+
 }

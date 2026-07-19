@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
@@ -17,15 +16,15 @@ void main() {
   });
 
   test('download sends task id and maps native cancellation', () async {
-    MethodCall? downloadCall;
+    MethodCall? enqueueCall;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async {
-          if (call.method == 'download') {
-            downloadCall = call;
-            return json.encode({'success': false, 'cancelled': true});
+          if (call.method == 'enqueueDownload') {
+            enqueueCall = call;
+            return json.encode({'accepted': true});
           }
-          if (call.method == 'getProgress') {
-            return json.encode({'status': 'idle'});
+          if (call.method == 'getDownloadTask') {
+            return json.encode(_nativeTask(_task, status: 'cancelled'));
           }
           return null;
         });
@@ -35,7 +34,7 @@ void main() {
             .download(_task, outputDir: '/downloads')
             .toList();
 
-    expect(downloadCall?.arguments, containsPair('taskId', _task.id));
+    expect(enqueueCall?.arguments, containsPair('taskId', _task.id));
     expect(events.last.status, DownloadStatus.cancelled);
   });
 
@@ -56,16 +55,25 @@ void main() {
   });
 
   test('concurrent streams receive progress for their own task ids', () async {
-    final downloadResults = {
-      _task.id: Completer<String>(),
-      _secondTask.id: Completer<String>(),
-    };
+    final completedTaskIds = <String>{};
     final progressTaskIds = <String>[];
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async {
           final arguments = call.arguments as Map<Object?, Object?>?;
           final taskId = arguments?['taskId'] as String?;
-          if (call.method == 'download') return downloadResults[taskId]!.future;
+          if (call.method == 'enqueueDownload') {
+            return json.encode({'accepted': true});
+          }
+          if (call.method == 'getDownloadTask') {
+            return json.encode(
+              _nativeTask(
+                taskId == _task.id ? _task : _secondTask,
+                status:
+                    completedTaskIds.contains(taskId) ? 'done' : 'downloading',
+                progress: completedTaskIds.contains(taskId) ? 1 : 0,
+              ),
+            );
+          }
           if (call.method == 'getProgress') {
             progressTaskIds.add(taskId!);
             return json.encode({
@@ -88,11 +96,7 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 650));
     expect(progressTaskIds, containsAll({_task.id, _secondTask.id}));
 
-    for (final entry in downloadResults.entries) {
-      entry.value.complete(
-        json.encode({'success': true, 'path': '/${entry.key}'}),
-      );
-    }
+    completedTaskIds.addAll({_task.id, _secondTask.id});
     final firstEvents = await firstEventsFuture;
     final secondEvents = await secondEventsFuture;
     expect(
@@ -112,7 +116,47 @@ void main() {
       ),
     );
   });
+
+  test('restores persisted foreground task snapshots', () async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+          if (call.method == 'getDownloadTasks') {
+            return json.encode([
+              _nativeTask(_task, status: 'done', progress: 1),
+              _nativeTask(_secondTask, status: 'waitingToRetry'),
+            ]);
+          }
+          return null;
+        });
+
+    final restored = await YtdlpService.instance.restoreDownloads();
+
+    expect(restored, hasLength(2));
+    expect(restored.first.status, DownloadStatus.done);
+    expect(restored.last.status, DownloadStatus.waitingToRetry);
+  });
 }
+
+Map<String, Object?> _nativeTask(
+  DownloadTask task, {
+  required String status,
+  double progress = 0,
+}) => {
+  'id': task.id,
+  'title': task.title,
+  'url': task.url,
+  'formatId': task.formatId,
+  'ext': task.ext,
+  'thumbnail': task.thumbnail,
+  'status': status,
+  'progress': progress,
+  'speed': '',
+  'eta': '',
+  'errorMessage': null,
+  'outputPath': status == 'done' ? '/${task.id}.m4a' : null,
+  'startedAt': null,
+  'completedAt': null,
+};
 
 const _task = DownloadTask(
   id: 'task-1',

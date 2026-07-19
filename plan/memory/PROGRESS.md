@@ -143,3 +143,17 @@
 - [x] Khởi tạo/wrap `liquid_glass_widgets` 0.22.1, bật Impeller trong Android manifest, thêm 4 regression test và tăng version `1.0.0+6` → `1.0.0+7`.
 - [x] Kiểm chứng cuối: targeted test pass 4/4, full suite pass 30/30, analyzer 0 issue và debug APK build thành công; format-check không ghi source còn 22/74 file baseline lệch formatter.
 - [ ] Chưa kiểm tra shader Premium, animation kéo tab và frame timing trên thiết bị Android thật. Bước tiếp theo: manual switch Bình thường ↔ Xịn xò ở dark/AMOLED/light và profile raster frame trong lúc scroll/chuyển tab.
+
+## [Phase 2] - 2026-07-19 14:21
+- [x] Chuyển download/queue/audio extraction khỏi `MainActivity` sang Android `dataSync` foreground service; task được persist, resume sau process recreation và hydrate lại vào Riverpod khi mở app.
+- [x] Thêm notification tiến trình với số đang tải/hoàn thành/chờ/lỗi; xin notification permission best-effort và giữ download chạy khi Flutter route/activity detach.
+- [x] Thêm auto retry tối đa 2 lần cho lỗi transient với backoff 2/4 giây, chờ đến khi có mạng; user cancel và lỗi terminal không retry.
+- [x] Mở native concurrency từ 1 lên 2 sau khi progress/cancel đã task-scoped; reserve queue dưới lock và thêm media ID vào output filename để tránh collision.
+- [x] Targeted regression pass 15/15, full suite pass 37/37, analyzer 0 issue và debug APK build pass; tăng version `1.0.0+7` → `1.0.0+8`.
+- [ ] Chưa có Android device để kiểm tra Home/screen-off/process recreation, notification permission, traffic sau cancel/retry và throughput hai task. Bước tiếp theo: manual device matrix rồi mới cân nhắc concurrency >2.
+
+## [Phase 4] - 2026-07-19 14:21
+- [x] Xác nhận whitelist Dart đã có WebM nhưng `MediaStore.Audio` có thể không trả file; thêm fallback query `MediaStore.Files` chỉ cho ứng viên WebM và xác nhận audio/duration bằng `MediaMetadataRetriever`.
+- [x] Merge theo path không phân biệt hoa thường, ưu tiên metadata từ `on_audio_query`, dùng synthetic ID ổn định cho fallback và giữ scan audio thường khi quyền video bị từ chối.
+- [x] Thêm MethodChannel mapping/merge regression test; native scanner compile trong debug APK.
+- [ ] Chưa quét file WebM thật trên API 24/29/33/35 hoặc SD card; bước tiếp theo sau device validation downloader là kiểm tra audio-only và video+audio WebM, duplicate và permission denied.

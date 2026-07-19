@@ -115,3 +115,16 @@
 - Final format-check exit 1 vì 22/74 file legacy sẽ đổi; lệnh dùng `--output=none`, các file mới/chỉnh sửa trong scope đã được format riêng và không format hàng loạt source ngoài phạm vi.
 - Debug APK build thành công nhưng còn cảnh báo sẵn có về Gradle 8.10.2, AGP 8.7.0, Kotlin 2.0.0 và Built-in Kotlin migration; không nâng toolchain trong issue UI này.
 - Chưa chạy app trên thiết bị thật nên chưa xác nhận chất lượng shader Premium, haptic/drag animation, light-theme contrast hoặc frame budget; automated test chỉ xác nhận cấu hình widget, persistence và navigation callback.
+
+## [Phase 2] - 2026-07-19 14:21
+- `scripts/analyze_codex.bat` vẫn không tồn tại; dùng script repo thực tế `scripts/flutter_analyze.bat`. Flutter/Dart trong sandbox timeout do SDK/cache ngoài workspace; chạy ngoài sandbox theo workaround đã xác nhận.
+- Targeted test đầu fail compile vì Dart không promote `DownloadGateway` sang interface restore/history; dùng cast cục bộ rõ ràng, không mở rộng public gateway bắt buộc cho fake hiện có.
+- Analyzer giữa session báo 1 lint `curly_braces_in_flow_control_structures`; thêm block và analyzer cuối sạch 0 error/warning/info.
+- Review sau concurrency phát hiện native queue có thể chọn trùng task khi hai job kết thúc đồng thời; thêm `queueLock` bao quanh chọn/reserve trước khi launch.
+- Debug APK build pass nhưng vẫn cảnh báo legacy Gradle 8.10.2, AGP 8.7.0, Kotlin 2.0.0 và Built-in Kotlin migration; không nâng toolchain/package trong issue downloader.
+- Final format-check không ghi source vẫn exit 1 vì 17/77 file legacy sẽ đổi; toàn bộ file Dart mới/chỉnh trong scope đã format riêng. Final analyzer 0 issue, full test pass 37/37 và APK debug build pass.
+- Không có thiết bị ADB kết nối. Automated tests/build không chứng minh service sống qua Home/screen-off/OEM kill, notification hiển thị thực, network traffic dừng sau cancel hay throughput tốt hơn; không tuyên bố runtime đã tối ưu.
+
+## [Phase 4] - 2026-07-19 14:21
+- WebM đã có trong whitelist cũ; root cause nằm trước filter vì `on_audio_query` phụ thuộc `MediaStore.Audio`. Fallback native compile/test mapping nhưng chưa có file/device thật để xác nhận OEM MediaStore trả `DATA` và metadata nhất quán.
+- Quyền video có thể bị user từ chối hoặc policy phân loại khác theo API/OEM; scan bắt lỗi và trả danh sách rỗng để không làm hỏng kết quả audio chính.

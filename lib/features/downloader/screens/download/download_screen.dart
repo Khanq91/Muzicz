@@ -259,18 +259,28 @@ class _DownloadTaskCard extends ConsumerWidget {
           ],
 
           // Error message
-          if (task.status == DownloadStatus.error &&
+          if ((task.status == DownloadStatus.error ||
+                  task.status == DownloadStatus.waitingToRetry) &&
               task.errorMessage != null) ...[
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFFFF3B30).withValues(alpha: 0.08),
+                color: (task.status == DownloadStatus.error
+                        ? const Color(0xFFFF3B30)
+                        : const Color(0xFFFF9F0A))
+                    .withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 task.errorMessage!,
-                style: const TextStyle(color: Color(0xFFFF3B30), fontSize: 12),
+                style: TextStyle(
+                  color:
+                      task.status == DownloadStatus.error
+                          ? const Color(0xFFFF3B30)
+                          : const Color(0xFFFF9F0A),
+                  fontSize: 12,
+                ),
               ),
             ),
           ],
@@ -379,6 +389,9 @@ class _StatusIcon extends StatelessWidget {
       case DownloadStatus.queued:
         icon = Icons.schedule_rounded;
         color = const Color(0xFFFF9F0A);
+      case DownloadStatus.waitingToRetry:
+        icon = Icons.wifi_off_rounded;
+        color = const Color(0xFFFF9F0A);
       case DownloadStatus.preparing:
       case DownloadStatus.downloading:
         return const SizedBox(
@@ -484,6 +497,7 @@ class _StatusBadge extends StatelessWidget {
     Color color;
     switch (status) {
       case DownloadStatus.queued:
+      case DownloadStatus.waitingToRetry:
         color = const Color(0xFFFF9F0A);
       case DownloadStatus.preparing:
       case DownloadStatus.downloading:

@@ -1,9 +1,12 @@
 // lib/screens/format/format_screen.dart
 
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/app_router.dart';
 import '../../core/theme/app_colors.dart';
@@ -257,6 +260,20 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
     }
     if (!mounted) return;
 
+    if (Platform.isAndroid) {
+      final notificationStatus = await Permission.notification.request();
+      if (!notificationStatus.isGranted && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Tải nền vẫn tiếp tục, nhưng tiến trình có thể không hiện trong thông báo.',
+            ),
+          ),
+        );
+      }
+    }
+    if (!mounted) return;
+
     final notifier = ref.read(downloadProvider.notifier);
 
     if (_isPlaylist) {
@@ -295,10 +312,7 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
       }
     } else {
       if (_selectedFormat == null) return;
-      await notifier.enqueue(
-        info: widget.videoInfo,
-        format: _selectedFormat!,
-      );
+      await notifier.enqueue(info: widget.videoInfo, format: _selectedFormat!);
     }
 
     if (!mounted) return;

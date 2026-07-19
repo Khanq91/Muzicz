@@ -96,3 +96,16 @@
 - Tách `AppBottomNavigation` thành widget presentation riêng; bản thường là code hiện tại được di chuyển nguyên hành vi, bản glass dùng API công khai `GlassTabBar.bottom` của package 0.22.1, còn `HomeScreen` tiếp tục sở hữu index/navigation.
 - Chỉ tab đang focus truyền `label` cho `GlassTab`; các tab còn lại giữ `semanticLabel`, nên Liquid Glass vẫn khớp contract icon + text khi focus và không làm giảm accessibility.
 - Không bật adaptive quality vì user yêu cầu Premium cố định; đổi lại cần device profiling trước khi khẳng định runtime mượt trên máy yếu.
+
+## [Phase 2] - 2026-07-19 14:21
+- Cho Android foreground service sở hữu queue, persistence, retry, concurrency và audio extraction; Dart chỉ enqueue/poll/hydrate. Cách này tránh download phụ thuộc lifecycle của Flutter engine và không nhân đôi orchestration giữa UI/native.
+- Dùng foreground service type `dataSync` cùng notification ongoing thay vì WorkManager vì download bắt đầu trực tiếp từ thao tác user, cần tiến trình liên tục và cooperative cancel theo task ID.
+- Persist snapshot bằng Android `SharedPreferences` JSON vì model queue nhỏ và chưa cần query/index; không thêm package/database khi chưa có bằng chứng cần thiết. Task interrupted được đưa lại `queued` để yt-dlp tiếp tục partial file.
+- Retry chỉ áp dụng tối đa 2 lần cho lỗi mạng/timeout/429/5xx; backoff 2/4 giây và chờ network thay vì retry cancel, private, unsupported hoặc lỗi terminal.
+- Giới hạn concurrency = 2: protocol đã task-scoped nhưng chưa có device benchmark; queue reservation dùng lock riêng và output template thêm media ID để tránh duplicate start/file collision.
+- Dùng một `YtdlpPython` initializer/cache chung cho Activity và service để giữ lazy startup và ngăn hai lock độc lập cùng gọi `Python.start`.
+
+## [Phase 4] - 2026-07-19 14:21
+- Dùng `MediaStore.Files` + `MediaMetadataRetriever` cho WebM fallback thay vì duyệt recursive filesystem; chỉ ứng viên `.webm` chịu metadata I/O và malformed file không làm fail toàn scan.
+- Ưu tiên record `on_audio_query` khi trùng path vì record đó có MediaStore album/artist ID đầy đủ; fallback dùng negative synthetic ID và metadata trong container.
+- Xin `READ_MEDIA_VIDEO` best-effort trên Android 13+ vì WebM có thể bị phân loại `video/webm`; từ chối quyền này không chặn thư viện audio thông thường.

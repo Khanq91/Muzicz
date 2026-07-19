@@ -8,17 +8,18 @@ void main() {
         File(
           'android/app/src/main/kotlin/com/muziczz/muziczz/MainActivity.kt',
         ).readAsStringSync();
+    final initializer =
+        File(
+          'android/app/src/main/kotlin/com/muziczz/muziczz/YtdlpPython.kt',
+        ).readAsStringSync();
     final configureBody = _functionBody(source, 'configureFlutterEngine');
 
     expect(configureBody, isNot(contains('Python.start')));
     expect(configureBody, isNot(contains('Python.getInstance')));
     expect(configureBody, isNot(contains('getModule("ytdlp_bridge")')));
-    expect(
-      source,
-      contains('by lazy(LazyThreadSafetyMode.SYNCHRONIZED)'),
-      reason:
-          'The first concurrent downloader calls must share one initializer.',
-    );
+    expect(source, contains('YtdlpPython.module(applicationContext)'));
+    expect(initializer, contains('synchronized(initializerLock)'));
+    expect(initializer, contains('cachedModule'));
   });
 }
 
