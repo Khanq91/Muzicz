@@ -164,3 +164,10 @@
 - [x] Home hiển thị loading state có live-region semantics khi initial scan chưa có bài; permission/request exception được map về `LibraryStatus.error` thay vì thành unhandled background future.
 - [x] Thêm 3 regression test cho first-run, background scan và slow init; targeted pass 3/3, full suite pass 40/40, analyzer 0 issue; tăng version `1.0.0+8` → `1.0.0+9`.
 - [ ] Chưa có Android device/Macrobenchmark/Perfetto để đo process start → first Home frame hoặc scan duration. Bước tiếp theo: đo cold/warm startup và kiểm tra loading/error/permission flow thực, sau đó xử lý deep scan mặc định/permission ownership như issue Phase 4 riêng.
+
+## [Phase 4] - 2026-07-19 15:22
+- [x] Đọc lại PERF-04, toàn bộ provider/scanner/storage/startup và các call site scan liên quan; baseline analyzer 0 issue, full suite pass 40/40.
+- [x] Thêm seam inject `MusicScanner`/`StorageService`; regression test trước sửa đỏ với 2 permission request cho một refresh và xanh sau sửa với đúng 1 request.
+- [x] Refresh thường chỉ query MediaStore: provider sở hữu permission request và `scanSongs` không còn gọi deep `scanMedia('/storage/emulated/0')`; giữ tham số mặc định để caller độc lập vẫn có thể tự bảo đảm quyền.
+- [x] Thêm guard test bảo vệ normal refresh khỏi deep scan; targeted pass 2/2, full suite pass 42/42, analyzer 0 issue; tăng version `1.0.0+9` → `1.0.0+10`.
+- [ ] Chưa có Android device/Perfetto để đo permission/platform-call count và scan I/O thực; file ngoài app chưa được MediaStore index có thể chưa xuất hiện ngay. Bước tiếp theo: device validation API 24/29/33/35 và thiết kế manual deep-rescan hoặc scan đúng file vừa tạo như issue riêng.

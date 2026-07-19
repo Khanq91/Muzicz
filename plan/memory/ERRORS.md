@@ -135,3 +135,9 @@
 - Formatter targeted làm thay đổi cơ học các đoạn legacy trong `music_provider.dart`; đã loại formatting noise và chỉ giữ thay đổi error boundary thuộc START-01.
 - Final `dart format --output=none --set-exit-if-changed .` không ghi source và exit 1 vì 17/79 file legacy sẽ đổi; không format hàng loạt ngoài phạm vi.
 - Final analyzer sạch và full suite pass 40/40. Chưa chạy Android device/Macrobenchmark/Perfetto nên chỉ xác nhận đã loại fixed 4,6 giây và scan-await khỏi code path; chưa có bằng chứng định lượng startup latency, initial-frame smoothness hoặc permission UX runtime.
+
+## [Phase 4] - 2026-07-19 15:22
+- `scripts/analyze_codex.bat` không tồn tại; tiếp tục dùng `scripts/flutter_analyze.bat`. Baseline analyzer trong sandbox chờ SDK/cache quá 40 giây nên dừng đúng process của session và chạy ngoài sandbox thành công.
+- Regression test trước sửa fail đúng với `permissionRequests = 2`; đây là bằng chứng duplicate permission orchestration. Guard test đầu fail vì helper bắt nhầm `{` của named parameters, đã sửa parser tìm `async {`; không phải lỗi production.
+- Targeted formatter tạo mechanical diff trong phần legacy của `music_provider.dart`; đã loại noise và chỉ giữ seam/scan change. Final format-check không ghi source vẫn exit 1 với baseline 17/80 file sẽ đổi.
+- Final analyzer 0 issue và full suite pass 42/42. `adb devices` không có thiết bị kết nối, nên chưa đo scan duration/I/O hoặc xác nhận file chưa-index trên runtime; thay đổi chỉ loại deep-scan và duplicate permission call khỏi code path, chưa chứng minh mức cải thiện định lượng.

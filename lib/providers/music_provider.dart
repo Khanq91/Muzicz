@@ -7,8 +7,12 @@ import '../services/storage_service.dart';
 enum LibraryStatus { idle, scanning, done, error, permissionDenied }
 
 class MusicProvider extends ChangeNotifier {
-  final _scanner = MusicScanner();
-  final _storage = StorageService();
+  MusicProvider({MusicScanner? scanner, StorageService? storage})
+    : _scanner = scanner ?? MusicScanner(),
+      _storage = storage ?? StorageService();
+
+  final MusicScanner _scanner;
+  final StorageService _storage;
 
   LibraryStatus _status = LibraryStatus.idle;
   LibraryStatus get status => _status;
@@ -103,6 +107,7 @@ class MusicProvider extends ChangeNotifier {
       }
 
       _allSongs = await _scanner.scanSongs(
+        ensurePermission: false,
         onProgress: (count) {
           _scanCount = count;
           // FIX P1: Only notify every 50 songs to avoid excessive rebuilds

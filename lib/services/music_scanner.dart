@@ -68,14 +68,13 @@ class MusicScanner {
     return _audioQuery.permissionsStatus();
   }
 
-  Future<List<SongItem>> scanSongs({ScanProgressCallback? onProgress}) async {
-    final hasPermission = await requestPermission();
-    if (!hasPermission) return [];
-
-    if (Platform.isAndroid) {
-      try {
-        await _audioQuery.scanMedia('/storage/emulated/0');
-      } catch (_) {}
+  Future<List<SongItem>> scanSongs({
+    ScanProgressCallback? onProgress,
+    bool ensurePermission = true,
+  }) async {
+    if (ensurePermission) {
+      final hasPermission = await requestPermission();
+      if (!hasPermission) return [];
     }
 
     final raw = await _audioQuery.querySongs(

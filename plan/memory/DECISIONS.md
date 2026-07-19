@@ -115,3 +115,8 @@
 - Chọn minimum splash 1,3 giây vì khớp thời điểm hai animation hiện tại hoàn tất (logo bắt đầu ở 200 ms, text ở 600 ms); đây là ngưỡng UX, không phải kết quả benchmark.
 - Với returning user, start scan ngay sau storage init nhưng không await trước Home; Home dùng `LibraryStatus.scanning && allSongs.isEmpty` để hiện loading thay vì empty state. Tradeoff là scan vẫn tiêu thụ I/O sau navigation, cần Perfetto/device measurement trước khi đánh giá frame/runtime.
 - Mở rộng `scanMusic` catch bao quanh cả permission request để background scan luôn kết thúc bằng state `permissionDenied` hoặc `error`, không tạo unhandled async error.
+
+## [Phase 4] - 2026-07-19 15:22
+- Đặt `MusicProvider.scanMusic` làm owner duy nhất của permission trong flow refresh; truyền `ensurePermission: false` xuống scanner sau khi quyền đã được xác nhận để không lặp platform call.
+- Normal refresh chỉ query MediaStore và không deep-scan root shared storage. Cách này giảm công việc I/O có thể tránh được; tradeoff là file chưa được MediaStore index cần một action manual riêng hoặc scan đúng path khi downloader hoàn tất.
+- Giữ `ensurePermission = true` làm mặc định của `MusicScanner.scanSongs` để không phá caller độc lập/public behavior; constructor injection chỉ là seam additive phục vụ regression test.
