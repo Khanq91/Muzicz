@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
@@ -47,25 +48,27 @@ class MiniPlayer extends StatelessWidget {
           HapticFeedback.selectionClick();
         }
       },
-      child: Container(
+      child: GlassCard(
+        key: const ValueKey('mini-player-glass-card'),
         margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
         height: 68,
-        decoration: BoxDecoration(
-          color: c.surfaceElevated,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: c.border, width: 0.5),
-          boxShadow: [
-            BoxShadow(
-              color: c.primary.withValues(alpha: 0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
-          ],
+        padding: EdgeInsets.zero,
+        useOwnLayer: true,
+        quality: GlassQuality.premium,
+        shape: const LiquidRoundedSuperellipse(borderRadius: 22),
+        clipBehavior: Clip.antiAlias,
+        settings: LiquidGlassSettings(
+          glassColor: c.glassBg,
+          backerColor: c.surfaceElevated.withValues(alpha: 0.68),
+          thickness: 24,
+          blur: 4,
+          lightIntensity: 0.35,
+          chromaticAberration: 0.01,
+          ambientStrength: 0.08,
+          saturation: 1.2,
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(18),
-          child: Stack(
-            children: [
+        child: Stack(
+          children: [
               // ── Progress line at bottom ─────────────────────────────
               Positioned(
                 bottom: 0,
@@ -120,8 +123,7 @@ class MiniPlayer extends StatelessWidget {
                   ],
                 ),
               ),
-            ],
-          ),
+          ],
         ),
       ),
     );
