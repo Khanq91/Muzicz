@@ -46,17 +46,17 @@ class _HomeScreenState extends State<HomeScreen> {
           Positioned.fill(
             child: IndexedStack(index: _currentIndex, children: _tabs),
           ),
-          Consumer<PlayerProvider>(
-            builder:
-                (_, player, __) =>
-                    player.currentSong != null
-                        ? const Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          child: MiniPlayer(),
-                        )
-                        : const SizedBox.shrink(),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Consumer<PlayerProvider>(
+              builder:
+                  (_, player, __) =>
+                      player.currentSong != null
+                          ? const MiniPlayer()
+                          : const SizedBox.shrink(),
+            ),
           ),
         ],
       ),
