@@ -39,31 +39,48 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
+    final bottomNavStyle = context.watch<ThemeProvider>().bottomNavStyle;
     return Scaffold(
       backgroundColor: c.background,
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: IndexedStack(index: _currentIndex, children: _tabs),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Consumer<PlayerProvider>(
-              builder:
-                  (_, player, __) =>
-                      player.currentSong != null
-                          ? const MiniPlayer()
-                          : const SizedBox.shrink(),
-            ),
-          ),
-        ],
-      ),
+      body:
+          bottomNavStyle.usesLiquidGlass
+              ? Stack(
+                children: [
+                  Positioned.fill(
+                    child: IndexedStack(index: _currentIndex, children: _tabs),
+                  ),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: Consumer<PlayerProvider>(
+                      builder:
+                          (_, player, __) =>
+                              player.currentSong != null
+                                  ? const MiniPlayer()
+                                  : const SizedBox.shrink(),
+                    ),
+                  ),
+                ],
+              )
+              : Column(
+                children: [
+                  Expanded(
+                    child: IndexedStack(index: _currentIndex, children: _tabs),
+                  ),
+                  Consumer<PlayerProvider>(
+                    builder:
+                        (_, player, __) =>
+                            player.currentSong != null
+                                ? const RepaintBoundary(child: MiniPlayer())
+                                : const SizedBox.shrink(),
+                  ),
+                ],
+              ),
       bottomNavigationBar: AppBottomNavigation(
         currentIndex: _currentIndex,
         onTap: (i) => setState(() => _currentIndex = i),
-        style: context.watch<ThemeProvider>().bottomNavStyle,
+        style: bottomNavStyle,
       ),
     );
   }

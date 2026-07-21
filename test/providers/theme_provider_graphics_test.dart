@@ -17,11 +17,13 @@ void main() {
       final provider = ThemeProvider();
 
       expect(provider.bottomNavStyle, BottomNavStyle.normal);
+      expect(provider.bottomNavStyle.usesLiquidGlass, isFalse);
 
       await provider.setBottomNavStyle(BottomNavStyle.fancy);
 
       final prefs = await SharedPreferences.getInstance();
       expect(provider.bottomNavStyle, BottomNavStyle.fancy);
+      expect(provider.bottomNavStyle.usesLiquidGlass, isTrue);
       expect(provider.visualRevision, 1);
       expect(prefs.getString('bottom_nav_style'), 'fancy');
     },

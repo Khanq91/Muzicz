@@ -46,7 +46,8 @@ void main() {
 
     final bridge =
         File('android/app/src/main/python/ytdlp_bridge.py').readAsStringSync();
-    expect(bridge, contains('%(title)s [%(id)s].%(ext)s'));
+    expect(bridge, contains('%(title)s.%(ext)s'));
+    expect(bridge, isNot(contains('[%(id)s]')));
   });
 
   test('audio scanner does not request visual media or expose WebM', () {

@@ -6,6 +6,7 @@ import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
 import '../providers/player_provider.dart';
+import '../providers/theme_provider.dart';
 import '../services/audio_handler.dart';
 import '../screens/now_playing_screen.dart';
 
@@ -18,6 +19,8 @@ class MiniPlayer extends StatelessWidget {
     final song = player.currentSong;
     if (song == null) return const SizedBox.shrink();
     final c = context.appColors;
+    final useLiquidGlass =
+        context.watch<ThemeProvider>().bottomNavStyle.usesLiquidGlass;
     return GestureDetector(
       onTap: () {
         Navigator.of(context).push(
@@ -48,27 +51,8 @@ class MiniPlayer extends StatelessWidget {
           HapticFeedback.selectionClick();
         }
       },
-      child: GlassCard(
-        key: const ValueKey('mini-player-glass-card'),
-        margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-        height: 68,
-        padding: EdgeInsets.zero,
-        useOwnLayer: true,
-        quality: GlassQuality.premium,
-        shape: const LiquidRoundedSuperellipse(borderRadius: 22),
-        clipBehavior: Clip.antiAlias,
-        settings: LiquidGlassSettings(
-          glassColor: c.glassBg.withValues(alpha: 0.05),
-          thickness: 30,
-          blur: 3,
-          lightIntensity: 0.42,
-          chromaticAberration: 0.012,
-          ambientStrength: 0.10,
-          ambientRim: 0.12,
-          refractiveIndex: 1.24,
-          saturation: 1.35,
-          glowIntensity: 0.9,
-        ),
+      child: _MiniPlayerSurface(
+        useLiquidGlass: useLiquidGlass,
         child: Stack(
           children: [
             // ── Progress line at bottom ─────────────────────────────
@@ -133,6 +117,62 @@ class MiniPlayer extends StatelessWidget {
 }
 
 // ── Close button ──────────────────────────────────────────────────────────────
+
+class _MiniPlayerSurface extends StatelessWidget {
+  const _MiniPlayerSurface({required this.useLiquidGlass, required this.child});
+
+  final bool useLiquidGlass;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.appColors;
+    if (useLiquidGlass) {
+      return GlassCard(
+        key: const ValueKey('mini-player-glass-card'),
+        margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        height: 68,
+        padding: EdgeInsets.zero,
+        useOwnLayer: true,
+        quality: GlassQuality.premium,
+        shape: const LiquidRoundedSuperellipse(borderRadius: 22),
+        clipBehavior: Clip.antiAlias,
+        settings: LiquidGlassSettings(
+          glassColor: c.glassBg.withValues(alpha: 0.05),
+          thickness: 30,
+          blur: 3,
+          lightIntensity: 0.42,
+          chromaticAberration: 0.012,
+          ambientStrength: 0.10,
+          ambientRim: 0.12,
+          refractiveIndex: 1.24,
+          saturation: 1.35,
+          glowIntensity: 0.9,
+        ),
+        child: child,
+      );
+    }
+
+    return Container(
+      key: const ValueKey('mini-player-normal-surface'),
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      height: 68,
+      decoration: BoxDecoration(
+        color: c.surfaceElevated,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: c.border, width: 0.5),
+        boxShadow: [
+          BoxShadow(
+            color: c.primary.withValues(alpha: 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(borderRadius: BorderRadius.circular(18), child: child),
+    );
+  }
+}
 
 class _CloseButton extends StatelessWidget {
   const _CloseButton({required this.player});

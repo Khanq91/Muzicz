@@ -264,8 +264,7 @@ def download(task_id: str, url: str, format_id: str, output_path: str = "") -> s
         actual_format = "bestvideo+bestaudio/best"
         print(f"[YTDLP_BRIDGE]   extract_audio mode → actual_format = {actual_format}")
 
-    # Media ID avoids output collisions when two concurrent tasks share a title.
-    outtmpl = os.path.join(output_path, "%(title)s [%(id)s].%(ext)s")
+    outtmpl = os.path.join(output_path, "%(title)s.%(ext)s")
     print(f"[YTDLP_BRIDGE]   outtmpl = {outtmpl}")
 
     skipped_videos = []

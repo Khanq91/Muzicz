@@ -38,6 +38,8 @@ enum BottomNavStyle {
   const BottomNavStyle(this.key, this.label);
   final String key;
   final String label;
+
+  bool get usesLiquidGlass => this == BottomNavStyle.fancy;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
