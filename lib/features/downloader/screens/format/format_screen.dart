@@ -95,28 +95,12 @@ const _videoPresets = [
 
 const _audioPresets = [
   _PlaylistPreset(
-    label: 'Audio tốt nhất',
-    formatId: 'bestaudio/best',
-    ext: 'm4a',
-    description: 'Bitrate cao nhất có thể',
-    isAudioOnly: true,
-    icon: Icons.music_note_rounded,
-  ),
-  _PlaylistPreset(
     label: 'M4A',
-    formatId: 'bestaudio[ext=m4a]/bestaudio',
+    formatId: 'bestaudio[ext=m4a]',
     ext: 'm4a',
-    description: 'Ưu tiên định dạng M4A',
+    description: 'Chỉ tải nguồn âm thanh M4A',
     isAudioOnly: true,
     icon: Icons.audio_file_rounded,
-  ),
-  _PlaylistPreset(
-    label: 'Opus',
-    formatId: 'bestaudio[ext=opus]/bestaudio',
-    ext: 'opus',
-    description: 'Chất lượng cao, dung lượng nhỏ',
-    isAudioOnly: true,
-    icon: Icons.graphic_eq_rounded,
   ),
 ];
 

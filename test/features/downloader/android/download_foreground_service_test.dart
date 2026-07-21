@@ -15,6 +15,9 @@ void main() {
     expect(manifest, contains('android.permission.POST_NOTIFICATIONS'));
     expect(manifest, contains('android:name=".DownloadForegroundService"'));
     expect(manifest, contains('android:foregroundServiceType="dataSync"'));
+    expect(manifest, contains('android.permission.READ_MEDIA_AUDIO'));
+    expect(manifest, isNot(contains('android.permission.READ_MEDIA_VIDEO')));
+    expect(manifest, isNot(contains('android.permission.READ_MEDIA_IMAGES')));
   });
 
   test('foreground service owns queue persistence and notification counts', () {
@@ -46,19 +49,25 @@ void main() {
     expect(bridge, contains('%(title)s [%(id)s].%(ext)s'));
   });
 
-  test('WebM fallback queries MediaStore candidates and validates audio', () {
-    final scanner =
-        File(
-          'android/app/src/main/kotlin/com/muziczz/muziczz/WebmAudioScanner.kt',
-        ).readAsStringSync();
+  test('audio scanner does not request visual media or expose WebM', () {
     final activity =
         File(
           'android/app/src/main/kotlin/com/muziczz/muziczz/MainActivity.kt',
         ).readAsStringSync();
+    final scanner = File('lib/services/music_scanner.dart').readAsStringSync();
+    final permissionController =
+        File(
+          'packages/on_audio_query_android-1.1.0/android/src/main/kotlin/com/lucasjosino/on_audio_query/controllers/PermissionController.kt',
+        ).readAsStringSync();
 
-    expect(scanner, contains('MediaStore.Files.getContentUri("external")'));
-    expect(scanner, contains('METADATA_KEY_HAS_AUDIO'));
-    expect(scanner, contains('duration <= MIN_MUSIC_DURATION_MS'));
-    expect(activity, contains('"scanWebmAudio"'));
+    expect(scanner, isNot(contains('Permission.videos')));
+    expect(scanner, contains("if (ext == 'webm') return false"));
+    expect(
+      permissionController,
+      contains('Manifest.permission.READ_MEDIA_AUDIO'),
+    );
+    expect(permissionController, isNot(contains('READ_MEDIA_IMAGES')));
+    expect(permissionController, isNot(contains('READ_MEDIA_VIDEO')));
+    expect(activity, isNot(contains('scanWebmAudio')));
   });
 }

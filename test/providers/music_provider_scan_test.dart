@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:muziczz/models/playlist_item.dart';
@@ -27,6 +28,29 @@ void main() {
     expect(scanner.scanCalls, 1);
     expect(scanner.lastEnsurePermission, isFalse);
     expect(provider.status, LibraryStatus.done);
+  });
+
+  test('concurrent refresh calls share one active scan', () async {
+    final scanner = _BlockingMusicScanner();
+    final provider = MusicProvider(scanner: scanner);
+    await provider.init();
+
+    final first = provider.scanMusic();
+    final second = provider.scanMusic();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(scanner.permissionRequests, 1);
+    expect(scanner.scanCalls, 0);
+
+    scanner.permission.complete(true);
+    await Future<void>.delayed(Duration.zero);
+    expect(scanner.scanCalls, 1);
+
+    scanner.scan.complete(const []);
+    await Future.wait([first, second]);
+
+    expect(provider.status, LibraryStatus.done);
+    expect(scanner.scanCalls, 1);
   });
 
   test('a normal library refresh does not trigger a deep media scan', () {
@@ -306,6 +330,28 @@ class _RecordingMusicScanner extends MusicScanner {
     if (ensurePermission) await requestPermission();
     onProgress?.call(0);
     return songs;
+  }
+}
+
+class _BlockingMusicScanner extends MusicScanner {
+  final permission = Completer<bool>();
+  final scan = Completer<List<SongItem>>();
+  int permissionRequests = 0;
+  int scanCalls = 0;
+
+  @override
+  Future<bool> requestPermission() {
+    permissionRequests += 1;
+    return permission.future;
+  }
+
+  @override
+  Future<List<SongItem>> scanSongs({
+    ScanProgressCallback? onProgress,
+    bool ensurePermission = true,
+  }) {
+    scanCalls += 1;
+    return scan.future;
   }
 }
 

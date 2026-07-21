@@ -53,6 +53,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   Timer? _navigationTimer;
   bool _scanInFlight = false;
+  bool _showScanningStatus = true;
   String _randomText = '';
 
   @override
@@ -89,6 +90,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     if (_scanInFlight) return;
     _navigationTimer?.cancel();
     _scanInFlight = true;
+    _showScanningStatus = true;
 
     final musicProvider = context.read<MusicProvider>();
     _resultCtrl.reset();
@@ -107,6 +109,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     if (!mounted) return;
 
     _scanInFlight = false;
+    _showScanningStatus = false;
     _pulseCtrl.stop();
     setState(() {});
 
@@ -210,7 +213,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               ),
               const Spacer(flex: 2),
               // Progress bar
-              if (music.status == LibraryStatus.idle ||
+              if (_showScanningStatus ||
+                  music.status == LibraryStatus.idle ||
                   music.status == LibraryStatus.scanning ||
                   music.status == LibraryStatus.done)
                 _AnimatedProgressBar(controller: _progressCtrl),
@@ -223,6 +227,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   Widget _buildStatus(MusicProvider music) {
+    if (_showScanningStatus) {
+      return _ScanningText(
+        key: const ValueKey('scanning'),
+        randomText: _randomText,
+      );
+    }
+
     return switch (music.status) {
       LibraryStatus.done => _ResultWidget(
         key: const ValueKey('scan-result'),

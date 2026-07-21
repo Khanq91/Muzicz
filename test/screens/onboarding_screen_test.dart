@@ -90,6 +90,26 @@ void main() {
 
     await tester.pumpWidget(const SizedBox.shrink());
   });
+
+  testWidgets('rescan keeps scanning copy visible while status was done', (
+    tester,
+  ) async {
+    final scanner = _OnboardingScanner(songs: const [_song]);
+    final provider = MusicProvider(scanner: scanner);
+    await provider.init();
+    await provider.scanMusic();
+
+    await tester.pumpWidget(_testApp(provider));
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('scanning')), findsOneWidget);
+    expect(find.byKey(const ValueKey('scan-result')), findsNothing);
+
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 }
 
 Widget _testApp(MusicProvider provider) {

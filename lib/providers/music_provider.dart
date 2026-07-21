@@ -184,8 +184,21 @@ class MusicProvider extends ChangeNotifier {
 
   // FIX P1: debounce notifyListeners during scan
   int _lastNotifiedCount = 0;
+  Future<void>? _activeScan;
 
-  Future<void> scanMusic() async {
+  Future<void> scanMusic() {
+    final activeScan = _activeScan;
+    if (activeScan != null) return activeScan;
+
+    late final Future<void> trackedScan;
+    trackedScan = _performScan().whenComplete(() {
+      if (identical(_activeScan, trackedScan)) _activeScan = null;
+    });
+    _activeScan = trackedScan;
+    return trackedScan;
+  }
+
+  Future<void> _performScan() async {
     _status = LibraryStatus.scanning;
     _scanCount = 0;
     _lastNotifiedCount = 0;

@@ -90,35 +90,36 @@ class VideoInfo {
   // ── Factory từ JSON libytdlp.so ─────────────────────────────
 
   factory VideoInfo.fromYtDlpJson(Map<String, dynamic> json, String url) {
-    final rawType  = json['_type'] as String?;
+    final rawType = json['_type'] as String?;
     final isPlaylist = rawType == 'playlist';
 
     final rawFormats = json['formats'] as List<dynamic>? ?? [];
-    final formats = rawFormats
-        .whereType<Map<String, dynamic>>()
-        .map(FormatOption.fromJson)
-        .where((f) {
-      // Bỏ format không hữu dụng
-      if (f.ext == 'mhtml') return false;
-      if (f.ext == 'none') return false;
-      // ✅ Giữ lại muxed format (TikTok): có cả vcodec + acodec
-      // và pure audio: không có vcodec
-      return true;
-    })
-        .toList();
+    final formats =
+        rawFormats
+            .whereType<Map<String, dynamic>>()
+            .map(FormatOption.fromJson)
+            .where((f) {
+              // Bỏ format không hữu dụng
+              if (f.ext == 'mhtml') return false;
+              if (f.ext == 'none') return false;
+              // ✅ Giữ lại muxed format (TikTok): có cả vcodec + acodec
+              // và pure audio: không có vcodec
+              return true;
+            })
+            .toList();
 
     return VideoInfo(
-      id:           json['id'] as String? ?? '',
-      title:        json['title'] as String? ?? 'Không có tiêu đề',
-      thumbnail:    json['thumbnail'] as String?,
-      duration:     (json['duration'] as num?)?.toInt(), // ✅ ép kiểu an toàn
-      platform:     VideoPlatform.fromUrl(url),
-      type:         isPlaylist ? VideoType.playlist : VideoType.video,
+      id: json['id'] as String? ?? '',
+      title: json['title'] as String? ?? 'Không có tiêu đề',
+      thumbnail: json['thumbnail'] as String?,
+      duration: (json['duration'] as num?)?.toInt(), // ✅ ép kiểu an toàn
+      platform: VideoPlatform.fromUrl(url),
+      type: isPlaylist ? VideoType.playlist : VideoType.video,
       playlistCount: json['playlist_count'] as int?,
-      formats:      formats,
-      url:          url,
-      uploader:     json['uploader'] as String?,
-      description:  json['description'] as String?,
+      formats: formats,
+      url: url,
+      uploader: json['uploader'] as String?,
+      description: json['description'] as String?,
       skippedCount: json['skipped_count'] as int?,
     );
   }
@@ -138,7 +139,9 @@ class VideoInfo {
 
   /// Formats chỉ audio (m4a, mp3, opus...)
   List<FormatOption> get audioFormats =>
-      formats.where((f) => f.isAudioOnly).toList();
+      formats
+          .where((f) => f.isAudioOnly && f.ext.toLowerCase() != 'webm')
+          .toList();
 
   /// Formats có video (đã gộp audio+video)
   List<FormatOption> get videoFormats =>

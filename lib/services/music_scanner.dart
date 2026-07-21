@@ -2,18 +2,14 @@ import 'dart:io';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../models/song_item.dart';
-import 'webm_audio_scanner.dart';
 
 typedef ScanProgressCallback = void Function(int count);
 
 class MusicScanner {
-  MusicScanner({OnAudioQuery? audioQuery, WebmAudioGateway? webmAudioGateway})
-    : _audioQuery = audioQuery ?? OnAudioQuery(),
-      _webmAudioGateway =
-          webmAudioGateway ?? const MethodChannelWebmAudioGateway();
+  MusicScanner({OnAudioQuery? audioQuery})
+    : _audioQuery = audioQuery ?? OnAudioQuery();
 
   final OnAudioQuery _audioQuery;
-  final WebmAudioGateway _webmAudioGateway;
   bool _permissionPermanentlyDenied = false;
 
   bool get permissionPermanentlyDenied => _permissionPermanentlyDenied;
@@ -25,25 +21,16 @@ class MusicScanner {
 
     // Bước 1: Thử qua on_audio_query (thường đủ trên mọi phiên bản)
     final alreadyGranted = await _audioQuery.permissionsStatus();
-    if (alreadyGranted) {
-      await _requestOptionalWebmPermission();
-      return true;
-    }
+    if (alreadyGranted) return true;
 
     final requestedByQuery = await _audioQuery.permissionsRequest();
-    if (requestedByQuery) {
-      await _requestOptionalWebmPermission();
-      return true;
-    }
+    if (requestedByQuery) return true;
 
     // Bước 2: Fallback — permission_handler
     if (Platform.isAndroid) {
       // READ_MEDIA_AUDIO cho Android 13+ (API 33+)
       final audioStatus = await Permission.audio.request();
-      if (audioStatus.isGranted) {
-        await _requestOptionalWebmPermission();
-        return true;
-      }
+      if (audioStatus.isGranted) return true;
 
       // READ_EXTERNAL_STORAGE cho Android ≤ 12
       final storageStatus = await Permission.storage.request();
@@ -56,10 +43,6 @@ class MusicScanner {
     }
 
     return false;
-  }
-
-  Future<void> _requestOptionalWebmPermission() async {
-    if (Platform.isAndroid) await Permission.videos.request();
   }
 
   Future<bool> checkPermission() async {
@@ -103,7 +86,6 @@ class MusicScanner {
       'alac',
       'aiff',
       'mid',
-      'webm',
       'mkv',
       '3gp',
     };
@@ -116,20 +98,19 @@ class MusicScanner {
           // Lọc file quá ngắn (< 30s) — nhạc chuông, thông báo
           if (s.duration! <= 30000) return false;
 
+          // WebM is intentionally unsupported. Discovering WebM through the
+          // visual-media collection would require an unrelated video grant.
+          final ext = s.data.split('.').last.toLowerCase();
+          if (ext == 'webm') return false;
+
           // Chấp nhận nếu on_audio_query đã đánh dấu là music
           if (s.isMusic == true) return true;
 
           // Fallback: kiểm tra extension
-          final ext = s.data.split('.').last.toLowerCase();
           return audioExtensions.contains(ext);
         }).toList();
 
-    final queriedSongs = filtered.map(SongItem.fromAudioQuery).toList();
-    final webmSongs =
-        Platform.isAndroid
-            ? await _webmAudioGateway.scan()
-            : const <SongItem>[];
-    final result = mergeScannedSongs(queriedSongs, webmSongs);
+    final result = filtered.map(SongItem.fromAudioQuery).toList();
     onProgress?.call(result.length);
     return result;
   }
@@ -169,24 +150,4 @@ class MusicScanner {
     }
     return map;
   }
-}
-
-List<SongItem> mergeScannedSongs(
-  Iterable<SongItem> primary,
-  Iterable<SongItem> fallback,
-) {
-  final byPath = <String, SongItem>{};
-  for (final song in primary) {
-    byPath[song.data.toLowerCase()] = song;
-  }
-  for (final song in fallback) {
-    byPath.putIfAbsent(song.data.toLowerCase(), () => song);
-  }
-  final merged =
-      byPath.values.toList()..sort(
-        (left, right) => (right.dateAdded ?? DateTime(0)).compareTo(
-          left.dateAdded ?? DateTime(0),
-        ),
-      );
-  return merged;
 }

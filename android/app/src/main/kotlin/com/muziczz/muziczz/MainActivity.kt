@@ -18,7 +18,6 @@ class MainActivity : AudioServiceFragmentActivity() {
 
     // ── Channel dùng chung cho ytdlp feature ──────────────────────────────────
     private val YTDLP_CHANNEL = "ytdlp_channel"
-    private val MUSIC_SCANNER_CHANNEL = "music_scanner_channel"
     private val activityScope  = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val ytdlpModule get() = YtdlpPython.module(applicationContext)
 
@@ -210,22 +209,6 @@ class MainActivity : AudioServiceFragmentActivity() {
                 }
             }
 
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, MUSIC_SCANNER_CHANNEL)
-            .setMethodCallHandler { call, result ->
-                when (call.method) {
-                    "scanWebmAudio" -> activityScope.launch {
-                        try {
-                            val songs = WebmAudioScanner.scan(applicationContext)
-                            withContext(Dispatchers.Main) { result.success(songs) }
-                        } catch (error: Exception) {
-                            withContext(Dispatchers.Main) {
-                                result.error("WEBM_SCAN_ERROR", error.message, null)
-                            }
-                        }
-                    }
-                    else -> result.notImplemented()
-                }
-            }
     }
 
 }
