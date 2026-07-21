@@ -58,71 +58,73 @@ class MiniPlayer extends StatelessWidget {
         shape: const LiquidRoundedSuperellipse(borderRadius: 22),
         clipBehavior: Clip.antiAlias,
         settings: LiquidGlassSettings(
-          glassColor: c.glassBg,
-          backerColor: c.surfaceElevated.withValues(alpha: 0.68),
-          thickness: 24,
-          blur: 4,
-          lightIntensity: 0.35,
-          chromaticAberration: 0.01,
-          ambientStrength: 0.08,
-          saturation: 1.2,
+          glassColor: c.glassBg.withValues(alpha: 0.05),
+          thickness: 30,
+          blur: 3,
+          lightIntensity: 0.42,
+          chromaticAberration: 0.012,
+          ambientStrength: 0.10,
+          ambientRim: 0.12,
+          refractiveIndex: 1.24,
+          saturation: 1.35,
+          glowIntensity: 0.9,
         ),
         child: Stack(
           children: [
-              // ── Progress line at bottom ─────────────────────────────
-              Positioned(
+            // ── Progress line at bottom ─────────────────────────────
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: _MiniProgressBar(player: player),
+            ),
+            // ── Content ─────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.only(
+                left: 14,
+                right: 4,
+                top: 0,
                 bottom: 0,
-                left: 0,
-                right: 0,
-                child: _MiniProgressBar(player: player),
               ),
-              // ── Content ─────────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.only(
-                  left: 14,
-                  right: 4,
-                  top: 0,
-                  bottom: 0,
-                ),
-                child: Row(
-                  children: [
-                    _AlbumArt(albumId: song.albumId),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            song.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: c.textPrimary,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
+              child: Row(
+                children: [
+                  _AlbumArt(albumId: song.albumId),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          song.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: c.textPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            song.artist,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: c.textTertiary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w300,
-                            ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          song.artist,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: c.textTertiary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w300,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                    // UX 4: Controls with loading state
-                    _MiniControls(player: player),
-                    _CloseButton(player: player),
-                  ],
-                ),
+                  ),
+                  // UX 4: Controls with loading state
+                  _MiniControls(player: player),
+                  _CloseButton(player: player),
+                ],
               ),
+            ),
           ],
         ),
       ),
