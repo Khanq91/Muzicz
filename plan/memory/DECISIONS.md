@@ -149,3 +149,9 @@
 - Chỉ permanent denial mới hiện `Mở cài đặt`; denial thường ưu tiên `Thử lại`. Error dùng thông báo chung vì provider hiện không expose exception, tránh mở rộng error model ngoài UI-01.
 - Dùng `FilledButton` cho Retry, `OutlinedButton` cho Settings, token màu app/`ColorScheme.error` và live-region semantics theo skill Flutter nội bộ; giữ nguyên presentation, business behavior và navigation success hiện có.
 - Thay `Future.delayed` điều hướng bằng `Timer` có owner/cancel trong widget và guard `LibraryStatus.done`; tradeoff là vẫn giữ delay success 2 giây để không đổi UX, nhưng không còn callback navigation sau dispose.
+
+## [Phase 5] - 2026-07-23 16:31
+- Tôn trọng nguyên trạng `TextScaler` do hệ điều hành cung cấp thay vì thay clamp 1.15 bằng một ngưỡng lớn hơn; accessibility setting là source of truth và giới hạn toàn app không phải giải pháp responsive lâu dài.
+- Chỉ bỏ wrapper `MediaQuery` ở root, giữ `ThemeSwitchWrapper` làm `MaterialApp.builder`; đây là thay đổi production nhỏ nhất, không đổi public API, package, state management, theme hoặc navigation.
+- Dùng regression structural guard cho root vì `MuzicApp` hiện khởi tạo nhiều provider/plugin, đồng thời dùng widget test thực cho Now Playing ở 320×568 và scale 1.0/1.3/2.0 để kiểm tra hành vi layout. Không refactor Now Playing khi test không chứng minh có overflow.
+- Không thêm clamp cục bộ vào widget. Nếu device validation phát hiện route cụ thể bị vỡ, route đó phải được sửa responsive và có test riêng thay vì vô hiệu hóa font scale của toàn app.

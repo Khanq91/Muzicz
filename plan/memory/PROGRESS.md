@@ -208,3 +208,11 @@
 - [x] Bỏ việc service tự mở Settings, expose permanent-denial state tối thiểu; chặn scan request chồng và sở hữu/cancel timer điều hướng khi dispose.
 - [x] Regression test đỏ trước sửa ở false-success và timer lifecycle; sau sửa targeted pass 4/4, full suite pass 53/53, analyzer 0 issue; tăng version `1.0.1+14` → `1.0.1+15`.
 - [ ] Format-check không ghi source giữ baseline 16/82 file legacy sẽ đổi. Chưa manual deny/retry/permanent-deny/return-from-Settings trên Android thật; bước tiếp theo là device validation UI-01, sau đó xử lý UI-02 text scale như issue Phase 5 độc lập.
+
+## [Phase 5] - 2026-07-23 16:31
+- [x] Đọc lại toàn bộ audit, memory hiện hành, `main.dart`, `now_playing_screen.dart`, provider/audio seam và test liên quan UI-02; baseline analyzer 0 issue và full suite pass 54/54.
+- [x] Hoàn tất UI-02: bỏ `MediaQuery.textScalerOf(context).clamp(...)` ở root, giữ nguyên `ThemeSwitchWrapper`, theme, navigation và toàn bộ business behavior.
+- [x] Thêm regression guard cho root và widget test Now Playing tại 320×568 với text scale 1.0/1.3/2.0; test đỏ trước sửa vì root còn `maxScaleFactor: 1.15`, sau sửa targeted pass 4/4 và full suite pass 58/58.
+- [x] Analyzer cuối qua `scripts/flutter_analyze.bat` exit 0, 0 error/warning/info; log cập nhật tại `audit/flutter_analyze.txt`.
+- [x] Chạy format-check cuối với `--output=none`: exit 1 do 18/82 file legacy ngoài scope sẽ đổi; `main.dart` và test UI-02 đã được format riêng.
+- [ ] Chưa manual Android font scale/TalkBack trên thiết bị thật và chưa phủ mọi route ở scale 2.0. Bước tiếp theo: device validation UI-02, sau đó xử lý UI-04 semantics và UI-05 touch target như issue Phase 5 độc lập.

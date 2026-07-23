@@ -175,3 +175,12 @@
 - Lượt full test đầu sau sửa fail do matcher `textContaining('bài hát')` trùng ngẫu nhiên với quote onboarding, không phải lỗi production; đổi assertion sang key trạng thái `scan-result`, targeted pass 4/4 và full suite pass 53/53.
 - Final format-check không ghi source exit 1 với 16/82 file legacy sẽ đổi; analyzer 0 issue. Chưa có Android device nên chưa xác nhận permission prompt OEM/API, mở Settings thực, return/resume và navigation Home bằng thao tác tay.
 - Onboarding vẫn giữ intro delay 5 giây có sẵn trước lần scan đầu; không thay trong UI-01 để tránh trộn performance/UX timing vào issue error-state. Cần đánh giá riêng bằng device flow nếu tiếp tục Phase 5 polish.
+
+## [Phase 5] - 2026-07-23 16:31
+- Repo vẫn không có `AGENTS.md`; không tạo file mới vì chưa có repo-specific rule cần bổ sung. Memory hiện hành nằm ở `plan/memory`, còn `PROGRESS.md` root là bản cũ hơn.
+- `scripts/flutter_analyze.bat` và `flutter test` timeout trong sandbox do Flutter SDK/cache ngoài workspace. Baseline analyzer do user chạy thủ công sạch; test/analyzer cuối chạy ngoài sandbox thành công.
+- Baseline analyzer thủ công dùng Flutter 3.38.9/Dart 3.10.8, trong khi analyzer cuối ngoài sandbox dùng Flutter 3.44.5/Dart 3.12.2. Cả hai đều 0 issue, nhưng không xem đây là so sánh hiệu năng vì toolchain khác nhau.
+- Lượt full test đầu sau khi thêm variants fail compile vì Flutter 3.44 không có `WidgetTester.variant` và `ValueVariant` không const; sửa harness dùng `ValueVariant.currentValue`. Đây là lỗi test code, không phải regression production.
+- Now Playing test gặp diagnostic có sẵn về `ListTile` nằm trong `DecoratedBox` của queue sheet; test UI-02 chỉ thu lỗi `RenderFlex overflow`. Không sửa Material/ink trong session này để tránh mở rộng scope; cần issue UI riêng nếu muốn xử lý.
+- Final `dart format --output=none --set-exit-if-changed .` exit 1 với 18/82 file legacy sẽ đổi; lệnh không ghi source. Hai file Dart trong scope đã được format riêng và `git diff --check` không báo whitespace error.
+- Chưa chạy font scale/TalkBack trên Android thật hoặc golden toàn bộ route; automated coverage chỉ xác nhận root không clamp và Now Playing không overflow ở viewport/scaler đã nêu.

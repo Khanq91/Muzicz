@@ -83,17 +83,7 @@ class MuzicApp extends StatelessWidget {
           return null;
         },
         home: const SplashScreen(),
-        builder: (context, child) {
-          return MediaQuery(
-            data: MediaQuery.of(context).copyWith(
-              textScaler: MediaQuery.textScalerOf(
-                context,
-              ).clamp(minScaleFactor: 0.85, maxScaleFactor: 1.15),
-            ),
-            // child: child!,
-            child: ThemeSwitchWrapper(child: child!),
-          );
-        },
+        builder: (context, child) => ThemeSwitchWrapper(child: child!),
       ),
     );
   }
