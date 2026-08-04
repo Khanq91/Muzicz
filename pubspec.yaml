@@ -39,6 +39,7 @@ dependencies:
 
   # Audio playback + background service
   just_audio: ^0.9.36
+  just_waveform: ^0.0.7
 #  just_audio_background: ^0.0.1-beta.11
   just_audio_background: ^0.0.1-beta.17
   audio_service: ^0.18.12

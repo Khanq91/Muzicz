@@ -375,6 +375,17 @@ gộp 2 phase vào 1 lượt kể cả khi phase trước "trông có vẻ ổn"
 
 ### 11.5 Prompt mẫu cho từng phase
 
+Bối cảnh:
+- Đang triển khai tính năng "Music Visual" cho app Muzicz (Flutter, package `muziczz`).
+- Tài liệu chính cần đọc và bám sát:  [MUZICZ_VISUAL_FEASIBILITY_PLAN.md](plan/visual-audio/MUZICZ_VISUAL_FEASIBILITY_PLAN.md) (kế hoạch đã chốt, 
+  gồm cả cơ chế setting Bình thường/Xịn xò và yêu cầu cô lập module).
+- Tài liệu tham khảo kỹ thuật chính khi cần đối chiếu công thức/thuật toán:
+  `[FLUTTER_MOBILE_FEASIBILITY_REPORT.md](docs/analysis/FLUTTER_MOBILE_FEASIBILITY_REPORT.md) `. 
+- Hai tài liệu sau CHỈ tham khảo thêm khi cần hiểu bối cảnh, không phải nguồn quyết định:
+  ` [MUSIC_VISUAL_FORENSIC_REPORT.md](docs/analysis/MUSIC_VISUAL_FORENSIC_REPORT.md) `, `[UPSTREAM_VISUAL_DIFF_REPORT.md](docs/analysis/UPSTREAM_VISUAL_DIFF_REPORT.md) `. 
+  Lưu ý cả 3 file này phân tích Wavez (Electron/Three.js), không phải Muzicz — không port code,
+  chỉ port thuật toán/công thức đã được [MUZICZ_VISUAL_FEASIBILITY_PLAN.md](plan/visual-audio/MUZICZ_VISUAL_FEASIBILITY_PLAN.md)  chọn lọc sẵn. 
+
 Prompt Phase 0/0.5 đã dùng ở lượt trước có thể tái sử dụng gần như nguyên văn cho Phase 1–3, chỉ đổi
 phần "Phạm vi lượt này" và "Ràng buộc bắt buộc" theo đúng scope của phase đó, giữ nguyên khung:
 bối cảnh → phạm vi hẹp → ràng buộc không sửa file cấm → constraint sandbox → yêu cầu tự verify gate

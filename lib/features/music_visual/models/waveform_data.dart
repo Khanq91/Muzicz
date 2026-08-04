@@ -1,4 +1,3 @@
-/// Data contract reserved for the waveform implementation in Phase 1.
 final class WaveformData {
   const WaveformData({
     required this.amplitudes,
@@ -6,6 +5,7 @@ final class WaveformData {
     required this.analysisVersion,
   });
 
+  /// Normalized peak amplitudes in the range 0.0–1.0.
   final List<double> amplitudes;
   final int songId;
   final int analysisVersion;
