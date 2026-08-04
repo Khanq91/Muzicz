@@ -6,6 +6,7 @@ import 'package:muziczz/providers/theme_provider.dart';
 import 'package:muziczz/widgets/theme_switch_wrapper.dart';
 import 'package:provider/provider.dart';
 import 'features/downloader/core/app_router.dart';
+import 'features/music_visual/providers/visual_mode_provider.dart';
 import 'providers/music_provider.dart';
 import 'providers/player_provider.dart';
 import 'screens/splash_screen.dart';
@@ -68,6 +69,7 @@ class MuzicApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => MusicProvider()),
         ChangeNotifierProvider(create: (_) => PlayerProvider(audioHandler)),
         ChangeNotifierProvider(create: (_) => LyricsProvider()),
+        ChangeNotifierProvider(create: (_) => VisualModeProvider()),
       ],
       child: MaterialApp(
         title: 'Muzicz Audio',

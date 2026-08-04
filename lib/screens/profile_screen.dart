@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../features/downloader/screens/downloader_gateway_screen.dart';
+import '../features/music_visual/core/visual_feature_flag.dart';
+import '../features/music_visual/providers/visual_mode_provider.dart';
+import '../features/music_visual/widgets/visual_mode_selector_sheet.dart';
 import '../providers/music_provider.dart';
 import '../providers/player_provider.dart';
 import '../theme/app_colors_data.dart';
@@ -299,6 +302,26 @@ class _SettingsSheetState extends State<_SettingsSheet> {
             },
             colors: c,
           ),
+
+          if (kMusicVisualFeatureEnabled) ...[
+            const SizedBox(height: 8),
+            _SettingsTappableRow(
+              icon: Icons.graphic_eq_rounded,
+              iconColor: c.tertiary,
+              label: 'Music Visual',
+              subtitle: context.watch<VisualModeProvider>().mode.label,
+              trailing: Icon(
+                Icons.chevron_right_rounded,
+                color: c.textDisabled,
+                size: 20,
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                VisualModeSelectorSheet.show(widget.parentContext);
+              },
+              colors: c,
+            ),
+          ],
 
           const SizedBox(height: 20),
 

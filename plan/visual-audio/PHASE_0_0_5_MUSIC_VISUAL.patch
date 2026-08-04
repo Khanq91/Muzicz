@@ -1,0 +1,509 @@
+diff --git a/lib/features/music_visual/core/visual_feature_flag.dart b/lib/features/music_visual/core/visual_feature_flag.dart
+new file mode 100644
+--- /dev/null
++++ b/lib/features/music_visual/core/visual_feature_flag.dart
+@@ -0,0 +1,3 @@
++/// Build-time kill switch for the isolated Music Visual feature.
++/// Set to false and rebuild to disable every Music Visual entry point.
++const bool kMusicVisualFeatureEnabled = true;
+diff --git a/lib/features/music_visual/models/waveform_data.dart b/lib/features/music_visual/models/waveform_data.dart
+new file mode 100644
+--- /dev/null
++++ b/lib/features/music_visual/models/waveform_data.dart
+@@ -0,0 +1,12 @@
++/// Data contract reserved for the waveform implementation in Phase 1.
++final class WaveformData {
++  const WaveformData({
++    required this.amplitudes,
++    required this.songId,
++    required this.analysisVersion,
++  });
++
++  final List<double> amplitudes;
++  final int songId;
++  final int analysisVersion;
++}
+diff --git a/lib/features/music_visual/services/waveform_extract_service.dart b/lib/features/music_visual/services/waveform_extract_service.dart
+new file mode 100644
+--- /dev/null
++++ b/lib/features/music_visual/services/waveform_extract_service.dart
+@@ -0,0 +1,5 @@
++/// Phase 0.5 scaffold only.
++/// Extraction and the isolated `music_visual_cache` are implemented in Phase 1.
++final class WaveformExtractService {
++  const WaveformExtractService();
++}
+diff --git a/lib/features/music_visual/providers/visual_mode_provider.dart b/lib/features/music_visual/providers/visual_mode_provider.dart
+new file mode 100644
+--- /dev/null
++++ b/lib/features/music_visual/providers/visual_mode_provider.dart
+@@ -0,0 +1,48 @@
++import 'package:flutter/foundation.dart';
++import 'package:shared_preferences/shared_preferences.dart';
++
++enum MusicVisualMode {
++  normal('normal', 'Bình thường'),
++  fancy('fancy', 'Xịn xò');
++
++  const MusicVisualMode(this.key, this.label);
++
++  final String key;
++  final String label;
++
++  bool get enablesReactiveVisual => this == MusicVisualMode.fancy;
++}
++
++class VisualModeProvider extends ChangeNotifier {
++  VisualModeProvider() {
++    _loadSaved();
++  }
++
++  static const _prefKey = 'music_visual_mode';
++
++  MusicVisualMode _mode = MusicVisualMode.normal;
++  MusicVisualMode get mode => _mode;
++
++  Future<void> setMode(MusicVisualMode mode) async {
++    if (_mode == mode) return;
++
++    _mode = mode;
++    notifyListeners();
++
++    final prefs = await SharedPreferences.getInstance();
++    await prefs.setString(_prefKey, mode.key);
++  }
++
++  Future<void> _loadSaved() async {
++    final prefs = await SharedPreferences.getInstance();
++    final saved = prefs.getString(_prefKey);
++    if (saved == null) return;
++
++    final found =
++        MusicVisualMode.values.where((mode) => mode.key == saved).firstOrNull;
++    if (found == null || found == _mode) return;
++
++    _mode = found;
++    notifyListeners();
++  }
++}
+diff --git a/lib/features/music_visual/providers/visual_feature_controller.dart b/lib/features/music_visual/providers/visual_feature_controller.dart
+new file mode 100644
+--- /dev/null
++++ b/lib/features/music_visual/providers/visual_feature_controller.dart
+@@ -0,0 +1,5 @@
++/// Phase 0.5 scaffold only.
++/// No controller is instantiated until the real visual pipeline is added.
++final class VisualFeatureController {
++  const VisualFeatureController();
++}
+diff --git a/lib/features/music_visual/painters/waveform_painter.dart b/lib/features/music_visual/painters/waveform_painter.dart
+new file mode 100644
+--- /dev/null
++++ b/lib/features/music_visual/painters/waveform_painter.dart
+@@ -0,0 +1,2 @@
++// Phase 0.5 scaffold only.
++// The real CustomPainter intentionally starts in Phase 1.
+diff --git a/lib/features/music_visual/widgets/visual_mode_selector_sheet.dart b/lib/features/music_visual/widgets/visual_mode_selector_sheet.dart
+new file mode 100644
+--- /dev/null
++++ b/lib/features/music_visual/widgets/visual_mode_selector_sheet.dart
+@@ -0,0 +1,275 @@
++import 'package:flutter/material.dart';
++import 'package:flutter/services.dart';
++import 'package:google_fonts/google_fonts.dart';
++import 'package:provider/provider.dart';
++
++import '../../../theme/app_colors_data.dart';
++import '../core/visual_feature_flag.dart';
++import '../providers/visual_mode_provider.dart';
++
++class VisualModeSelectorSheet extends StatefulWidget {
++  const VisualModeSelectorSheet({super.key});
++
++  static void show(BuildContext context) {
++    if (!kMusicVisualFeatureEnabled) return;
++
++    showModalBottomSheet(
++      context: context,
++      backgroundColor: Colors.transparent,
++      isScrollControlled: true,
++      builder:
++          (_) => ChangeNotifierProvider.value(
++            value: context.read<VisualModeProvider>(),
++            child: const VisualModeSelectorSheet(),
++          ),
++    );
++  }
++
++  @override
++  State<VisualModeSelectorSheet> createState() =>
++      _VisualModeSelectorSheetState();
++}
++
++class _VisualModeSelectorSheetState extends State<VisualModeSelectorSheet> {
++  late MusicVisualMode _selectedMode;
++
++  @override
++  void initState() {
++    super.initState();
++    _selectedMode = context.read<VisualModeProvider>().mode;
++  }
++
++  Future<void> _apply() async {
++    final provider = context.read<VisualModeProvider>();
++    if (provider.mode == _selectedMode) {
++      Navigator.pop(context);
++      return;
++    }
++
++    HapticFeedback.mediumImpact();
++    Navigator.pop(context);
++    await Future.delayed(const Duration(milliseconds: 180));
++    await provider.setMode(_selectedMode);
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    final c = context.appColors;
++    final currentMode = context.watch<VisualModeProvider>().mode;
++    final hasChange = currentMode != _selectedMode;
++
++    return Container(
++      decoration: BoxDecoration(
++        color: c.card,
++        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
++      ),
++      padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
++      child: Column(
++        mainAxisSize: MainAxisSize.min,
++        children: [
++          Center(
++            child: Container(
++              width: 36,
++              height: 4,
++              decoration: BoxDecoration(
++                color: c.divider,
++                borderRadius: BorderRadius.circular(2),
++              ),
++            ),
++          ),
++          const SizedBox(height: 20),
++          Row(
++            children: [
++              Expanded(
++                child: Column(
++                  crossAxisAlignment: CrossAxisAlignment.start,
++                  children: [
++                    Text(
++                      'Music Visual',
++                      style: GoogleFonts.outfit(
++                        fontSize: 18,
++                        fontWeight: FontWeight.w700,
++                        color: c.textPrimary,
++                      ),
++                    ),
++                    Text(
++                      'Chọn phong cách hiển thị khi phát nhạc',
++                      style: GoogleFonts.outfit(
++                        fontSize: 13,
++                        color: c.textTertiary,
++                      ),
++                    ),
++                  ],
++                ),
++              ),
++              AnimatedOpacity(
++                opacity: hasChange ? 1 : 0,
++                duration: const Duration(milliseconds: 200),
++                child: TextButton(
++                  onPressed: hasChange ? _apply : null,
++                  style: TextButton.styleFrom(
++                    backgroundColor: c.primary.withValues(alpha: 0.12),
++                    foregroundColor: c.primary,
++                    shape: RoundedRectangleBorder(
++                      borderRadius: BorderRadius.circular(10),
++                    ),
++                    padding: const EdgeInsets.symmetric(
++                      horizontal: 16,
++                      vertical: 8,
++                    ),
++                  ),
++                  child: Text(
++                    'Áp dụng',
++                    style: GoogleFonts.outfit(
++                      fontWeight: FontWeight.w600,
++                      fontSize: 14,
++                    ),
++                  ),
++                ),
++              ),
++            ],
++          ),
++          const SizedBox(height: 20),
++          for (final mode in MusicVisualMode.values)
++            _VisualModeOption(
++              mode: mode,
++              isSelected: _selectedMode == mode,
++              isCurrentlyActive: currentMode == mode,
++              onTap: () {
++                HapticFeedback.selectionClick();
++                setState(() => _selectedMode = mode);
++              },
++            ),
++        ],
++      ),
++    );
++  }
++}
++
++class _VisualModeOption extends StatelessWidget {
++  const _VisualModeOption({
++    required this.mode,
++    required this.isSelected,
++    required this.isCurrentlyActive,
++    required this.onTap,
++  });
++
++  final MusicVisualMode mode;
++  final bool isSelected;
++  final bool isCurrentlyActive;
++  final VoidCallback onTap;
++
++  @override
++  Widget build(BuildContext context) {
++    final c = context.appColors;
++    return Semantics(
++      selected: isSelected,
++      button: true,
++      child: InkWell(
++        borderRadius: BorderRadius.circular(16),
++        onTap: onTap,
++        child: AnimatedContainer(
++          duration: const Duration(milliseconds: 200),
++          margin: const EdgeInsets.only(bottom: 10),
++          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
++          decoration: BoxDecoration(
++            color:
++                isSelected
++                    ? c.primary.withValues(alpha: 0.10)
++                    : c.surfaceElevated,
++            borderRadius: BorderRadius.circular(16),
++            border: Border.all(
++              color: isSelected ? c.primary : c.border,
++              width: isSelected ? 1.5 : 0.5,
++            ),
++          ),
++          child: Row(
++            children: [
++              Container(
++                width: 44,
++                height: 44,
++                decoration: BoxDecoration(
++                  color: c.glassBg,
++                  borderRadius: BorderRadius.circular(12),
++                  border: Border.all(color: c.glassBorder),
++                ),
++                child: Icon(
++                  mode.enablesReactiveVisual
++                      ? Icons.graphic_eq_rounded
++                      : Icons.view_compact_alt_rounded,
++                  color: c.primary,
++                ),
++              ),
++              const SizedBox(width: 16),
++              Expanded(
++                child: Column(
++                  crossAxisAlignment: CrossAxisAlignment.start,
++                  children: [
++                    Row(
++                      children: [
++                        Text(
++                          mode.label,
++                          style: GoogleFonts.outfit(
++                            fontSize: 15,
++                            fontWeight: FontWeight.w600,
++                            color: isSelected ? c.primary : c.textPrimary,
++                          ),
++                        ),
++                        if (isCurrentlyActive) ...[
++                          const SizedBox(width: 8),
++                          _CurrentBadge(colors: c),
++                        ],
++                      ],
++                    ),
++                    Text(
++                      mode.enablesReactiveVisual
++                          ? 'Hiệu ứng âm nhạc — đang phát triển'
++                          : 'Giao diện phát nhạc hiện tại',
++                      style: GoogleFonts.outfit(
++                        fontSize: 12,
++                        color: c.textTertiary,
++                      ),
++                    ),
++                  ],
++                ),
++              ),
++              AnimatedScale(
++                scale: isSelected ? 1 : 0,
++                duration: const Duration(milliseconds: 180),
++                curve: Curves.easeOutBack,
++                child: Icon(
++                  Icons.check_circle_rounded,
++                  color: c.primary,
++                  size: 22,
++                ),
++              ),
++            ],
++          ),
++        ),
++      ),
++    );
++  }
++}
++
++class _CurrentBadge extends StatelessWidget {
++  const _CurrentBadge({required this.colors});
++
++  final AppColorsData colors;
++
++  @override
++  Widget build(BuildContext context) => Container(
++    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
++    decoration: BoxDecoration(
++      color: colors.primary.withValues(alpha: 0.15),
++      borderRadius: BorderRadius.circular(6),
++    ),
++    child: Text(
++      'Hiện tại',
++      style: GoogleFonts.outfit(
++        fontSize: 10,
++        fontWeight: FontWeight.w600,
++        color: colors.primary,
++      ),
++    ),
++  );
++}
+diff --git a/lib/features/music_visual/widgets/reactive_waveform_view.dart b/lib/features/music_visual/widgets/reactive_waveform_view.dart
+new file mode 100644
+--- /dev/null
++++ b/lib/features/music_visual/widgets/reactive_waveform_view.dart
+@@ -0,0 +1,22 @@
++import 'package:flutter/widgets.dart';
++import 'package:provider/provider.dart';
++
++import '../core/visual_feature_flag.dart';
++import '../providers/visual_mode_provider.dart';
++
++class ReactiveWaveformView extends StatelessWidget {
++  const ReactiveWaveformView({super.key});
++
++  @override
++  Widget build(BuildContext context) {
++    if (!kMusicVisualFeatureEnabled) return const SizedBox.shrink();
++
++    final enabled = context.select<VisualModeProvider, bool>(
++      (provider) => provider.mode.enablesReactiveVisual,
++    );
++    if (!enabled) return const SizedBox.shrink();
++
++    // Empty Phase 0.5 placeholder. No ticker, controller, extraction, or painter.
++    return const SizedBox(height: 48);
++  }
++}
+diff --git a/lib/main.dart b/lib/main.dart
+--- a/lib/main.dart
++++ b/lib/main.dart
+@@ -6,6 +6,7 @@ import 'package:muziczz/providers/theme_provider.dart';
+ import 'package:muziczz/widgets/theme_switch_wrapper.dart';
+ import 'package:provider/provider.dart';
+ import 'features/downloader/core/app_router.dart';
++import 'features/music_visual/providers/visual_mode_provider.dart';
+ import 'providers/music_provider.dart';
+ import 'providers/player_provider.dart';
+ import 'screens/splash_screen.dart';
+@@ -68,6 +69,7 @@ class MuzicApp extends StatelessWidget {
+         ChangeNotifierProvider(create: (_) => MusicProvider()),
+         ChangeNotifierProvider(create: (_) => PlayerProvider(audioHandler)),
+         ChangeNotifierProvider(create: (_) => LyricsProvider()),
++        ChangeNotifierProvider(create: (_) => VisualModeProvider()),
+       ],
+       child: MaterialApp(
+         title: 'Muzicz Audio',
+diff --git a/lib/screens/profile_screen.dart b/lib/screens/profile_screen.dart
+--- a/lib/screens/profile_screen.dart
++++ b/lib/screens/profile_screen.dart
+@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
+ import 'package:google_fonts/google_fonts.dart';
+ import 'package:provider/provider.dart';
+ import '../features/downloader/screens/downloader_gateway_screen.dart';
++import '../features/music_visual/core/visual_feature_flag.dart';
++import '../features/music_visual/providers/visual_mode_provider.dart';
++import '../features/music_visual/widgets/visual_mode_selector_sheet.dart';
+ import '../providers/music_provider.dart';
+ import '../providers/player_provider.dart';
+ import '../theme/app_colors_data.dart';
+@@ -300,6 +303,26 @@ class _SettingsSheetState extends State<_SettingsSheet> {
+             colors: c,
+           ),
+ 
++          if (kMusicVisualFeatureEnabled) ...[
++            const SizedBox(height: 8),
++            _SettingsTappableRow(
++              icon: Icons.graphic_eq_rounded,
++              iconColor: c.tertiary,
++              label: 'Music Visual',
++              subtitle: context.watch<VisualModeProvider>().mode.label,
++              trailing: Icon(
++                Icons.chevron_right_rounded,
++                color: c.textDisabled,
++                size: 20,
++              ),
++              onTap: () {
++                Navigator.pop(context);
++                VisualModeSelectorSheet.show(widget.parentContext);
++              },
++              colors: c,
++            ),
++          ],
++
+           const SizedBox(height: 20),
+ 
+           // ── Thư viện nhạc ─────────────────────────────────────────────
+diff --git a/lib/screens/now_playing_screen.dart b/lib/screens/now_playing_screen.dart
+--- a/lib/screens/now_playing_screen.dart
++++ b/lib/screens/now_playing_screen.dart
+@@ -7,4 +7,5 @@ import 'package:on_audio_query/on_audio_query.dart';
+ import 'package:provider/provider.dart';
++import '../features/music_visual/widgets/reactive_waveform_view.dart';
+ import '../models/song_item.dart';
+ import '../providers/lyrics_provider.dart';
+ import '../providers/music_provider.dart';
+@@ -244,6 +245,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
+                           _SongInfo(song: song),
+                           const SizedBox(height: 20),
+                           _ProgressSection(player: player),
++                          const ReactiveWaveformView(),
+                           const SizedBox(height: 20),
+                           _ControlsSection(player: player),
+                           const SizedBox(height: 16),
+diff --git a/plan/memory/PROGRESS.md b/plan/memory/PROGRESS.md
+--- a/plan/memory/PROGRESS.md
++++ b/plan/memory/PROGRESS.md
+@@ -154,3 +154,17 @@
+ - [x] Analyzer cuối qua `scripts/flutter_analyze.bat` exit 0, 0 error/warning/info; log cập nhật tại `audit/flutter_analyze.txt`.
+ - [x] Chạy format-check cuối với `--output=none`: exit 1 do 18/82 file legacy ngoài scope sẽ đổi; `main.dart` và test UI-02 đã được format riêng.
+ - [ ] Chưa manual Android font scale/TalkBack trên thiết bị thật và chưa phủ mọi route ở scale 2.0. Bước tiếp theo: device validation UI-02, sau đó xử lý UI-04 semantics và UI-05 touch target như issue Phase 5 độc lập.
++
++## [PLAN-MUZICZ_VISUAL_FEASIBILITY_PLAN.md] [Phase 0] - 2026-08-04 15:41
++- [CONFIRMED] `LyricsProvider._findCurrentIndex` duyệt `lines` từ index 0 bằng vòng `for` và dừng ở timestamp đầu tiên lớn hơn position; lookup hiện là linear scan O(n), không phải binary search/cursor.
++- [CONFIRMED] Seek lùi vẫn tìm lại đúng dòng theo control flow hiện tại vì mỗi lần lookup đều bắt đầu từ index 0; audit không phát hiện bug correctness riêng cho backward seek, chỉ có chi phí tuyến tính.
++- [CONFIRMED] `_artRotateCtrl` dùng animation 20 giây, `repeat()` khi `PlayerProvider.isPlaying` và `stop()` khi pause; không đọc `position` và không subscribe `positionDataStream`.
++- [CONFIRMED] `PlayerProvider` expose position bằng `positionDataStream` thay vì lưu/notify position qua `ChangeNotifier`, nên listener `_onPlayerChange` của Now Playing cũng không nhận position tick gián tiếp.
++- [UNVERIFIED] Chưa đo runtime số dòng lyric/frame time trên thiết bị; chưa có bằng chứng linear scan hiện gây giật thực tế.
++
++## [PLAN-MUZICZ_VISUAL_FEASIBILITY_PLAN.md] [Phase 0.5] - 2026-08-04 15:41
++- [x] Scaffold đủ `core/models/services/providers/painters/widgets` trong `lib/features/music_visual/`; các file waveform/controller/painter chưa chứa logic waveform thật.
++- [x] Thêm kill-switch build-time, `MusicVisualMode`, `VisualModeProvider` với key riêng `music_visual_mode`, và selector sheet mirror sheet/haptic/delay-apply hiện có.
++- [x] Giữ đúng 3 file tích hợp ngoài module: `main.dart`, `profile_screen.dart`, `now_playing_screen.dart`; không sửa `_ProgressSection` hoặc ba file audio/lyrics bị cấm.
++- [x] Mode `normal` và kill-switch off trả `SizedBox.shrink()` trước khi tạo bất kỳ controller/ticker nào; mode `fancy` mới chỉ trả placeholder rỗng cao 48 px.
++- [UNVERIFIED] Patch đã được kiểm tra tĩnh nhưng chưa chạy `flutter analyze`, build, restart-persistence, device regression hoặc rollback build vì sandbox không có Flutter SDK; chờ Khang áp patch và báo kết quả gate Phase 0.5.

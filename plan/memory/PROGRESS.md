@@ -216,3 +216,18 @@
 - [x] Analyzer cuối qua `scripts/flutter_analyze.bat` exit 0, 0 error/warning/info; log cập nhật tại `audit/flutter_analyze.txt`.
 - [x] Chạy format-check cuối với `--output=none`: exit 1 do 18/82 file legacy ngoài scope sẽ đổi; `main.dart` và test UI-02 đã được format riêng.
 - [ ] Chưa manual Android font scale/TalkBack trên thiết bị thật và chưa phủ mọi route ở scale 2.0. Bước tiếp theo: device validation UI-02, sau đó xử lý UI-04 semantics và UI-05 touch target như issue Phase 5 độc lập.
+
+## [PLAN-MUZICZ_VISUAL_FEASIBILITY_PLAN.md] [Phase 0] - 2026-08-04 15:41
+- [CONFIRMED] `LyricsProvider._findCurrentIndex` duyệt `lines` từ index 0 bằng vòng `for` và dừng ở timestamp đầu tiên lớn hơn position; lookup hiện là linear scan O(n), không phải binary search/cursor.
+- [CONFIRMED] Seek lùi vẫn tìm lại đúng dòng theo control flow hiện tại vì mỗi lần lookup đều bắt đầu từ index 0; audit không phát hiện bug correctness riêng cho backward seek, chỉ có chi phí tuyến tính.
+- [CONFIRMED] `_artRotateCtrl` dùng animation 20 giây, `repeat()` khi `PlayerProvider.isPlaying` và `stop()` khi pause; không đọc `position` và không subscribe `positionDataStream`.
+- [CONFIRMED] `PlayerProvider` expose position bằng `positionDataStream` thay vì lưu/notify position qua `ChangeNotifier`, nên listener `_onPlayerChange` của Now Playing cũng không nhận position tick gián tiếp.
+- [UNVERIFIED] Chưa đo runtime số dòng lyric/frame time trên thiết bị; chưa có bằng chứng linear scan hiện gây giật thực tế.
+
+## [PLAN-MUZICZ_VISUAL_FEASIBILITY_PLAN.md] [Phase 0.5] - 2026-08-04 15:41
+- [x] Scaffold đủ `core/models/services/providers/painters/widgets` trong `lib/features/music_visual/`; các file waveform/controller/painter chưa chứa logic waveform thật.
+- [x] Thêm kill-switch build-time, `MusicVisualMode`, `VisualModeProvider` với key riêng `music_visual_mode`, và selector sheet mirror sheet/haptic/delay-apply hiện có.
+- [x] Giữ đúng 3 file tích hợp ngoài module: `main.dart`, `profile_screen.dart`, `now_playing_screen.dart`; không sửa `_ProgressSection` hoặc ba file audio/lyrics bị cấm.
+- [x] Mode `normal` và kill-switch off trả `SizedBox.shrink()` trước khi tạo bất kỳ controller/ticker nào; mode `fancy` mới chỉ trả placeholder rỗng cao 48 px.
+- [CONFIRMED] Khang đã áp patch; `flutter analyze` hoàn tất với `No issues found` và full test suite pass 58/58 ngày 2026-08-04.
+- [UNVERIFIED] Chưa có kết quả restart-persistence, device regression, kill-switch rebuild hoặc rollback build; tiếp tục dừng ở gate Phase 0.5 và chờ review trước Phase 1.

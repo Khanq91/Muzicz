@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
+import '../features/music_visual/widgets/reactive_waveform_view.dart';
 import '../models/song_item.dart';
 import '../providers/lyrics_provider.dart';
 import '../providers/music_provider.dart';
@@ -244,6 +245,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
                           _SongInfo(song: song),
                           const SizedBox(height: 20),
                           _ProgressSection(player: player),
+                          const ReactiveWaveformView(),
                           const SizedBox(height: 20),
                           _ControlsSection(player: player),
                           const SizedBox(height: 16),
