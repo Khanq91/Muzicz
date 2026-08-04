@@ -319,3 +319,133 @@ bất kỳ thứ gì cần `OfflineAudioContext`-style full-track decode.
 - Mục tiêu đã đạt: nếu sau này phát hiện lỗi, gỡ hoặc tắt gấp không cần đụng vào
   `PlayerProvider`, `audio_handler.dart`, `lyrics_service.dart` hay bất kỳ phần nào của luồng
   playback/lyric chính.
+
+## 11. Gate và prompt cho từng phase — điều kiện để đi tiếp
+
+Nguyên tắc chung: mỗi phase là 1 lượt agent riêng, phạm vi hẹp, dừng lại chờ review ở cuối. Không
+gộp 2 phase vào 1 lượt kể cả khi phase trước "trông có vẻ ổn" — gate dưới đây là điều kiện khách quan
+để quyết định, không phải cảm giác.
+
+### 11.1 Gate Phase 0 → Phase 0.5
+
+- Kết quả audit (`_LyricsView` seek binary-search hay linear scan; `_artRotateCtrl` có nghe
+  `position` không) đã ghi vào `plan/memory/` kèm nhãn CONFIRMED/INFERRED.
+- Nếu phát hiện bug thật ở seek/lyric (không chỉ "chưa tối ưu"): quyết định fix trước hay chấp nhận
+  rủi ro đã biết rồi mới đi tiếp — không lờ đi.
+
+### 11.2 Gate Phase 0.5 → Phase 1 (gate quan trọng nhất — trước khi đụng performance thật)
+
+1. **Build sạch:** `flutter analyze` không thêm warning/error mới so với baseline.
+2. **Ranh giới module đúng thiết kế:** `grep -r "music_visual" lib/ --include="*.dart" -l` chỉ ra các
+   file trong `lib/features/music_visual/` + đúng 3 điểm tích hợp ở mục 4.2. Ra hơn 3 file ngoài
+   module = fail.
+3. **Setting hoạt động thật, không phải UI giả:** chọn "Xịn xò" → restart app → vẫn giữ; chọn "Bình
+   thường" → không có `Ticker`/timer nào của module chạy nền.
+4. **Kill-switch có tác dụng thật:** `kMusicVisualFeatureEnabled = false` → build lại → mục "Xịn xò"
+   biến mất/disable hẳn, không chỉ ẩn UI còn logic chạy ngầm.
+5. **Test rollback** (quan trọng nhất với mục tiêu "dễ gỡ"): xoá `lib/features/music_visual/` +
+   revert 3 điểm tích hợp trên 1 branch/stash test → build phải xanh ngay, không lỗi import ngược.
+   Fail ở đây thì sửa boundary trước, chưa cho viết thêm logic lên trên.
+6. **Không regression luồng chính:** playback/lyric/mini player/queue hoạt động y hệt trước khi có
+   `music_visual/`.
+7. Đã ghi vào `plan/memory/PROGRESS.md` và Khang đã review.
+
+### 11.3 Gate Phase 1 → Phase 2
+
+- Waveform hiển thị đúng cho ít nhất 3 bài hát thật khác thể loại (nhạc động, nhạc chậm, có đoạn
+  silence) — không chỉ 1 bài demo.
+- `RepaintBoundary` xác nhận bằng DevTools: `_ControlsSection`/`_ProgressSection`/nút play không
+  rebuild theo frame khi waveform đang vẽ.
+- Cache waveform hoạt động đúng: mở lại bài đã phát không extract lại từ đầu; đổi bài liên tục 10
+  lần không leak memory/isolate (theo dõi qua DevTools Memory).
+- Seek liên tục, tắt/mở app giữa lúc đang phát không crash, `playheadFraction` đồng bộ đúng vị trí.
+- Đo trên tối thiểu 1 máy Android tầm thấp/trung thật — không chỉ emulator.
+
+### 11.4 Gate Phase 2 → Phase 3
+
+- Cover pulse theo amplitude đã tích hợp vào `NowPlayingScreen` thật, không phải màn hình cô lập
+  riêng nữa.
+- Người dùng thật (kể cả chỉ là Khang) xác nhận trải nghiệm "đáng" so với `_artRotateCtrl` cũ — đây
+  là gate mang tính sản phẩm, không chỉ kỹ thuật. Nếu không thấy đáng, dừng ở MVP A, không tự động
+  đẩy sang Phase 3.
+- Không có regression về pin/nhiệt so với trước khi có Phase 1–2 sau 20–30 phút nghe liên tục, theo
+  đúng kế hoạch đo ở mục 14.3 của feasibility report gốc.
+- Quyết định rõ ràng: có đầu tư native plugin (Android `Visualizer`/iOS tap) hay dừng ở đây. Đây là
+  quyết định của Khang, không phải agent tự chọn tiếp.
+
+### 11.5 Prompt mẫu cho từng phase
+
+Prompt Phase 0/0.5 đã dùng ở lượt trước có thể tái sử dụng gần như nguyên văn cho Phase 1–3, chỉ đổi
+phần "Phạm vi lượt này" và "Ràng buộc bắt buộc" theo đúng scope của phase đó, giữ nguyên khung:
+bối cảnh → phạm vi hẹp → ràng buộc không sửa file cấm → constraint sandbox → yêu cầu tự verify gate
+ở mục 11 tương ứng → dừng chờ review.
+
+**Phase 1:**
+
+```
+Phạm vi lượt này: CHỈ Phase 1 (POC waveform local) trong lib/features/music_visual/.
+Điều kiện bắt đầu: Gate Phase 0.5 → Phase 1 (mục 11.2 của plan) đã pass và đã được Khang review.
+
+Việc cần làm:
+- Thêm just_waveform (xác nhận version mới nhất trên pub.dev trước khi thêm vào pubspec.yaml).
+- Implement WaveformExtractService: input là file path từ SongItem/on_audio_query, cache vào
+  getApplicationDocumentsDirectory()/music_visual_cache/, key theo songId + analysisVersion.
+- Implement WaveformPainter (CustomPainter) vẽ 256–1024 cột amplitude, playhead theo
+  playheadFraction lấy từ PlayerProvider.position (đọc, không sửa PlayerProvider).
+- Gắn vào ReactiveWaveformView đã scaffold ở Phase 0.5, trong RepaintBoundary riêng.
+
+Ràng buộc bắt buộc:
+- Không sửa providers/player_provider.dart, services/audio_handler.dart,
+  services/lyrics_service.dart.
+- Không mở rộng phạm vi tích hợp quá 3 điểm đã chốt ở mục 4.2 của plan.
+- Sandbox không có Flutter SDK: xuất diff để mình áp tay, mình báo lại kết quả build/test.
+
+Trước khi báo hoàn thành, tự kiểm tra và báo cáo kết quả theo đúng 5 tiêu chí ở mục 11.3 của
+MUZICZ_VISUAL_FEASIBILITY_PLAN.md (waveform đúng cho 3+ bài khác thể loại, RepaintBoundary xác
+nhận qua DevTools, cache hoạt động đúng, seek/lifecycle không crash, đã đo trên máy thật).
+Dừng lại, không tự chuyển sang Phase 2.
+```
+
+**Phase 2:**
+
+```
+Phạm vi lượt này: CHỈ Phase 2 — tích hợp cover pulse theo amplitude vào NowPlayingScreen thật.
+Điều kiện bắt đầu: Gate Phase 1 → Phase 2 (mục 11.3) đã pass và đã được Khang review.
+
+Việc cần làm:
+- Thay/bổ sung _artRotateCtrl trong now_playing_screen.dart bằng animation đọc amplitude đã
+  precompute từ Phase 1 (qua VisualFeatureController), chỉ áp dụng khi MusicVisualMode = fancy.
+- Khi MusicVisualMode = normal, giữ nguyên _artRotateCtrl cũ y hệt hiện tại — không đổi behavior
+  mặc định của app.
+
+Ràng buộc bắt buộc: giống Phase 1 (không sửa player_provider/audio_handler/lyrics_service, không
+mở rộng phạm vi tích hợp, xuất diff cho sandbox không có SDK).
+
+Trước khi báo hoàn thành, tự kiểm tra theo mục 11.4 của plan, đặc biệt là đo pin/nhiệt 20–30 phút
+theo mục 14.3 của FLUTTER_MOBILE_FEASIBILITY_REPORT.md. Dừng lại chờ Khang quyết định có làm
+Phase 3 (native RMS) hay dừng ở đây — đây là quyết định sản phẩm, agent không tự chọn.
+```
+
+**Phase 3 (chỉ tạo prompt này nếu Khang đã quyết định làm tiếp sau Phase 2):**
+
+```
+Phạm vi lượt này: CHỈ POC Android Visualizer (không làm iOS trong cùng lượt, tách riêng vì rủi ro/
+API khác nhau — xem mục 8–9 của FLUTTER_MOBILE_FEASIBILITY_REPORT.md).
+Điều kiện bắt đầu: Khang đã xác nhận muốn đầu tư native plugin sau Phase 2.
+
+Việc cần làm:
+- POC riêng, KHÔNG merge vào lib/features/music_visual/ chính cho tới khi packet ổn định trên
+  thiết bị thật, theo đúng khuyến nghị "production/high-end sau POC" ở mục 6.3 của feasibility
+  report.
+- Dùng just_audio's androidAudioSessionIdStream để gắn android.media.audiofx.Visualizer.
+- Chỉ request RECORD_AUDIO ngay trước khi bật sub-toggle riêng (không xin quyền khi user chỉ chọn
+  "Xịn xò" ở mức Phase 1–2).
+
+Ràng buộc bắt buộc: giống các phase trước. Đây là phần duy nhất được phép thêm native code
+(Kotlin), nhưng vẫn phải nằm trong lib/features/music_visual/ + platform channel riêng, không
+đụng cấu trúc audio_handler.dart hiện có.
+
+Kết quả cần báo: packet RMS có ổn định qua ít nhất 3 lần seek/pause/resume/đổi track không, có
+crash khi Bluetooth route đổi không. Nếu không ổn định, dừng ở MVP A/B (Phase 1–2), không cố ép
+Phase 3 chạy bằng workaround.
+```
