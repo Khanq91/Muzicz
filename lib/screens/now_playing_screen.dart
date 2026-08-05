@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
+import '../features/music_visual/widgets/reactive_cover_art_transform.dart';
 import '../features/music_visual/widgets/reactive_waveform_view.dart';
 import '../models/song_item.dart';
 import '../providers/lyrics_provider.dart';
@@ -230,6 +231,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
                             flipAnim: _flipAnim,
                             front: _AlbumArtSection(
                               song: song,
+                              player: player,
                               rotateCtrl: _artRotateCtrl,
                               onTap: _toggleFlip,
                             ),
@@ -584,11 +586,13 @@ class _LyricsListView extends StatelessWidget {
 class _AlbumArtSection extends StatelessWidget {
   const _AlbumArtSection({
     required this.song,
+    required this.player,
     required this.rotateCtrl,
     required this.onTap,
   });
 
   final SongItem song;
+  final PlayerProvider player;
   final AnimationController rotateCtrl;
   final VoidCallback onTap;
 
@@ -599,13 +603,10 @@ class _AlbumArtSection extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Center(
-        child: AnimatedBuilder(
-          animation: rotateCtrl,
-          builder:
-              (_, child) => Transform.rotate(
-                angle: rotateCtrl.value * 2 * 3.14159,
-                child: child,
-              ),
+        child: ReactiveCoverArtTransform(
+          song: song,
+          player: player,
+          normalRotation: rotateCtrl,
           child: Container(
             width: size,
             height: size,
