@@ -7,6 +7,10 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 
+    <!-- Declared for the opt-in Android Visualizer POC. Runtime permission is
+         requested only from its dedicated Realtime RMS sub-toggle. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
     <!-- ── Storage ─────────────────────────────────────────────────────────── -->
     <!-- Android ≤ 9 / API 28 -->
     <uses-permission

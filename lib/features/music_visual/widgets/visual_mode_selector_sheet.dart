@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../theme/app_colors_data.dart';
 import '../core/visual_feature_flag.dart';
 import '../providers/visual_mode_provider.dart';
+import '../poc/android_visualizer_poc_screen.dart';
 
 class VisualModeSelectorSheet extends StatefulWidget {
   const VisualModeSelectorSheet({super.key});
@@ -138,6 +139,24 @@ class _VisualModeSelectorSheetState extends State<VisualModeSelectorSheet> {
               onTap: () {
                 HapticFeedback.selectionClick();
                 setState(() => _selectedMode = mode);
+              },
+            ),
+          if (currentMode == MusicVisualMode.fancy)
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+              leading: Icon(Icons.science_rounded, color: c.primary),
+              title: const Text('Android Visualizer POC'),
+              subtitle: const Text(
+                'Harness riêng; quyền mic chỉ hỏi trong sub-toggle Realtime RMS',
+              ),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const AndroidVisualizerPocScreen(),
+                  ),
+                );
               },
             ),
         ],

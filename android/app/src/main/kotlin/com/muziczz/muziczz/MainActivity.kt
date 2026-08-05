@@ -8,6 +8,7 @@ import android.os.Environment
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.*
+import com.muziczz.muziczz.musicvisual.poc.AndroidVisualizerPocPlugin
 
 //import io.flutter.embedding.android.FlutterFragmentActivity
 import com.ryanheise.audioservice.AudioServiceFragmentActivity
@@ -20,14 +21,21 @@ class MainActivity : AudioServiceFragmentActivity() {
     private val YTDLP_CHANNEL = "ytdlp_channel"
     private val activityScope  = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val ytdlpModule get() = YtdlpPython.module(applicationContext)
+    private var androidVisualizerPoc: AndroidVisualizerPocPlugin? = null
 
     override fun onDestroy() {
+        androidVisualizerPoc?.dispose()
+        androidVisualizerPoc = null
         super.onDestroy()
         activityScope.cancel()
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+
+        androidVisualizerPoc = AndroidVisualizerPocPlugin.register(
+            flutterEngine.dartExecutor.binaryMessenger
+        )
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, YTDLP_CHANNEL)
             .setMethodCallHandler { call, result ->
