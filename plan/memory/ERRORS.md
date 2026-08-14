@@ -176,7 +176,13 @@
 - Final format-check không ghi source exit 1 với 16/82 file legacy sẽ đổi; analyzer 0 issue. Chưa có Android device nên chưa xác nhận permission prompt OEM/API, mở Settings thực, return/resume và navigation Home bằng thao tác tay.
 - Onboarding vẫn giữ intro delay 5 giây có sẵn trước lần scan đầu; không thay trong UI-01 để tránh trộn performance/UX timing vào issue error-state. Cần đánh giá riêng bằng device flow nếu tiếp tục Phase 5 polish.
 
-## [Phase 5] - 2026-07-23 16:31
+## [Phase 5] - 2026-08-14 08:20
+- Phát hiện quan trọng ngoài scope: `test/accessibility/text_scale_test.dart` pump `NowPlayingScreen` không có `VisualModeProvider` nhưng vẫn pass vì handler `FlutterError.onError` của test nuốt mọi exception ngoài overflow — tức là từ khi Music Visual Phase 2 thêm `ReactiveCoverArtTransform`, test UI-02 đang pass trên một cây widget build fail giữa chừng. Test mới đã đăng ký `VisualModeProvider`; test UI-02 cần vá tương tự trong issue riêng.
+- `containsSemantics` deprecated trên Flutter 3.44 (thay bằng `isSemantics`); `SemanticsHandle` phải `dispose()` trong thân test vì verification chạy trước `addTearDown`.
+- Diagnostic có sẵn `ListTile background color... DecoratedBox` của queue sheet bắn ra ngay khi pump Now Playing (sheet build offstage cả khi chưa mở); test lọc đúng thông báo này, lỗi khác vẫn fail.
+- Regression trước sửa đỏ đúng: semantics thiếu label/flag ở cả 4 nhóm control; kích thước đo được 34 (mini prev/next), 40 (shuffle/repeat), 26 (queue remove), 44 (`PrimaryIconButton`) khớp bằng chứng audit. Đây là bằng chứng code-path, không phải lỗi môi trường.
+- Tap `queue_music_rounded` trong test cảnh báo warnIfMissed do animation opacity của pill bar nhưng vẫn trúng; test touch-target dùng `warnIfMissed: false` cho tap này.
+- Flutter/Dart trong sandbox tiếp tục timeout do SDK/cache ngoài workspace; toàn bộ analyzer/test/format chạy ngoài sandbox theo workaround đã xác nhận. Final format-check exit 1 với 17/99 file legacy baseline.
 - Repo vẫn không có `AGENTS.md`; không tạo file mới vì chưa có repo-specific rule cần bổ sung. Memory hiện hành nằm ở `plan/memory`, còn `PROGRESS.md` root là bản cũ hơn.
 - `scripts/flutter_analyze.bat` và `flutter test` timeout trong sandbox do Flutter SDK/cache ngoài workspace. Baseline analyzer do user chạy thủ công sạch; test/analyzer cuối chạy ngoài sandbox thành công.
 - Baseline analyzer thủ công dùng Flutter 3.38.9/Dart 3.10.8, trong khi analyzer cuối ngoài sandbox dùng Flutter 3.44.5/Dart 3.12.2. Cả hai đều 0 issue, nhưng không xem đây là so sánh hiệu năng vì toolchain khác nhau.

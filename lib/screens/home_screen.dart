@@ -365,12 +365,16 @@ class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
           ),
           suffixIcon:
               searchCtrl.text.isNotEmpty
-                  ? GestureDetector(
-                    onTap: onClear,
-                    child: Icon(
-                      Icons.close_rounded,
-                      color: c.textTertiary,
-                      size: 20,
+                  ? Semantics(
+                    button: true,
+                    label: 'Xóa tìm kiếm',
+                    child: GestureDetector(
+                      onTap: onClear,
+                      child: Icon(
+                        Icons.close_rounded,
+                        color: c.textTertiary,
+                        size: 20,
+                      ),
                     ),
                   )
                   : null,
@@ -788,19 +792,27 @@ class _AvatarButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
-    return GestureDetector(
-      onTap:
-          () => Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => const ProfileScreen())),
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: LinearGradient(colors: [c.primary, c.tertiary]),
+    return Semantics(
+      button: true,
+      label: 'Hồ sơ',
+      child: GestureDetector(
+        onTap:
+            () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const ProfileScreen())),
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(colors: [c.primary, c.tertiary]),
+          ),
+          child: const Icon(
+            Icons.person_rounded,
+            color: Colors.white,
+            size: 22,
+          ),
         ),
-        child: const Icon(Icons.person_rounded, color: Colors.white, size: 22),
       ),
     );
   }

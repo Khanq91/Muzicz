@@ -181,25 +181,29 @@ class _CloseButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        _confirmStop(context);
-      },
-      behavior: HitTestBehavior.opaque,
-      child: SizedBox(
-        width: 40,
-        height: 68,
-        child: Center(
-          child: Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: c.surfaceElevated,
-              border: Border.all(color: c.border, width: 0.5),
+    return Semantics(
+      button: true,
+      label: 'Đóng trình phát',
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          _confirmStop(context);
+        },
+        behavior: HitTestBehavior.opaque,
+        child: SizedBox(
+          width: 48,
+          height: 68,
+          child: Center(
+            child: Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: c.surfaceElevated,
+                border: Border.all(color: c.border, width: 0.5),
+              ),
+              child: Icon(Icons.close_rounded, color: c.textDisabled, size: 14),
             ),
-            child: Icon(Icons.close_rounded, color: c.textDisabled, size: 14),
           ),
         ),
       ),
@@ -304,6 +308,7 @@ class _MiniControls extends StatelessWidget {
       children: [
         _ControlButton(
           icon: Icons.skip_previous_rounded,
+          label: 'Bài trước',
           onTap: () {
             player.skipToPrevious();
             HapticFeedback.selectionClick();
@@ -316,6 +321,7 @@ class _MiniControls extends StatelessWidget {
         const SizedBox(width: 2),
         _ControlButton(
           icon: Icons.skip_next_rounded,
+          label: 'Bài tiếp theo',
           onTap: () {
             player.skipToNext();
             HapticFeedback.selectionClick();
@@ -343,44 +349,59 @@ class _SmartPlayPauseButton extends StatelessWidget {
             processingState == ProcessingState.loading ||
             processingState == ProcessingState.buffering;
 
-        return GestureDetector(
-          onTap: () {
-            if (!isLoading) {
-              player.playPause();
-              HapticFeedback.selectionClick();
-            }
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: isLoading ? c.primary.withValues(alpha: 0.5) : c.primary,
-              shape: BoxShape.circle,
+        return Semantics(
+          button: true,
+          label:
+              isLoading ? 'Đang tải' : (player.isPlaying ? 'Tạm dừng' : 'Phát'),
+          child: GestureDetector(
+            onTap: () {
+              if (!isLoading) {
+                player.playPause();
+                HapticFeedback.selectionClick();
+              }
+            },
+            behavior: HitTestBehavior.opaque,
+            child: SizedBox(
+              width: 48,
+              height: 48,
+              child: Center(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color:
+                        isLoading
+                            ? c.primary.withValues(alpha: 0.5)
+                            : c.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child:
+                      isLoading
+                          ? const Padding(
+                            padding: EdgeInsets.all(8),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                          : AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 150),
+                            transitionBuilder:
+                                (child, anim) =>
+                                    ScaleTransition(scale: anim, child: child),
+                            child: Icon(
+                              player.isPlaying
+                                  ? Icons.pause_rounded
+                                  : Icons.play_arrow_rounded,
+                              key: ValueKey(player.isPlaying),
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                ),
+              ),
             ),
-            child:
-                isLoading
-                    ? const Padding(
-                      padding: EdgeInsets.all(8),
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                    : AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 150),
-                      transitionBuilder:
-                          (child, anim) =>
-                              ScaleTransition(scale: anim, child: child),
-                      child: Icon(
-                        player.isPlaying
-                            ? Icons.pause_rounded
-                            : Icons.play_arrow_rounded,
-                        key: ValueKey(player.isPlaying),
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
           ),
         );
       },
@@ -391,10 +412,12 @@ class _SmartPlayPauseButton extends StatelessWidget {
 class _ControlButton extends StatefulWidget {
   const _ControlButton({
     required this.icon,
+    required this.label,
     required this.onTap,
     this.size = 24,
   });
   final IconData icon;
+  final String label;
   final VoidCallback onTap;
   final double size;
 
@@ -435,13 +458,25 @@ class _ControlButtonState extends State<_ControlButton>
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
-    return GestureDetector(
-      onTap: _onTap,
-      child: ScaleTransition(
-        scale: _scale,
-        child: Padding(
-          padding: const EdgeInsets.all(6),
-          child: Icon(widget.icon, color: c.textSecondary, size: widget.size),
+    return Semantics(
+      button: true,
+      label: widget.label,
+      child: GestureDetector(
+        onTap: _onTap,
+        behavior: HitTestBehavior.opaque,
+        child: ScaleTransition(
+          scale: _scale,
+          child: SizedBox(
+            width: 48,
+            height: 48,
+            child: Center(
+              child: Icon(
+                widget.icon,
+                color: c.textSecondary,
+                size: widget.size,
+              ),
+            ),
+          ),
         ),
       ),
     );

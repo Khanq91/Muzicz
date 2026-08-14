@@ -1,26 +1,20 @@
 ============================================================
 Flutter Analyze Report
 ============================================================
-Run ID       : c68c4f32-a0db-42d0-bfc4-a53cddc40af6
-Generated At : 2026-08-04 15:41:08
+Run ID       : 59d10a28-9351-404b-8e94-126890a07564
+Generated At : 2026-08-14 08:17:17
 Computer     : DESKTOP-VR5416E
 User         : HUIT
 Working Dir  : D:\khang\data\flutterDev\project\Muzicz
 Git Branch   : main
-Git Commit   : b219100
+Git Commit   : c824cec
 Log File     : audit\flutter_analyze.txt
 Command      : flutter analyze --no-pub
 ------------------------------------------------------------
 
 Flutter SDK:
-
-┌─────────────────────────────────────────────────────────┐
-│ A new version of Flutter is available!                  │
-│                                                         │
-│ To update to the latest version, run "flutter upgrade". │
-└─────────────────────────────────────────────────────────┘
 Flutter 3.44.5 • channel stable • https://github.com/flutter/flutter.git
-Framework • revision f94f4fc76b (4 weeks ago) • 2026-07-06 11:19:24 -0700
+Framework • revision f94f4fc76b (5 weeks ago) • 2026-07-06 11:19:24 -0700
 Engine • hash d3a3293399556a85388faf8c6f0723a7a5597aa8 (revision 83675ed276) (1 months ago) • 2026-06-30 16:59:03.000Z
 Tools • Dart 3.12.2 • DevTools 2.57.0
 
@@ -37,13 +31,13 @@ BEGIN FLUTTER ANALYZE
 ============================================================
 
 Analyzing Muzicz...                                             
-No issues found! (ran in 39.4s)
+No issues found! (ran in 49.7s)
 
 ============================================================
 END FLUTTER ANALYZE
 ============================================================
-Finished At : 2026-08-04 15:41:57
-Duration    : 48.84s
+Finished At : 2026-08-14 08:18:11
+Duration    : 53.83s
 Exit Code   : 0
 Status      : SUCCESS
 ------------------------------------------------------------

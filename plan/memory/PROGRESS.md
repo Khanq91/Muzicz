@@ -217,6 +217,14 @@
 - [x] Chạy format-check cuối với `--output=none`: exit 1 do 18/82 file legacy ngoài scope sẽ đổi; `main.dart` và test UI-02 đã được format riêng.
 - [ ] Chưa manual Android font scale/TalkBack trên thiết bị thật và chưa phủ mọi route ở scale 2.0. Bước tiếp theo: device validation UI-02, sau đó xử lý UI-04 semantics và UI-05 touch target như issue Phase 5 độc lập.
 
+## [Phase 5] - 2026-08-14 08:20
+- [x] Đọc lại UI-04/UI-05, toàn bộ mini player, bottom navigation, Now Playing controls/queue sheet, home search/avatar và `PrimaryIconButton`; baseline analyzer 0 issue, full suite pass 63/63.
+- [x] Hoàn tất UI-04: thêm Semantics button/label cho prev/next/play/close của MiniPlayer, label+selected cho 3 tab bottom nav thường, label+toggled cho shuffle/repeat/favorite, tooltip cho playlist-add/close/queue-close, label cho pill bar (mở/thu gọn/4 action), swipe hint, queue remove, search clear và avatar Hồ sơ.
+- [x] Hoàn tất UI-05: mở hit area ≥48dp cho mini prev/next (34→48), mini play (36→48), mini close (40→48), shuffle/repeat Now Playing (40→48), queue remove (26→48) và `PrimaryIconButton` default (44→48); icon visual giữ nguyên, chỉ mở vùng chạm bằng SizedBox+Center+HitTestBehavior.opaque.
+- [x] Regression 8 test mới trong `test/accessibility/control_semantics_test.dart` và `touch_target_test.dart`; trước sửa đỏ đúng (thiếu label/flag; kích thước 34/40/26/44). Sau sửa targeted pass 8/8, full suite pass 71/71, analyzer 0 issue; tăng version `2.0.0+18` → `2.0.0+19`.
+- [x] Format riêng các file trong scope; format-check `--output=none` cuối exit 1 với 17/99 file legacy baseline sẽ đổi, không format hàng loạt.
+- [ ] Chưa chạy TalkBack/Semantics Debugger trên Android thật để xác nhận traversal order và announce thực tế; pill bar action icons (40dp) và bottom nav item (cao 42dp) chưa mở lên 48 vì đổi kích thước sẽ tràn layout pill 280px/nav hiện có — cần quyết định UI riêng. Phase 5 còn UI-03/06/07/08+ tùy audit; bước tiếp theo là device validation accessibility hoặc finding Phase 5 kế tiếp theo chỉ đạo.
+
 ## [PLAN-MUZICZ_VISUAL_FEASIBILITY_PLAN.md] [Phase 0] - 2026-08-04 15:41
 - [CONFIRMED] `LyricsProvider._findCurrentIndex` duyệt `lines` từ index 0 bằng vòng `for` và dừng ở timestamp đầu tiên lớn hơn position; lookup hiện là linear scan O(n), không phải binary search/cursor.
 - [CONFIRMED] Seek lùi vẫn tìm lại đúng dòng theo control flow hiện tại vì mỗi lần lookup đều bắt đầu từ index 0; audit không phát hiện bug correctness riêng cho backward seek, chỉ có chi phí tuyến tính.

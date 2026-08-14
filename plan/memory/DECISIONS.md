@@ -150,7 +150,12 @@
 - Dùng `FilledButton` cho Retry, `OutlinedButton` cho Settings, token màu app/`ColorScheme.error` và live-region semantics theo skill Flutter nội bộ; giữ nguyên presentation, business behavior và navigation success hiện có.
 - Thay `Future.delayed` điều hướng bằng `Timer` có owner/cancel trong widget và guard `LibraryStatus.done`; tradeoff là vẫn giữ delay success 2 giây để không đổi UX, nhưng không còn callback navigation sau dispose.
 
-## [Phase 5] - 2026-07-23 16:31
+## [Phase 5] - 2026-08-14 08:20
+- Dùng `Semantics` wrapper quanh GestureDetector hiện có thay vì migrate sang `IconButton`/`NavigationBar` để không đổi presentation, animation press-scale và haptic hiện tại; IconButton có sẵn chỉ thêm `tooltip`, favorite dùng `MergeSemantics` để gộp toggled + tooltip vào một node.
+- Bottom nav thường dùng `ExcludeSemantics` quanh Text của tab active để tránh TalkBack đọc trùng label; tab inactive vẫn công bố tên nhờ Semantics label. Bản Liquid Glass đã có `semanticLabel` từ trước nên không sửa.
+- Mở hit area bằng `SizedBox` 48 + `Center` + `HitTestBehavior.opaque` thay vì tăng icon size hoặc padding; visual không đổi, chỉ vùng chạm mở rộng. Không đụng pill bar (Row 280px chứa 6 item, 6×48=288 sẽ tràn) và bottom nav item height — hai chỗ này cần quyết định layout riêng, không trộn vào issue accessibility.
+- Test đo qua semantics node rect thay vì `androidTapTargetGuideline` toàn màn để giữ phạm vi đúng danh sách audit UI-05; guideline toàn màn sẽ ép sửa cả các control ngoài scope (album link, swipe hint, top bar) trong cùng diff.
+- Lọc đúng một diagnostic có sẵn `ListTile trong DecoratedBox` của queue sheet trong test harness, lỗi khác vẫn fail; diagnostic này đã ghi nhận từ session UI-02 và cần issue UI riêng.
 - Tôn trọng nguyên trạng `TextScaler` do hệ điều hành cung cấp thay vì thay clamp 1.15 bằng một ngưỡng lớn hơn; accessibility setting là source of truth và giới hạn toàn app không phải giải pháp responsive lâu dài.
 - Chỉ bỏ wrapper `MediaQuery` ở root, giữ `ThemeSwitchWrapper` làm `MaterialApp.builder`; đây là thay đổi production nhỏ nhất, không đổi public API, package, state management, theme hoặc navigation.
 - Dùng regression structural guard cho root vì `MuzicApp` hiện khởi tạo nhiều provider/plugin, đồng thời dùng widget test thực cho Now Playing ở 320×568 và scale 1.0/1.3/2.0 để kiểm tra hành vi layout. Không refactor Now Playing khi test không chứng minh có overflow.

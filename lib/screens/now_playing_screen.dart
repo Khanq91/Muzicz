@@ -177,6 +177,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           leading: IconButton(
+            tooltip: 'Đóng',
             icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 32),
             onPressed: () => Navigator.pop(context),
           ),
@@ -757,14 +758,18 @@ class _ExpandablePillBarState extends State<_ExpandablePillBar> {
                   ignoring: _isExpanded,
                   child: Material(
                     color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () => setState(() => _isExpanded = true),
-                      child: Container(
-                        alignment: Alignment.center,
-                        child: const Icon(
-                          Icons.more_horiz_rounded,
-                          color: Colors.white,
-                          size: 28,
+                    child: Semantics(
+                      button: true,
+                      label: 'Tùy chọn phát',
+                      child: InkWell(
+                        onTap: () => setState(() => _isExpanded = true),
+                        child: Container(
+                          alignment: Alignment.center,
+                          child: const Icon(
+                            Icons.more_horiz_rounded,
+                            color: Colors.white,
+                            size: 28,
+                          ),
                         ),
                       ),
                     ),
@@ -784,42 +789,50 @@ class _ExpandablePillBarState extends State<_ExpandablePillBar> {
                       children: [
                         _buildActionIcon(
                           icon: Icons.lyrics_rounded,
+                          label: 'Lời bài hát',
                           isActive: lyricsActive,
                           c: c,
                           onTap: widget.onLyricsTap,
                         ),
                         _buildActionIcon(
                           icon: Icons.queue_music_rounded,
+                          label: 'Hàng chờ phát',
                           isActive: queueActive,
                           c: c,
                           onTap: widget.onQueueTap,
                         ),
                         _buildActionIcon(
                           icon: Icons.speed_rounded,
+                          label: 'Tốc độ phát',
                           isActive: speedActive,
                           c: c,
                           onTap: () => _showSpeedSheet(context, widget.player),
                         ),
                         _buildActionIcon(
                           icon: Icons.bedtime_rounded,
+                          label: 'Hẹn giờ ngủ',
                           isActive: timerActive,
                           c: c,
                           onTap:
                               () =>
                                   _showSleepTimerSheet(context, widget.player),
                         ),
-                        GestureDetector(
-                          onTap: () => setState(() => _isExpanded = false),
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white12,
-                            ),
-                            child: const Icon(
-                              Icons.close_rounded,
-                              size: 16,
-                              color: Colors.white70,
+                        Semantics(
+                          button: true,
+                          label: 'Thu gọn tùy chọn',
+                          child: GestureDetector(
+                            onTap: () => setState(() => _isExpanded = false),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white12,
+                              ),
+                              child: const Icon(
+                                Icons.close_rounded,
+                                size: 16,
+                                color: Colors.white70,
+                              ),
                             ),
                           ),
                         ),
@@ -837,28 +850,34 @@ class _ExpandablePillBarState extends State<_ExpandablePillBar> {
 
   Widget _buildActionIcon({
     required IconData icon,
+    required String label,
     required bool isActive,
     required AppColorsData c,
     required VoidCallback onTap,
   }) {
     return Transform.scale(
       scale: _isExpanded ? 1.0 : 0.8,
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
-        child: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color:
-                isActive
-                    ? c.primary.withValues(alpha: 0.2)
-                    : Colors.transparent,
-          ),
-          child: Icon(
-            icon,
-            size: 20,
-            color: isActive ? c.primary : Colors.white70,
+      child: Semantics(
+        button: true,
+        label: label,
+        selected: isActive,
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color:
+                  isActive
+                      ? c.primary.withValues(alpha: 0.2)
+                      : Colors.transparent,
+            ),
+            child: Icon(
+              icon,
+              size: 20,
+              color: isActive ? c.primary : Colors.white70,
+            ),
           ),
         ),
       ),
@@ -1120,20 +1139,26 @@ class _SwipeHint extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      label: 'Mở hàng chờ phát',
+      excludeSemantics: true,
       onTap: onTap,
-      child: Column(
-        children: [
-          Icon(
-            Icons.keyboard_arrow_up_rounded,
-            color: c.onPlayerMinimal,
-            size: 20,
-          ),
-          Text(
-            'Hàng chờ',
-            style: GoogleFonts.outfit(fontSize: 11, color: c.onPlayerMinimal),
-          ),
-        ],
+      child: GestureDetector(
+        onTap: onTap,
+        child: Column(
+          children: [
+            Icon(
+              Icons.keyboard_arrow_up_rounded,
+              color: c.onPlayerMinimal,
+              size: 20,
+            ),
+            Text(
+              'Hàng chờ',
+              style: GoogleFonts.outfit(fontSize: 11, color: c.onPlayerMinimal),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1180,6 +1205,7 @@ class _TopBar extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
+            tooltip: 'Đóng',
             icon: Icon(
               Icons.keyboard_arrow_down_rounded,
               size: 32,
@@ -1199,30 +1225,33 @@ class _TopBar extends StatelessWidget {
                     letterSpacing: 2.5,
                   ),
                 ),
-                GestureDetector(
-                  onTap: () => _navigateToAlbum(context, music, song),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        song.album.isNotEmpty ? song.album : 'Từ thư viện',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.outfit(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: c.onPlayerHigh,
-                          decoration: TextDecoration.underline,
-                          decorationColor: Colors.white38,
+                Semantics(
+                  button: true,
+                  child: GestureDetector(
+                    onTap: () => _navigateToAlbum(context, music, song),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          song.album.isNotEmpty ? song.album : 'Từ thư viện',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.outfit(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: c.onPlayerHigh,
+                            decoration: TextDecoration.underline,
+                            decorationColor: Colors.white38,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 3),
-                      Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        size: 9,
-                        color: c.onPlayerSubtle,
-                      ),
-                    ],
+                        const SizedBox(width: 3),
+                        Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 9,
+                          color: c.onPlayerSubtle,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -1756,6 +1785,7 @@ class _SongInfo extends StatelessWidget {
             ),
           ),
           IconButton(
+            tooltip: 'Thêm vào danh sách phát',
             onPressed: () {
               showModalBottomSheet(
                 context: context,
@@ -1774,20 +1804,29 @@ class _SongInfo extends StatelessWidget {
               size: 26,
             ),
           ),
-          IconButton(
-            onPressed: () {
-              music.toggleFavorite(song.id);
-              HapticFeedback.selectionClick();
-            },
-            icon: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              transitionBuilder:
-                  (child, anim) => ScaleTransition(scale: anim, child: child),
-              child: Icon(
-                isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                key: ValueKey(isFav),
-                color: isFav ? c.tertiary : c.onPlayerLow,
-                size: 26,
+          MergeSemantics(
+            child: Semantics(
+              toggled: isFav,
+              child: IconButton(
+                tooltip: isFav ? 'Bỏ yêu thích' : 'Yêu thích',
+                onPressed: () {
+                  music.toggleFavorite(song.id);
+                  HapticFeedback.selectionClick();
+                },
+                icon: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  transitionBuilder:
+                      (child, anim) =>
+                          ScaleTransition(scale: anim, child: child),
+                  child: Icon(
+                    isFav
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
+                    key: ValueKey(isFav),
+                    color: isFav ? c.tertiary : c.onPlayerLow,
+                    size: 26,
+                  ),
+                ),
               ),
             ),
           ),
@@ -1912,6 +1951,8 @@ class _ControlsSection extends StatelessWidget {
         children: [
           _IconBtn(
             icon: Icons.shuffle_rounded,
+            label: 'Phát ngẫu nhiên',
+            toggled: player.shuffleEnabled,
             color: player.shuffleEnabled ? c.primary : c.onPlayerLow,
             size: 24,
             onTap: () {
@@ -1921,6 +1962,7 @@ class _ControlsSection extends StatelessWidget {
           ),
           _IconBtn(
             icon: Icons.skip_previous_rounded,
+            label: 'Bài trước',
             color: Colors.white,
             size: 36,
             onTap: () {
@@ -1931,6 +1973,7 @@ class _ControlsSection extends StatelessWidget {
           _PlayButton(player: player),
           _IconBtn(
             icon: Icons.skip_next_rounded,
+            label: 'Bài tiếp theo',
             color: Colors.white,
             size: 36,
             onTap: () {
@@ -1943,6 +1986,11 @@ class _ControlsSection extends StatelessWidget {
                 player.repeatMode == RepeatMode.one
                     ? Icons.repeat_one_rounded
                     : Icons.repeat_rounded,
+            label:
+                player.repeatMode == RepeatMode.one
+                    ? 'Lặp lại một bài'
+                    : 'Lặp lại',
+            toggled: player.repeatMode != RepeatMode.none,
             color:
                 player.repeatMode == RepeatMode.one ? c.primary : c.onPlayerLow,
             size: 24,
@@ -1992,41 +2040,45 @@ class _PlayButtonState extends State<_PlayButton>
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
-    return GestureDetector(
-      onTapDown: (_) => _ctrl.forward(),
-      onTapUp: (_) async {
-        await _ctrl.reverse();
-        widget.player.playPause();
-        HapticFeedback.mediumImpact();
-      },
-      onTapCancel: () => _ctrl.reverse(),
-      child: ScaleTransition(
-        scale: _scale,
-        child: Container(
-          width: 72,
-          height: 72,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.white.withValues(alpha: 0.25),
-                blurRadius: 20,
-                offset: const Offset(0, 4),
+    return Semantics(
+      button: true,
+      label: widget.player.isPlaying ? 'Tạm dừng' : 'Phát',
+      child: GestureDetector(
+        onTapDown: (_) => _ctrl.forward(),
+        onTapUp: (_) async {
+          await _ctrl.reverse();
+          widget.player.playPause();
+          HapticFeedback.mediumImpact();
+        },
+        onTapCancel: () => _ctrl.reverse(),
+        child: ScaleTransition(
+          scale: _scale,
+          child: Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.white.withValues(alpha: 0.25),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 150),
+              transitionBuilder:
+                  (child, anim) => ScaleTransition(scale: anim, child: child),
+              child: Icon(
+                widget.player.isPlaying
+                    ? Icons.pause_rounded
+                    : Icons.play_arrow_rounded,
+                key: ValueKey(widget.player.isPlaying),
+                color: c.background,
+                size: 38,
               ),
-            ],
-          ),
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 150),
-            transitionBuilder:
-                (child, anim) => ScaleTransition(scale: anim, child: child),
-            child: Icon(
-              widget.player.isPlaying
-                  ? Icons.pause_rounded
-                  : Icons.play_arrow_rounded,
-              key: ValueKey(widget.player.isPlaying),
-              color: c.background,
-              size: 38,
             ),
           ),
         ),
@@ -2038,14 +2090,18 @@ class _PlayButtonState extends State<_PlayButton>
 class _IconBtn extends StatefulWidget {
   const _IconBtn({
     required this.icon,
+    required this.label,
     required this.color,
     required this.size,
     required this.onTap,
+    this.toggled,
   });
   final IconData icon;
+  final String label;
   final Color color;
   final double size;
   final VoidCallback onTap;
+  final bool? toggled;
 
   @override
   State<_IconBtn> createState() => _IconBtnState();
@@ -2077,18 +2133,27 @@ class _IconBtnState extends State<_IconBtn>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _ctrl.forward(),
-      onTapUp: (_) async {
-        await _ctrl.reverse();
-        widget.onTap();
-      },
-      onTapCancel: () => _ctrl.reverse(),
-      child: ScaleTransition(
-        scale: _scale,
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: Icon(widget.icon, color: widget.color, size: widget.size),
+    return Semantics(
+      button: true,
+      label: widget.label,
+      toggled: widget.toggled,
+      child: GestureDetector(
+        onTapDown: (_) => _ctrl.forward(),
+        onTapUp: (_) async {
+          await _ctrl.reverse();
+          widget.onTap();
+        },
+        onTapCancel: () => _ctrl.reverse(),
+        behavior: HitTestBehavior.opaque,
+        child: ScaleTransition(
+          scale: _scale,
+          child: SizedBox(
+            width: widget.size + 16 < 48 ? 48 : widget.size + 16,
+            height: widget.size + 16 < 48 ? 48 : widget.size + 16,
+            child: Center(
+              child: Icon(widget.icon, color: widget.color, size: widget.size),
+            ),
+          ),
         ),
       ),
     );
@@ -2143,6 +2208,7 @@ class _QueueSheet extends StatelessWidget {
                   ),
                 ),
                 IconButton(
+                  tooltip: 'Thu gọn hàng chờ',
                   onPressed: onClose,
                   icon: Icon(
                     Icons.keyboard_arrow_down_rounded,
@@ -2210,14 +2276,22 @@ class _QueueSheet extends StatelessWidget {
                             color: c.primary,
                             size: 20,
                           )
-                          : GestureDetector(
-                            onTap: () => player.removeFromQueue(i),
-                            child: Padding(
-                              padding: const EdgeInsets.all(4),
-                              child: Icon(
-                                Icons.close_rounded,
-                                color: c.textDisabled,
-                                size: 18,
+                          : Semantics(
+                            button: true,
+                            label: 'Xóa khỏi hàng chờ',
+                            child: GestureDetector(
+                              onTap: () => player.removeFromQueue(i),
+                              behavior: HitTestBehavior.opaque,
+                              child: SizedBox(
+                                width: 48,
+                                height: 48,
+                                child: Center(
+                                  child: Icon(
+                                    Icons.close_rounded,
+                                    color: c.textDisabled,
+                                    size: 18,
+                                  ),
+                                ),
                               ),
                             ),
                           ),

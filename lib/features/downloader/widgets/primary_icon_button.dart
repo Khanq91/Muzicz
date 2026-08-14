@@ -14,7 +14,7 @@ class PrimaryIconButton extends StatelessWidget {
     required this.icon,
     this.onPressed,
     this.isLoading = false,
-    this.size = 44,
+    this.size = 48,
   });
 
   @override

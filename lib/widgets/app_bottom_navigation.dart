@@ -181,53 +181,60 @@ class _NormalNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutCubic,
-        padding: EdgeInsets.symmetric(
-          horizontal: active ? 16 : 14,
-          vertical: 10,
-        ),
-        decoration: BoxDecoration(
-          color:
-              active ? c.primary.withValues(alpha: 0.14) : Colors.transparent,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedScale(
-              scale: active ? 1.08 : 1.0,
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeOutBack,
-              child: Icon(
-                icon,
-                color: active ? c.primary : c.textTertiary,
-                size: 22,
+    return Semantics(
+      button: true,
+      selected: active,
+      label: label,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+          padding: EdgeInsets.symmetric(
+            horizontal: active ? 16 : 14,
+            vertical: 10,
+          ),
+          decoration: BoxDecoration(
+            color:
+                active ? c.primary.withValues(alpha: 0.14) : Colors.transparent,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedScale(
+                scale: active ? 1.08 : 1.0,
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutBack,
+                child: Icon(
+                  icon,
+                  color: active ? c.primary : c.textTertiary,
+                  size: 22,
+                ),
               ),
-            ),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 260),
-              curve: Curves.easeOutCubic,
-              child:
-                  active
-                      ? Padding(
-                        padding: const EdgeInsets.only(left: 7),
-                        child: Text(
-                          label,
-                          style: GoogleFonts.outfit(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: c.primary,
+              AnimatedSize(
+                duration: const Duration(milliseconds: 260),
+                curve: Curves.easeOutCubic,
+                child:
+                    active
+                        ? Padding(
+                          padding: const EdgeInsets.only(left: 7),
+                          child: ExcludeSemantics(
+                            child: Text(
+                              label,
+                              style: GoogleFonts.outfit(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: c.primary,
+                              ),
+                            ),
                           ),
-                        ),
-                      )
-                      : const SizedBox.shrink(),
-            ),
-          ],
+                        )
+                        : const SizedBox.shrink(),
+              ),
+            ],
+          ),
         ),
       ),
     );
