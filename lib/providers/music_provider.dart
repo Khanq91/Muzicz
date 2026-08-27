@@ -119,9 +119,11 @@ class MusicProvider extends ChangeNotifier {
 
   List<SongItem> get filteredSongs {
     if (_homeSearchQuery.isEmpty) return _allSongs;
-    if (_homeFilterCacheQuery == _homeSearchQuery &&
+    final cached = _homeFilterCache;
+    if (cached != null &&
+        _homeFilterCacheQuery == _homeSearchQuery &&
         _homeFilterCacheRevision == _libraryRevision) {
-      return _homeFilterCache!;
+      return cached;
     }
     final result = _filterSongs(_homeSearchQuery);
     _homeFilterCacheQuery = _homeSearchQuery;
@@ -131,9 +133,11 @@ class MusicProvider extends ChangeNotifier {
 
   List<SongItem> get libraryFilteredSongs {
     if (_librarySearchQuery.isEmpty) return _allSongs;
-    if (_libraryFilterCacheQuery == _librarySearchQuery &&
+    final cached = _libraryFilterCache;
+    if (cached != null &&
+        _libraryFilterCacheQuery == _librarySearchQuery &&
         _libraryFilterCacheRevision == _libraryRevision) {
-      return _libraryFilterCache!;
+      return cached;
     }
     final result = _filterSongs(_librarySearchQuery);
     _libraryFilterCacheQuery = _librarySearchQuery;
@@ -444,12 +448,14 @@ class MusicProvider extends ChangeNotifier {
   void _commitHomeSearchQuery(String query) {
     _homeSearchQuery = query;
     _homeFilterCache = null;
+    _homeFilterCacheQuery = null;
     notifyListeners();
   }
 
   void _commitLibrarySearchQuery(String query) {
     _librarySearchQuery = query;
     _libraryFilterCache = null;
+    _libraryFilterCacheQuery = null;
     _librarySortCache.clear();
     notifyListeners();
   }

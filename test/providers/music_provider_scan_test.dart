@@ -178,6 +178,35 @@ void main() {
     expect(sorted.first.id, 1299);
   });
 
+  testWidgets('re-entering a cleared search query reuses a valid cache', (
+    tester,
+  ) async {
+    final provider = MusicProvider(
+      scanner: _RecordingMusicScanner(songs: _songs(50)),
+    );
+    await provider.init();
+    await provider.scanMusic();
+    const expectedIds = [4, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49];
+
+    provider.setHomeSearchQuery('Song 4');
+    await tester.pump(const Duration(milliseconds: 160));
+    expect(provider.filteredSongs.map((song) => song.id), expectedIds);
+    provider.setHomeSearchQuery('');
+    expect(provider.filteredSongs, hasLength(50));
+    provider.setHomeSearchQuery('Song 4');
+    await tester.pump(const Duration(milliseconds: 160));
+    expect(provider.filteredSongs.map((song) => song.id), expectedIds);
+
+    provider.setLibrarySearchQuery('Song 4');
+    await tester.pump(const Duration(milliseconds: 160));
+    expect(provider.libraryFilteredSongs.map((song) => song.id), expectedIds);
+    provider.setLibrarySearchQuery('');
+    expect(provider.libraryFilteredSongs, hasLength(50));
+    provider.setLibrarySearchQuery('Song 4');
+    await tester.pump(const Duration(milliseconds: 160));
+    expect(provider.libraryFilteredSongs.map((song) => song.id), expectedIds);
+  });
+
   test('derived song lists reuse stable snapshots until invalidated', () async {
     SharedPreferences.setMockInitialValues({
       'recently_played': jsonEncode([30, 20, 10]),
