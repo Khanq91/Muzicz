@@ -9,6 +9,7 @@ import '../../core/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/video_info.dart';
 import '../../providers/analyze_provider.dart';
+import '../../providers/download_provider.dart';
 import '../../services/downloader_storage_service.dart';
 import '../../widgets/app_shell.dart';
 import '../../widgets/glass_card.dart';
@@ -109,7 +110,9 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
             basePath: base,
             currentPath: DownloaderStorageService.instance.downloadPath,
             onSelect: (path) async {
-              await DownloaderStorageService.instance.setAndSavePath(path);
+              await ref
+                  .read(downloadOutputDirectoryProvider.notifier)
+                  .setPath(path);
               if (mounted) {
                 setState(() {});
                 _showSnack('Đã chọn: $path');
@@ -117,8 +120,9 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
             },
             onCustomPick: () async {
               final path =
-                  await DownloaderStorageService.instance
-                      .pickDownloadDirectory();
+                  await ref
+                      .read(downloadOutputDirectoryProvider.notifier)
+                      .pickDirectory();
               if (path != null && mounted) {
                 setState(() {});
                 _showSnack('Đã chọn: $path');

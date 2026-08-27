@@ -14,9 +14,32 @@ final downloadGatewayProvider = Provider<DownloadGateway>(
   (ref) => YtdlpService.instance,
 );
 
-final downloadOutputDirectoryProvider = Provider<String>(
-  (ref) => DownloaderStorageService.instance.downloadPath,
-);
+final downloadOutputDirectoryProvider =
+    NotifierProvider<OutputDirectoryNotifier, String>(
+      OutputDirectoryNotifier.new,
+    );
+
+/// Owns the download output directory as Riverpod state, so every
+/// `ref.read`/`ref.watch` sees the folder the user picked most recently
+/// instead of the value cached on first read from the storage singleton.
+class OutputDirectoryNotifier extends Notifier<String> {
+  @override
+  String build() => DownloaderStorageService.instance.downloadPath;
+
+  /// Persists [path] through the storage service and publishes it.
+  Future<void> setPath(String path) async {
+    await DownloaderStorageService.instance.setAndSavePath(path);
+    state = path;
+  }
+
+  /// Opens the system directory picker and publishes the chosen folder.
+  Future<String?> pickDirectory() async {
+    final picked =
+        await DownloaderStorageService.instance.pickDownloadDirectory();
+    if (picked != null) state = picked;
+    return picked;
+  }
+}
 
 /// Dart dispatches the visible queue to the Android foreground service.
 /// The service owns the actual concurrency limit (currently one task).

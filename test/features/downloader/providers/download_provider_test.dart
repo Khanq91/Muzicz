@@ -14,7 +14,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         downloadGatewayProvider.overrideWithValue(gateway),
-        downloadOutputDirectoryProvider.overrideWithValue('/downloads'),
+        downloadOutputDirectoryProvider.overrideWith(_FixedOutputDirectory.new),
         downloadDispatchLimitProvider.overrideWithValue(1),
       ],
     );
@@ -38,12 +38,40 @@ void main() {
     expect(container.read(downloadProvider).queuedTasks, isEmpty);
   });
 
+  test('changing the output directory applies to the next dispatch', () async {
+    final gateway = _RecordingDownloadGateway();
+    final container = ProviderContainer(
+      overrides: [
+        downloadGatewayProvider.overrideWithValue(gateway),
+        downloadOutputDirectoryProvider.overrideWith(_FixedOutputDirectory.new),
+        downloadDispatchLimitProvider.overrideWithValue(1),
+      ],
+    );
+    addTearDown(() {
+      container.dispose();
+      gateway.dispose();
+    });
+
+    final notifier = container.read(downloadProvider.notifier);
+    await notifier.enqueue(info: _video('one'), format: _format);
+    expect(gateway.outputDirs, ['/downloads']);
+
+    await container
+        .read(downloadOutputDirectoryProvider.notifier)
+        .setPath('/music');
+    await gateway.complete(gateway.startedTaskIds.single);
+    await Future<void>.delayed(Duration.zero);
+    await notifier.enqueue(info: _video('two'), format: _format);
+
+    expect(gateway.outputDirs, ['/downloads', '/music']);
+  });
+
   test('synchronous start failure moves the task to error', () async {
     final gateway = _ThrowingDownloadGateway();
     final container = ProviderContainer(
       overrides: [
         downloadGatewayProvider.overrideWithValue(gateway),
-        downloadOutputDirectoryProvider.overrideWithValue('/downloads'),
+        downloadOutputDirectoryProvider.overrideWith(_FixedOutputDirectory.new),
         downloadDispatchLimitProvider.overrideWithValue(1),
       ],
     );
@@ -63,7 +91,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         downloadGatewayProvider.overrideWithValue(gateway),
-        downloadOutputDirectoryProvider.overrideWithValue('/downloads'),
+        downloadOutputDirectoryProvider.overrideWith(_FixedOutputDirectory.new),
         downloadDispatchLimitProvider.overrideWithValue(1),
       ],
     );
@@ -96,7 +124,7 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           downloadGatewayProvider.overrideWithValue(gateway),
-          downloadOutputDirectoryProvider.overrideWithValue('/downloads'),
+          downloadOutputDirectoryProvider.overrideWith(_FixedOutputDirectory.new),
           downloadDispatchLimitProvider.overrideWithValue(1),
         ],
       );
@@ -138,7 +166,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         downloadGatewayProvider.overrideWithValue(gateway),
-        downloadOutputDirectoryProvider.overrideWithValue('/downloads'),
+        downloadOutputDirectoryProvider.overrideWith(_FixedOutputDirectory.new),
         downloadDispatchLimitProvider.overrideWithValue(1),
       ],
     );
@@ -181,7 +209,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         downloadGatewayProvider.overrideWithValue(gateway),
-        downloadOutputDirectoryProvider.overrideWithValue('/downloads'),
+        downloadOutputDirectoryProvider.overrideWith(_FixedOutputDirectory.new),
         downloadDispatchLimitProvider.overrideWithValue(1),
       ],
     );
@@ -216,8 +244,18 @@ VideoInfo _video(String id) => VideoInfo(
   formats: const [],
 );
 
+/// Publishes a fixed directory without touching disk or SharedPreferences.
+class _FixedOutputDirectory extends OutputDirectoryNotifier {
+  @override
+  String build() => '/downloads';
+
+  @override
+  Future<void> setPath(String path) async => state = path;
+}
+
 class _RecordingDownloadGateway implements DownloadGateway {
   final List<String> startedTaskIds = [];
+  final List<String?> outputDirs = [];
   final List<String> cancelledTaskIds = [];
   final List<StreamController<DownloadTask>> _controllers = [];
   final Map<String, DownloadTask> _tasks = {};
@@ -227,6 +265,7 @@ class _RecordingDownloadGateway implements DownloadGateway {
   @override
   Stream<DownloadTask> download(DownloadTask task, {String? outputDir}) {
     startedTaskIds.add(task.id);
+    outputDirs.add(outputDir);
     final controller = StreamController<DownloadTask>();
     _controllers.add(controller);
     _tasks[task.id] = task;

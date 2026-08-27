@@ -238,9 +238,9 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
   Future<void> _startDownload() async {
     // Lưu path vào SharedPreferences đúng lúc user confirm download
     if (_pendingOutputPath != null) {
-      await DownloaderStorageService.instance.setAndSavePath(
-        _pendingOutputPath!,
-      );
+      await ref
+          .read(downloadOutputDirectoryProvider.notifier)
+          .setPath(_pendingOutputPath!);
     }
     if (!mounted) return;
 
