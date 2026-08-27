@@ -1,0 +1,7 @@
+{
+  "exclude": ["lib/legacy/**"],
+  "min_confidence": 0.75,
+  "model": "claude-sonnet-4-6",
+  "reduce_model": "claude-fable-5",
+  "visual_model": "claude-sonnet-4-6"
+}
