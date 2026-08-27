@@ -152,6 +152,89 @@ void main() {
     expect(gateway.seekToIndexCalls, [0]);
     expect(gateway.seekCalls, [Duration.zero]);
   });
+
+  test('a play request issued mid-load waits, then replaces the queue', () async {
+    gateway.blockLoads = true;
+
+    final first = provider.playSongs([_song(1), _song(2)]);
+    await _settle();
+    expect(gateway.pendingLoads, hasLength(1));
+
+    final second = provider.playSongs([_song(3), _song(4)]);
+    await _settle();
+    // The second request must wait instead of racing the in-flight load.
+    expect(gateway.pendingLoads, hasLength(1));
+
+    gateway.pendingLoads.removeAt(0).complete();
+    await _settle();
+    expect(gateway.pendingLoads, hasLength(1));
+    // The superseded request must not start playback of its stale queue.
+    expect(gateway.playCalls, 0);
+
+    gateway.pendingLoads.removeAt(0).complete();
+    await Future.wait([first, second]);
+
+    expect(gateway.queue.map((song) => song.id), [3, 4]);
+    expect(provider.queue.map((song) => song.id), [3, 4]);
+    expect(provider.currentSong?.id, 3);
+    expect(gateway.currentSong?.id, 3);
+    expect(gateway.playCalls, 1);
+  });
+
+  test('near-simultaneous play requests never interleave engine loads', () async {
+    gateway.blockLoads = true;
+
+    final first = provider.playSongs([_song(1), _song(2)]);
+    final second = provider.playSongs([_song(3), _song(4)]);
+    await _settle();
+
+    // Release loads one by one; at no point may two be in flight.
+    while (gateway.pendingLoads.isNotEmpty) {
+      expect(gateway.pendingLoads, hasLength(1));
+      gateway.pendingLoads.removeAt(0).complete();
+      await _settle();
+    }
+    await Future.wait([first, second]);
+
+    expect(gateway.queue.map((song) => song.id), [3, 4]);
+    expect(provider.queue.map((song) => song.id), [3, 4]);
+    expect(provider.currentSong?.id, 3);
+    expect(gateway.currentSong?.id, 3);
+    expect(gateway.playCalls, 1);
+  });
+
+  test('index events emitted while loading do not change the song', () async {
+    gateway.blockLoads = true;
+
+    final play = provider.playSongs(
+      [_song(1), _song(2), _song(3)],
+      initialIndex: 2,
+    );
+    await _settle();
+    expect(provider.currentSong?.id, 3);
+
+    // The engine reports index 0 after addAll(), before the initial seek.
+    gateway.emitCurrentIndex(0);
+    await _settle();
+    expect(provider.currentSong?.id, 3);
+
+    gateway.pendingLoads.removeAt(0).complete();
+    await play;
+    expect(provider.currentSong?.id, 3);
+
+    // History must still be empty: previous restarts the track instead of
+    // seeking back to the phantom index 0.
+    await provider.skipToPrevious();
+    expect(gateway.seekToIndexCalls, isEmpty);
+    expect(gateway.seekCalls, [Duration.zero]);
+  });
+}
+
+/// Drains chained microtasks so awaiting code reaches its next suspension.
+Future<void> _settle() async {
+  for (var i = 0; i < 10; i++) {
+    await Future<void>.delayed(Duration.zero);
+  }
 }
 
 SongItem _song(int id) => SongItem(
@@ -179,6 +262,13 @@ class _FakePlayerAudioGateway implements PlayerAudioGateway {
   bool emitIndexOnSeek = false;
   int cancelledSubscriptions = 0;
 
+  /// When true every loadSongs() clears the queue, then parks on a completer
+  /// in [pendingLoads] until the test releases it — mirroring the async gap
+  /// between ConcatenatingAudioSource.clear() and addAll().
+  bool blockLoads = false;
+  final List<Completer<void>> pendingLoads = [];
+  int playCalls = 0;
+
   _FakePlayerAudioGateway() {
     _playingController.onCancel = _recordCancellation;
     _currentIndexController.onCancel = _recordCancellation;
@@ -205,9 +295,13 @@ class _FakePlayerAudioGateway implements PlayerAudioGateway {
 
   @override
   Future<void> loadSongs(List<SongItem> songs, {int initialIndex = 0}) async {
-    queue
-      ..clear()
-      ..addAll(songs);
+    queue.clear();
+    if (blockLoads) {
+      final gate = Completer<void>();
+      pendingLoads.add(gate);
+      await gate.future;
+    }
+    queue.addAll(songs);
     currentIndex = initialIndex;
   }
 
@@ -254,7 +348,7 @@ class _FakePlayerAudioGateway implements PlayerAudioGateway {
   Future<void> pause() async {}
 
   @override
-  Future<void> play() async {}
+  Future<void> play() async => playCalls++;
 
   @override
   Future<void> seek(Duration position) async => seekCalls.add(position);

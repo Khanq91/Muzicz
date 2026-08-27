@@ -40,6 +40,15 @@ class PlayerProvider extends ChangeNotifier {
   bool _isReordering = false;
   bool _isChangingTrack = false;
 
+  /// Id of the most recent queue-load request. A load whose id is no longer
+  /// current was superseded by a newer play request and must not start
+  /// playback.
+  int _loadGeneration = 0;
+
+  /// Tail of the chain that serialises engine loads, so two rapid play
+  /// requests can never interleave clear()/addAll() on the audio source.
+  Future<void> _loadChain = Future<void>.value();
+
   // ── Playback speed ─────────────────────────────────────────────────────────
 
   double _speed = 1.0;
@@ -131,7 +140,9 @@ class PlayerProvider extends ChangeNotifier {
       );
       _currentPlayIndex = 0;
       _currentSong = _playQueue[0];
-      _loadQueueToHandler(0).then((_) => _handler.play());
+      _loadQueueToHandler(0).then((loaded) async {
+        if (loaded) await _handler.play();
+      });
       notifyListeners();
     }
   }
@@ -168,7 +179,7 @@ class PlayerProvider extends ChangeNotifier {
     _currentSong = _playQueue[_currentPlayIndex];
     notifyListeners();
 
-    await _loadQueueToHandler(_currentPlayIndex);
+    if (!await _loadQueueToHandler(_currentPlayIndex)) return;
     await _handler.play();
   }
 
@@ -190,7 +201,7 @@ class PlayerProvider extends ChangeNotifier {
     _currentSong = _playQueue[0];
     notifyListeners();
 
-    await _loadQueueToHandler(0);
+    if (!await _loadQueueToHandler(0)) return;
     await _handler.play();
   }
 
@@ -426,8 +437,33 @@ class PlayerProvider extends ChangeNotifier {
     _playQueue = list;
   }
 
-  Future<void> _loadQueueToHandler(int startIndex) async {
-    await _handler.loadSongs(_playQueue, initialIndex: startIndex);
+  /// Loads [_playQueue] into the engine starting at [startIndex].
+  ///
+  /// Loads run one at a time. Returns false when a newer play request
+  /// superseded this one while it was queued or loading; the caller must
+  /// then skip playback because the engine now holds (or will hold) the
+  /// newer queue.
+  Future<bool> _loadQueueToHandler(int startIndex) async {
+    final generation = ++_loadGeneration;
+    final previous = _loadChain;
+    final completer = Completer<void>();
+    _loadChain = completer.future;
+    try {
+      await previous;
+      if (generation != _loadGeneration) return false;
+
+      // Index events fired while the engine rebuilds its playlist refer to a
+      // half-built queue; ignore them until the load has settled.
+      _isChangingTrack = true;
+      try {
+        await _handler.loadSongs(_playQueue, initialIndex: startIndex);
+      } finally {
+        _isChangingTrack = false;
+      }
+      return generation == _loadGeneration;
+    } finally {
+      completer.complete();
+    }
   }
 
   Future<void> _seekToIndex(int index, {bool recordHistory = true}) async {
