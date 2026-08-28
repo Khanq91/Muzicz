@@ -46,10 +46,23 @@ class _EditSongSheetState extends State<EditSongSheet> {
     super.dispose();
   }
 
+  void _save() {
+    final song = widget.song;
+    final t = _titleCtrl.text.trim();
+    final a = _artistCtrl.text.trim();
+    if (t.isNotEmpty) {
+      context.read<MusicProvider>().updateSongMeta(
+        song.id,
+        t.isEmpty ? song.title : t,
+        a.isEmpty ? song.artist : a,
+      );
+    }
+    Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
-    final song = widget.song;
     return Padding(
       padding: EdgeInsets.fromLTRB(
         24,
@@ -70,9 +83,9 @@ class _EditSongSheetState extends State<EditSongSheet> {
             ),
           ),
           const SizedBox(height: 16),
-          _metaField(context, AppStrings.songTitle, _titleCtrl),
+          _metaField(context, AppStrings.songTitle, _titleCtrl, isLast: false),
           const SizedBox(height: 12),
-          _metaField(context, AppStrings.artist, _artistCtrl),
+          _metaField(context, AppStrings.artist, _artistCtrl, isLast: true),
           const SizedBox(height: 20),
           Row(
             children: [
@@ -89,18 +102,7 @@ class _EditSongSheetState extends State<EditSongSheet> {
               Expanded(
                 child: FilledButton(
                   style: FilledButton.styleFrom(backgroundColor: c.primary),
-                  onPressed: () {
-                    final t = _titleCtrl.text.trim();
-                    final a = _artistCtrl.text.trim();
-                    if (t.isNotEmpty) {
-                      context.read<MusicProvider>().updateSongMeta(
-                        song.id,
-                        t.isEmpty ? song.title : t,
-                        a.isEmpty ? song.artist : a,
-                      );
-                    }
-                    Navigator.pop(context);
-                  },
+                  onPressed: _save,
                   child: Text(
                     AppStrings.save,
                     style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
@@ -117,8 +119,9 @@ class _EditSongSheetState extends State<EditSongSheet> {
   Widget _metaField(
     BuildContext context,
     String label,
-    TextEditingController ctrl,
-  ) {
+    TextEditingController ctrl, {
+    required bool isLast,
+  }) {
     final c = context.appColors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -130,6 +133,9 @@ class _EditSongSheetState extends State<EditSongSheet> {
         const SizedBox(height: 6),
         TextField(
           controller: ctrl,
+          // Enter moves to the next field; Done on the last field saves.
+          textInputAction: isLast ? TextInputAction.done : TextInputAction.next,
+          onSubmitted: isLast ? (_) => _save() : null,
           style: GoogleFonts.outfit(color: c.textPrimary),
           decoration: InputDecoration(
             filled: true,

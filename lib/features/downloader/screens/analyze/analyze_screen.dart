@@ -117,6 +117,10 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
     // should spin. A failed init must not leave it stuck on "Đang khởi động".
     final initializing = outputDir.isLoading;
     final initFailed = outputDir.hasError && !initializing;
+    final canAnalyze =
+        serviceReady &&
+        analyzeState.currentUrl.isNotEmpty &&
+        !analyzeState.isLoading;
 
     return GradientBackground(
       child: AppShell(
@@ -169,6 +173,7 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
                           ref.read(analyzeProvider.notifier).onUrlChanged(url),
                   onPaste: _paste,
                   onClear: _clear,
+                  onSubmit: canAnalyze ? _analyze : null,
                 ),
                 const SizedBox(height: 16),
 
@@ -177,12 +182,7 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
                   label: initializing ? 'Đang khởi động...' : 'Phân tích',
                   icon: Icons.search_rounded,
                   isLoading: analyzeState.isLoading || initializing,
-                  onPressed:
-                      serviceReady &&
-                              analyzeState.currentUrl.isNotEmpty &&
-                              !analyzeState.isLoading
-                          ? _analyze
-                          : null,
+                  onPressed: canAnalyze ? _analyze : null,
                 ),
                 if (initFailed)
                   Padding(
@@ -582,6 +582,9 @@ class _UrlInputCard extends StatelessWidget {
   final VoidCallback onPaste;
   final VoidCallback onClear;
 
+  /// Keyboard "Go" action — same gate as the Phân tích button.
+  final VoidCallback? onSubmit;
+
   const _UrlInputCard({
     required this.controller,
     required this.focusNode,
@@ -590,6 +593,7 @@ class _UrlInputCard extends StatelessWidget {
     required this.onChanged,
     required this.onPaste,
     required this.onClear,
+    required this.onSubmit,
   });
 
   @override
@@ -626,6 +630,7 @@ class _UrlInputCard extends StatelessWidget {
                   minLines: 1,
                   keyboardType: TextInputType.url,
                   textInputAction: TextInputAction.go,
+                  onSubmitted: (_) => onSubmit?.call(),
                   autocorrect: false,
                 ),
               ),
