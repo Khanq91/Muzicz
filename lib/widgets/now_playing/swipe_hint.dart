@@ -1,0 +1,35 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:muziczz/theme/app_colors_data.dart';
+
+class SwipeHint extends StatelessWidget {
+  const SwipeHint({super.key, required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.appColors;
+    return Semantics(
+      button: true,
+      label: 'Mở hàng chờ phát',
+      excludeSemantics: true,
+      onTap: onTap,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Column(
+          children: [
+            Icon(
+              Icons.keyboard_arrow_up_rounded,
+              color: c.onPlayerMinimal,
+              size: 20,
+            ),
+            Text(
+              'Hàng chờ',
+              style: GoogleFonts.outfit(fontSize: 11, color: c.onPlayerMinimal),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
