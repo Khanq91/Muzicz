@@ -4,6 +4,7 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 import '../providers/theme_provider.dart';
 import '../theme/app_colors_data.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 class AppBottomNavigation extends StatelessWidget {
   const AppBottomNavigation({
@@ -70,19 +71,19 @@ class _PremiumGlassBottomNavigation extends StatelessWidget {
         _glassTab(
           index: 0,
           icon: Icons.home_rounded,
-          label: 'Home',
+          label: AppStrings.tabHome,
           glowColor: c.primary,
         ),
         _glassTab(
           index: 1,
           icon: Icons.language_rounded,
-          label: 'Trực tuyến',
+          label: AppStrings.online,
           glowColor: c.secondary,
         ),
         _glassTab(
           index: 2,
           icon: Icons.library_music_rounded,
-          label: 'Thư viện',
+          label: AppStrings.library,
           glowColor: c.tertiary,
         ),
       ],
@@ -142,19 +143,19 @@ class _NormalBottomNavigation extends StatelessWidget {
           children: [
             _NormalNavItem(
               icon: Icons.home_rounded,
-              label: 'Home',
+              label: AppStrings.tabHome,
               active: currentIndex == 0,
               onTap: () => onTap(0),
             ),
             _NormalNavItem(
               icon: Icons.language_rounded,
-              label: 'Trực tuyến',
+              label: AppStrings.online,
               active: currentIndex == 1,
               onTap: () => onTap(1),
             ),
             _NormalNavItem(
               icon: Icons.library_music_rounded,
-              label: 'Thư viện',
+              label: AppStrings.library,
               active: currentIndex == 2,
               onTap: () => onTap(2),
             ),

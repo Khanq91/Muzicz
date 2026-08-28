@@ -15,6 +15,7 @@ import 'now_playing_screen.dart';
 import 'online_screen.dart';
 import 'onboarding_screen.dart';
 import 'profile_screen.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 // ════════════════════════════════════════════════════════════════════════════
 // HomeScreen
@@ -104,9 +105,9 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
 
   String _greeting() {
     final h = DateTime.now().hour;
-    if (h < 12) return 'Chào buổi sáng';
-    if (h < 18) return 'Chào buổi chiều';
-    return 'Chào buổi tối';
+    if (h < 12) return AppStrings.greetingMorning;
+    if (h < 18) return AppStrings.greetingAfternoon;
+    return AppStrings.greetingEvening;
   }
 
   @override
@@ -193,7 +194,7 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
                   ),
                 ),
                 Text(
-                  'Muzicz Audio',
+                  AppStrings.appName,
                   style: GoogleFonts.outfit(
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
@@ -251,7 +252,7 @@ class _InitialLibraryLoadingState extends StatelessWidget {
     return Semantics(
       key: const ValueKey('initial-library-loading'),
       liveRegion: true,
-      label: 'Đang tải thư viện nhạc',
+      label: AppStrings.libraryLoading,
       child: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
@@ -268,7 +269,7 @@ class _InitialLibraryLoadingState extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Đang tải thư viện nhạc…',
+                AppStrings.libraryLoadingEllipsis,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.outfit(
                   color: c.textSecondary,
@@ -315,7 +316,7 @@ class _ScanButton extends StatelessWidget {
                   color: c.textTertiary,
                   size: 22,
                 ),
-                tooltip: 'Quét lại nhạc',
+                tooltip: AppStrings.rescanMusic,
                 onPressed: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const OnboardingScreen()),
@@ -356,7 +357,7 @@ class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
         onChanged: onChanged,
         style: GoogleFonts.outfit(color: c.textPrimary, fontSize: 15),
         decoration: InputDecoration(
-          hintText: 'Tìm bài hát, nghệ sĩ, album…',
+          hintText: AppStrings.searchHint,
           hintStyle: GoogleFonts.outfit(color: c.textDisabled, fontSize: 15),
           prefixIcon: Icon(
             Icons.search_rounded,
@@ -367,7 +368,7 @@ class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
               searchCtrl.text.isNotEmpty
                   ? Semantics(
                     button: true,
-                    label: 'Xóa tìm kiếm',
+                    label: AppStrings.clearSearch,
                     child: GestureDetector(
                       onTap: onClear,
                       child: Icon(
@@ -429,12 +430,12 @@ class _SearchResultsSliver extends StatelessWidget {
               Icon(Icons.search_off_rounded, color: c.textDisabled, size: 48),
               const SizedBox(height: 12),
               Text(
-                'Không tìm thấy kết quả',
+                AppStrings.noResults,
                 style: GoogleFonts.outfit(color: c.textTertiary, fontSize: 15),
               ),
               const SizedBox(height: 8),
               Text(
-                'Thử tìm bằng tên nghệ sĩ hoặc album',
+                AppStrings.searchTip,
                 style: GoogleFonts.outfit(color: c.textDisabled, fontSize: 13),
               ),
             ],
@@ -465,25 +466,25 @@ class _QuickAccessSection extends StatelessWidget {
     final c = context.appColors;
     final sections = [
       _QuickSection(
-        title: 'Nghe gần đây',
+        title: AppStrings.recentlyPlayed,
         songs: music.recentlyPlayed,
         gradient: c.recentlyPlayedGradient,
         icon: Icons.history_rounded,
       ),
       _QuickSection(
-        title: 'Nghe nhiều nhất',
+        title: AppStrings.mostPlayed,
         songs: music.mostPlayed,
         gradient: c.mostPlayedGradient,
         icon: Icons.trending_up_rounded,
       ),
       _QuickSection(
-        title: 'Yêu thích',
+        title: AppStrings.favorites,
         songs: music.favorites,
         gradient: c.favoritesGradient,
         icon: Icons.favorite_rounded,
       ),
       _QuickSection(
-        title: 'Random Mix',
+        title: AppStrings.randomMix,
         songs: music.randomMix,
         gradient: c.randomMixGradient,
         icon: Icons.shuffle_rounded,
@@ -496,7 +497,7 @@ class _QuickAccessSection extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
           child: Text(
-            'Truy cập nhanh',
+            AppStrings.quickAccess,
             style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -645,7 +646,7 @@ class _QuickCardState extends State<_QuickCard>
                           ),
                         ),
                         Text(
-                          '$songCount bài',
+                          AppStrings.songCountShort(songCount),
                           style: GoogleFonts.outfit(
                             fontSize: 11,
                             fontWeight: FontWeight.w300,
@@ -682,7 +683,7 @@ class _SmartListsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (recentlyAdded.isNotEmpty) ...[
-          _SectionHeader(title: 'Mới thêm gần đây'),
+          _SectionHeader(title: AppStrings.recentlyAdded),
           ...recentlyAdded
               .take(5)
               .map(
@@ -695,7 +696,7 @@ class _SmartListsSection extends StatelessWidget {
               ),
         ],
         if (neverPlayed.isNotEmpty) ...[
-          _SectionHeader(title: 'Chưa từng nghe'),
+          _SectionHeader(title: AppStrings.neverPlayed),
           ...neverPlayed
               .take(5)
               .map(
@@ -721,7 +722,7 @@ class _SmartListsSection extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Chưa có nhạc nào.\nHãy quét thư viện nhạc của bạn.',
+                    AppStrings.emptyLibraryHint,
                     textAlign: TextAlign.center,
                     style: GoogleFonts.outfit(
                       color: c.textTertiary,
@@ -740,7 +741,7 @@ class _SmartListsSection extends StatelessWidget {
                     },
                     icon: const Icon(Icons.search_rounded, size: 18),
                     label: Text(
-                      'Quét thư viện ngay',
+                      AppStrings.scanLibraryNow,
                       style: GoogleFonts.outfit(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -794,7 +795,7 @@ class _AvatarButton extends StatelessWidget {
     final c = context.appColors;
     return Semantics(
       button: true,
-      label: 'Hồ sơ',
+      label: AppStrings.profile,
       child: GestureDetector(
         onTap:
             () => Navigator.of(

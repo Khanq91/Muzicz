@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/player_provider.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 class SpeedSheet extends StatelessWidget {
   const SpeedSheet({super.key});
@@ -31,7 +32,7 @@ class SpeedSheet extends StatelessWidget {
           Row(
             children: [
               Text(
-                'Tốc độ phát',
+                AppStrings.playbackSpeed,
                 style: GoogleFonts.outfit(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
@@ -46,7 +47,7 @@ class SpeedSheet extends StatelessWidget {
                     Navigator.pop(context);
                   },
                   child: Text(
-                    'Đặt lại',
+                    AppStrings.reset,
                     style: GoogleFonts.outfit(color: c.primary, fontSize: 14),
                   ),
                 ),
@@ -81,7 +82,9 @@ class SpeedSheet extends StatelessWidget {
                       ),
                       child: Center(
                         child: Text(
-                          s == 1.0 ? 'Bình thường' : '$s×',
+                          s == 1.0
+                              ? AppStrings.speedNormal
+                              : AppStrings.speedMultiplier('$s'),
                           textAlign: TextAlign.center,
                           style: GoogleFonts.outfit(
                             fontSize: s == 1.0 ? 10 : 15,

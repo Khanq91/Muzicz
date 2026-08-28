@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/player_provider.dart';
 import 'sheets/sleep_timer_sheet.dart';
 import 'sheets/speed_sheet.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 // ════════════════════════════════════════════════════════════════════════════
 // _ExtraActions — thêm lyrics button
@@ -116,7 +117,7 @@ class _ExpandablePillBarState extends State<ExpandablePillBar> {
                     color: Colors.transparent,
                     child: Semantics(
                       button: true,
-                      label: 'Tùy chọn phát',
+                      label: AppStrings.playbackOptions,
                       child: InkWell(
                         onTap: () => setState(() => _isExpanded = true),
                         child: Container(
@@ -145,28 +146,28 @@ class _ExpandablePillBarState extends State<ExpandablePillBar> {
                       children: [
                         _buildActionIcon(
                           icon: Icons.lyrics_rounded,
-                          label: 'Lời bài hát',
+                          label: AppStrings.lyrics,
                           isActive: lyricsActive,
                           c: c,
                           onTap: widget.onLyricsTap,
                         ),
                         _buildActionIcon(
                           icon: Icons.queue_music_rounded,
-                          label: 'Hàng chờ phát',
+                          label: AppStrings.queue,
                           isActive: queueActive,
                           c: c,
                           onTap: widget.onQueueTap,
                         ),
                         _buildActionIcon(
                           icon: Icons.speed_rounded,
-                          label: 'Tốc độ phát',
+                          label: AppStrings.playbackSpeed,
                           isActive: speedActive,
                           c: c,
                           onTap: () => _showSpeedSheet(context, widget.player),
                         ),
                         _buildActionIcon(
                           icon: Icons.bedtime_rounded,
-                          label: 'Hẹn giờ ngủ',
+                          label: AppStrings.sleepTimer,
                           isActive: timerActive,
                           c: c,
                           onTap:
@@ -175,7 +176,7 @@ class _ExpandablePillBarState extends State<ExpandablePillBar> {
                         ),
                         Semantics(
                           button: true,
-                          label: 'Thu gọn tùy chọn',
+                          label: AppStrings.collapseOptions,
                           child: GestureDetector(
                             onTap: () => setState(() => _isExpanded = false),
                             child: Container(

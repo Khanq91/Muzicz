@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 class SwipeHint extends StatelessWidget {
   const SwipeHint({super.key, required this.onTap});
@@ -11,7 +12,7 @@ class SwipeHint extends StatelessWidget {
     final c = context.appColors;
     return Semantics(
       button: true,
-      label: 'Mở hàng chờ phát',
+      label: AppStrings.openQueue,
       excludeSemantics: true,
       onTap: onTap,
       child: GestureDetector(
@@ -24,7 +25,7 @@ class SwipeHint extends StatelessWidget {
               size: 20,
             ),
             Text(
-              'Hàng chờ',
+              AppStrings.queueShort,
               style: GoogleFonts.outfit(fontSize: 11, color: c.onPlayerMinimal),
             ),
           ],

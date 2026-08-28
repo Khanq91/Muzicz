@@ -7,33 +7,9 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import '../providers/music_provider.dart';
 import 'home_screen.dart';
+import 'package:muziczz/core/app_strings.dart';
 
-const _randomTexts = [
-  // Thơ / cảm xúc
-  'Âm nhạc là tiếng lòng không cần phiên dịch.',
-  'Mỗi bài hát là một chiếc thuyền chở ký ức.',
-  'Có những nỗi buồn chỉ nhạc mới hiểu được.',
-  'Giai điệu đúng lúc — như một cái ôm vô hình.',
-  // Hài hước
-  'Tại sao nhạc sĩ giỏi mở khóa? Vì họ có nhiều phím! 🎹',
-  'Headphone = giáp trụ cách ly khỏi người đời. 🎧',
-  'Bài hát yêu thích là bài bạn bỏ play 47 lần trong một ngày.',
-  '– Em đang làm gì vậy?\n– Nghe nhạc.\n– Ừ, không cần nói chuyện nữa.',
-  // Quotes
-  '"Without music, life would be a mistake." — Nietzsche',
-  '"Music gives a soul to the universe." — Plato',
-  '"One good thing about music, when it hits you, you feel no pain." — Bob Marley',
-  '"Music is the shorthand of emotion." — Tolstoy',
-  // Có thể bạn chưa biết
-  'Có thể bạn chưa biết: Nghe nhạc buồn thực ra giúp não giải phóng dopamine 🎵',
-  'Có thể bạn chưa biết: Tim người có xu hướng đồng bộ nhịp với âm nhạc đang nghe.',
-  'Có thể bạn chưa biết: Nhạc nền giúp tăng hiệu suất làm việc lặp lại lên ~15%.',
-  'Có thể bạn chưa biết: Bạch tuộc có thể "cảm nhận" âm nhạc qua da 🐙',
-  // Triết lý nhẹ
-  'Âm nhạc không cần lý do. Cứ bật lên và sống.',
-  'Bạn không cần hiểu lời — đôi khi chỉ cần cảm nhận.',
-  'Playlist của bạn là nhật ký không có chữ.',
-];
+const _randomTexts = AppStrings.onboardingQuotes;
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -244,8 +220,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       LibraryStatus.permissionDenied => _ScanFailure(
         key: const ValueKey('permission-denied'),
         icon: Icons.library_music_outlined,
-        title: 'Cần quyền truy cập nhạc',
-        message: 'Muzicz cần quyền đọc tệp âm thanh để tìm nhạc trên thiết bị.',
+        title: AppStrings.needPermissionTitle,
+        message: AppStrings.needPermissionBody,
         onRetry: () => _startScan(showIntroDelay: false),
         onOpenSettings:
             music.permissionPermanentlyDenied ? openAppSettings : null,
@@ -253,8 +229,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       LibraryStatus.error => _ScanFailure(
         key: const ValueKey('scan-error'),
         icon: Icons.error_outline_rounded,
-        title: 'Không thể quét thư viện',
-        message: 'Đã có lỗi khi đọc thư viện nhạc. Hãy thử lại.',
+        title: AppStrings.scanFailedTitle,
+        message: AppStrings.scanFailedBody,
         onRetry: () => _startScan(showIntroDelay: false),
       ),
       LibraryStatus.idle || LibraryStatus.scanning => _ScanningText(
@@ -286,7 +262,7 @@ class _ScanningText extends StatelessWidget {
         ),
         const SizedBox(height: 28),
         Text(
-          'Đang quét nhạc của bạn…',
+          AppStrings.scanning,
           style: GoogleFonts.outfit(
             fontSize: 15,
             fontWeight: FontWeight.w600,
@@ -295,7 +271,7 @@ class _ScanningText extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Chỉ mất vài giây, hứa!',
+          AppStrings.scanningHint,
           style: GoogleFonts.outfit(
             fontSize: 13,
             fontWeight: FontWeight.w300,
@@ -355,7 +331,7 @@ class _ResultWidget extends StatelessWidget {
             position: slide1,
             child: _ResultRow(
               icon: Icons.music_note_rounded,
-              value: '$songCount bài hát',
+              value: AppStrings.songCount(songCount),
               color: c.primary,
             ),
           ),
@@ -367,7 +343,7 @@ class _ResultWidget extends StatelessWidget {
             position: slide2,
             child: _ResultRow(
               icon: Icons.person_rounded,
-              value: '$artistCount nghệ sĩ',
+              value: AppStrings.artistCount(artistCount),
               color: c.tertiary,
             ),
           ),
@@ -427,14 +403,14 @@ class _ScanFailure extends StatelessWidget {
           FilledButton.icon(
             onPressed: onRetry,
             icon: const Icon(Icons.refresh_rounded),
-            label: const Text('Thử lại'),
+            label: const Text(AppStrings.retry),
           ),
           if (onOpenSettings != null) ...[
             const SizedBox(height: 8),
             OutlinedButton.icon(
               onPressed: onOpenSettings,
               icon: const Icon(Icons.settings_outlined),
-              label: const Text('Mở cài đặt'),
+              label: const Text(AppStrings.openSettings),
             ),
           ],
         ],

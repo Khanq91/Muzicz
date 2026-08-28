@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../models/song_item.dart';
 import '../../../providers/music_provider.dart';
 import '../../../providers/player_provider.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 /// Mở sheet liệt kê các bài cùng album với [song]. Không làm gì nếu album
 /// không có bài nào trong thư viện.
@@ -99,7 +100,7 @@ class AlbumSongsSheet extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '${albumSongs.length} bài hát',
+                            AppStrings.songCount(albumSongs.length),
                             style: GoogleFonts.outfit(
                               fontSize: 12,
                               color: c.textTertiary,

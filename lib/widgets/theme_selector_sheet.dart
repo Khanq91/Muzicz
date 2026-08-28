@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_colors_data.dart';
 import '../providers/theme_provider.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 /// ════════════════════════════════════════════════════════════════════════════
 /// ThemeSelectorSheet — bottom sheet chọn theme
@@ -90,7 +91,7 @@ class _ThemeSelectorSheetState extends State<ThemeSelectorSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Giao diện',
+                      AppStrings.appearance,
                       style: GoogleFonts.outfit(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -98,7 +99,7 @@ class _ThemeSelectorSheetState extends State<ThemeSelectorSheet> {
                       ),
                     ),
                     Text(
-                      'Chọn bộ màu sắc cho ứng dụng',
+                      AppStrings.themeSheetSubtitle,
                       style: GoogleFonts.outfit(
                         fontSize: 13,
                         color: c.textTertiary,
@@ -135,7 +136,7 @@ class _ThemeSelectorSheetState extends State<ThemeSelectorSheet> {
                             ),
                           )
                           : Text(
-                            'Áp dụng',
+                            AppStrings.apply,
                             style: GoogleFonts.outfit(
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
@@ -164,7 +165,7 @@ class _ThemeSelectorSheetState extends State<ThemeSelectorSheet> {
           if (_previewMode != currentMode) ...[
             const SizedBox(height: 8),
             Text(
-              'Nhấn "Áp dụng" để chuyển sang giao diện ${_previewMode.label}',
+              AppStrings.applyThemeHint(_previewMode.label),
               textAlign: TextAlign.center,
               style: GoogleFonts.outfit(fontSize: 12, color: c.textTertiary),
             ),
@@ -244,7 +245,7 @@ class _ThemeOption extends StatelessWidget {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            'Hiện tại',
+                            AppStrings.current,
                             style: GoogleFonts.outfit(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
@@ -283,9 +284,9 @@ class _ThemeOption extends StatelessWidget {
   }
 
   String _subtitle(AppThemeMode mode) => switch (mode) {
-    AppThemeMode.dark => 'Nền đen xám, dễ dùng ban đêm',
-    AppThemeMode.amoled => 'Pure black, tiết kiệm pin OLED',
-    AppThemeMode.light => 'Nền sáng, dễ đọc ngoài trời',
+    AppThemeMode.dark => AppStrings.themeDarkDesc,
+    AppThemeMode.amoled => AppStrings.themeAmoledDesc,
+    AppThemeMode.light => AppStrings.themeLightDesc,
   };
 }
 

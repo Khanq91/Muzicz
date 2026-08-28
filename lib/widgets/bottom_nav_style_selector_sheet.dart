@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/theme_provider.dart';
 import '../theme/app_colors_data.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 class BottomNavStyleSelectorSheet extends StatefulWidget {
   const BottomNavStyleSelectorSheet({super.key});
@@ -83,7 +84,7 @@ class _BottomNavStyleSelectorSheetState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Đồ họa',
+                      AppStrings.graphics,
                       style: GoogleFonts.outfit(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -91,7 +92,7 @@ class _BottomNavStyleSelectorSheetState
                       ),
                     ),
                     Text(
-                      'Chọn phong cách thanh điều hướng dưới',
+                      AppStrings.bottomNavStyleSubtitle,
                       style: GoogleFonts.outfit(
                         fontSize: 13,
                         color: c.textTertiary,
@@ -117,7 +118,7 @@ class _BottomNavStyleSelectorSheetState
                     ),
                   ),
                   child: Text(
-                    'Áp dụng',
+                    AppStrings.apply,
                     style: GoogleFonts.outfit(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
@@ -221,8 +222,8 @@ class _BottomNavStyleOption extends StatelessWidget {
                     ),
                     Text(
                       style == BottomNavStyle.fancy
-                          ? 'Liquid Glass Premium'
-                          : 'Thanh điều hướng hiện tại',
+                          ? AppStrings.bottomNavFancyDesc
+                          : AppStrings.bottomNavNormalDesc,
                       style: GoogleFonts.outfit(
                         fontSize: 12,
                         color: c.textTertiary,
@@ -262,7 +263,7 @@ class _CurrentBadge extends StatelessWidget {
       borderRadius: BorderRadius.circular(6),
     ),
     child: Text(
-      'Hiện tại',
+      AppStrings.current,
       style: GoogleFonts.outfit(
         fontSize: 10,
         fontWeight: FontWeight.w600,

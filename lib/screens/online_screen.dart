@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 class OnlineScreen extends StatelessWidget {
   const OnlineScreen({super.key, this.isEmbedded = false});
@@ -31,7 +32,7 @@ class OnlineScreen extends StatelessWidget {
                     ),
                   if (isEmbedded) const SizedBox(width: 16),
                   Text(
-                    'Trực tuyến',
+                    AppStrings.online,
                     style: GoogleFonts.outfit(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
@@ -72,7 +73,7 @@ class OnlineScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 24),
                           Text(
-                            'Đang phát triển',
+                            AppStrings.inDevelopment,
                             style: GoogleFonts.outfit(
                               fontSize: 22,
                               fontWeight: FontWeight.w700,
@@ -82,7 +83,7 @@ class OnlineScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 10),
                           Text(
-                            'Tính năng phát nhạc trực tuyến đang được\nxây dựng. Cảm ơn bạn đã chờ đợi!',
+                            AppStrings.onlineComingBody,
                             textAlign: TextAlign.center,
                             style: GoogleFonts.outfit(
                               fontSize: 14,
@@ -102,7 +103,7 @@ class OnlineScreen extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
                       child: Text(
-                        'Sắp có',
+                        AppStrings.comingSoon,
                         style: GoogleFonts.outfit(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
@@ -120,31 +121,30 @@ class OnlineScreen extends StatelessWidget {
                         _FeatureTile(
                           icon: Icons.download_rounded,
                           iconColor: c.secondary,
-                          title: 'Tải nhạc từ URL',
-                          subtitle:
-                              'TikTok, YouTube, SoundCloud và hơn thế nữa',
-                          badge: 'Sớm',
+                          title: AppStrings.downloadFromUrl,
+                          subtitle: AppStrings.onlineDownloadSubtitle,
+                          badge: AppStrings.soon,
                         ),
                         _FeatureTile(
                           icon: Icons.radio_rounded,
                           iconColor: c.primary,
-                          title: 'Radio trực tuyến',
-                          subtitle: 'Nghe các kênh radio từ khắp nơi',
-                          badge: 'Sắp có',
+                          title: AppStrings.onlineRadio,
+                          subtitle: AppStrings.onlineRadioSubtitle,
+                          badge: AppStrings.comingSoon,
                         ),
                         _FeatureTile(
                           icon: Icons.search_rounded,
                           iconColor: c.accentCyan,
-                          title: 'Tìm kiếm trực tuyến',
-                          subtitle: 'Tìm và phát nhạc trực tiếp từ web',
-                          badge: 'Đang phát triển',
+                          title: AppStrings.onlineSearch,
+                          subtitle: AppStrings.onlineSearchSubtitle,
+                          badge: AppStrings.inDevelopment,
                         ),
                         _FeatureTile(
                           icon: Icons.sync_rounded,
                           iconColor: c.tertiary,
-                          title: 'Đồng bộ danh sách phát',
-                          subtitle: 'Đồng bộ playlist với các nền tảng khác',
-                          badge: 'Sắp có',
+                          title: AppStrings.playlistSync,
+                          subtitle: AppStrings.playlistSyncSubtitle,
+                          badge: AppStrings.comingSoon,
                         ),
                       ]),
                     ),

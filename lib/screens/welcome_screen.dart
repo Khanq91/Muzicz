@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
 import 'splash_screen.dart';
 import 'onboarding_screen.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -94,7 +95,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                       const MuziczLogo(size: 64),
                       const SizedBox(height: 20),
                       Text(
-                        'Muzic',
+                        AppStrings.brandName,
                         style: GoogleFonts.outfit(
                           fontSize: 28,
                           fontWeight: FontWeight.w700,
@@ -103,7 +104,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                         ),
                       ),
                       Text(
-                        'AUDIO',
+                        AppStrings.brandSuffix,
                         style: GoogleFonts.outfit(
                           fontSize: 11,
                           fontWeight: FontWeight.w300,
@@ -113,7 +114,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'Trải nghiệm âm nhạc trong tầm tay.\nTất cả từ bộ sưu tập của bạn.',
+                        AppStrings.welcomeTagline,
                         textAlign: TextAlign.center,
                         style: GoogleFonts.outfit(
                           fontSize: 14,
@@ -125,7 +126,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                       const Spacer(flex: 3),
                       // Primary CTA
                       _GradientButton(
-                        label: 'Quét nhạc trên máy',
+                        label: AppStrings.scanDeviceMusic,
                         icon: Icons.search_rounded,
                         onTap: () {
                           Navigator.of(context).push(

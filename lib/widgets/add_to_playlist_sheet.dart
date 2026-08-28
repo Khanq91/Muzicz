@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../models/song_item.dart';
 import '../models/playlist_item.dart';
 import '../providers/music_provider.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 /// Sheet thêm bài hát vào playlist — phong cách YouTube.
 /// Dùng được từ NowPlayingScreen, MusicListTile context menu, v.v.
@@ -85,7 +86,7 @@ class _AddToPlaylistSheetState extends State<AddToPlaylistSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Lưu vào danh sách',
+                        AppStrings.saveToPlaylist,
                         style: GoogleFonts.outfit(
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
@@ -135,7 +136,7 @@ class _AddToPlaylistSheetState extends State<AddToPlaylistSheet> {
                 onChanged: (q) => setState(() => _query = q),
                 style: GoogleFonts.outfit(color: c.textPrimary, fontSize: 14),
                 decoration: InputDecoration(
-                  hintText: 'Tìm danh sách…',
+                  hintText: AppStrings.searchPlaylistsHint,
                   hintStyle: GoogleFonts.outfit(
                     color: c.textDisabled,
                     fontSize: 14,
@@ -190,7 +191,7 @@ class _AddToPlaylistSheetState extends State<AddToPlaylistSheet> {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            'Chưa có danh sách nào.\nNhấn "+ Tạo mới" để bắt đầu.',
+                            AppStrings.noPlaylistsAddHint,
                             textAlign: TextAlign.center,
                             style: GoogleFonts.outfit(
                               color: c.textTertiary,
@@ -205,7 +206,7 @@ class _AddToPlaylistSheetState extends State<AddToPlaylistSheet> {
                     ? Padding(
                       padding: const EdgeInsets.symmetric(vertical: 24),
                       child: Text(
-                        'Không tìm thấy danh sách nào.',
+                        AppStrings.noPlaylistsFound,
                         style: GoogleFonts.outfit(color: c.textTertiary),
                       ),
                     )
@@ -227,13 +228,13 @@ class _AddToPlaylistSheetState extends State<AddToPlaylistSheet> {
                               music.addToPlaylist(pl.id, widget.song);
                               _showFeedback(
                                 context,
-                                'Đã thêm vào "${pl.name}"',
+                                AppStrings.addedToPlaylist(pl.name),
                               );
                             } else {
                               music.removeFromPlaylist(pl.id, widget.song.id);
                               _showFeedback(
                                 context,
-                                'Đã xóa khỏi "${pl.name}"',
+                                AppStrings.removedFromPlaylist(pl.name),
                               );
                             }
                           },
@@ -273,7 +274,7 @@ class _AddToPlaylistSheetState extends State<AddToPlaylistSheet> {
               borderRadius: BorderRadius.circular(16),
             ),
             title: Text(
-              'Tạo danh sách mới',
+              AppStrings.createNewPlaylist,
               style: GoogleFonts.outfit(
                 color: c.textPrimary,
                 fontWeight: FontWeight.w600,
@@ -285,7 +286,7 @@ class _AddToPlaylistSheetState extends State<AddToPlaylistSheet> {
               autofocus: true,
               style: GoogleFonts.outfit(color: c.textPrimary),
               decoration: InputDecoration(
-                hintText: 'Tên danh sách…',
+                hintText: AppStrings.playlistNameHint,
                 hintStyle: GoogleFonts.outfit(color: c.textDisabled),
                 filled: true,
                 fillColor: c.surfaceElevated,
@@ -304,14 +305,14 @@ class _AddToPlaylistSheetState extends State<AddToPlaylistSheet> {
               TextButton(
                 onPressed: () => Navigator.pop(dialogCtx),
                 child: Text(
-                  'Hủy',
+                  AppStrings.cancel,
                   style: GoogleFonts.outfit(color: c.textTertiary),
                 ),
               ),
               TextButton(
                 onPressed: () => _doCreate(dialogCtx, ctrl, music),
                 child: Text(
-                  'Tạo & Thêm',
+                  AppStrings.createAndAdd,
                   style: GoogleFonts.outfit(
                     color: c.primary,
                     fontWeight: FontWeight.w600,
@@ -334,7 +335,7 @@ class _AddToPlaylistSheetState extends State<AddToPlaylistSheet> {
     await music.addToPlaylist(pl.id, widget.song);
     if (!dialogCtx.mounted) return;
     Navigator.pop(dialogCtx);
-    _showFeedback(dialogCtx, 'Đã tạo "$name" và thêm bài hát');
+    _showFeedback(dialogCtx, AppStrings.createdPlaylistAndAdded(name));
   }
 }
 
@@ -375,7 +376,7 @@ class _CreateNewButton extends StatelessWidget {
               ),
               const SizedBox(width: 14),
               Text(
-                'Tạo danh sách mới',
+                AppStrings.createNewPlaylist,
                 style: GoogleFonts.outfit(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -420,7 +421,7 @@ class _PlaylistCheckTile extends StatelessWidget {
         ),
       ),
       subtitle: Text(
-        '${playlist.songCount} bài hát',
+        AppStrings.songCount(playlist.songCount),
         style: GoogleFonts.outfit(fontSize: 12, color: c.textTertiary),
       ),
       trailing: _AnimatedCheckbox(checked: checked),

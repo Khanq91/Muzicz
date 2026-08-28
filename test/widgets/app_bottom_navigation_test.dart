@@ -5,6 +5,7 @@ import 'package:muziczz/providers/theme_provider.dart';
 import 'package:muziczz/theme/app_theme.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:muziczz/widgets/app_bottom_navigation.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 void main() {
   testWidgets('normal style keeps the existing navigation behavior', (
@@ -26,7 +27,7 @@ void main() {
     );
 
     expect(find.byKey(const ValueKey('normal-bottom-navigation')), findsOne);
-    expect(find.text('Home'), findsOneWidget);
+    expect(find.text(AppStrings.tabHome), findsOneWidget);
     expect(find.text('Trực tuyến'), findsNothing);
 
     await tester.tap(find.byIcon(Icons.language_rounded));

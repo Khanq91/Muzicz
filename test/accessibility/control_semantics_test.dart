@@ -18,6 +18,7 @@ import 'package:muziczz/widgets/app_bottom_navigation.dart';
 import 'package:muziczz/widgets/mini_player.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -85,7 +86,7 @@ void main() {
     );
 
     expect(
-      tester.getSemantics(find.bySemanticsLabel('Home')),
+      tester.getSemantics(find.bySemanticsLabel(AppStrings.tabHome)),
       isSemantics(isButton: true, hasTapAction: true, isSelected: true),
     );
     expect(

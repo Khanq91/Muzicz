@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/music_provider.dart';
 import '../theme/app_colors_data.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 class HiddenSongsScreen extends StatelessWidget {
   const HiddenSongsScreen({super.key});
@@ -28,7 +29,7 @@ class HiddenSongsScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Bài hát đã ẩn',
+          AppStrings.hiddenSongs,
           style: GoogleFonts.outfit(
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -47,8 +48,8 @@ class HiddenSongsScreen extends StatelessWidget {
                   final meta = entries[i].value;
                   return _HiddenTile(
                     songId: id,
-                    title: meta['title'] ?? 'Unknown',
-                    artist: meta['artist'] ?? 'Unknown',
+                    title: meta['title'] ?? AppStrings.unknown,
+                    artist: meta['artist'] ?? AppStrings.unknown,
                     onRestore:
                         () => _confirmRestore(
                           context,
@@ -77,21 +78,21 @@ class HiddenSongsScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
             ),
             title: Text(
-              'Khôi phục bài hát?',
+              AppStrings.restoreSongTitle,
               style: GoogleFonts.outfit(
                 color: c.textPrimary,
                 fontWeight: FontWeight.w600,
               ),
             ),
             content: Text(
-              '"$title" sẽ xuất hiện lại trong thư viện.',
+              AppStrings.restoreSongBody(title),
               style: GoogleFonts.outfit(color: c.textSecondary, height: 1.6),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: Text(
-                  'Hủy',
+                  AppStrings.cancel,
                   style: GoogleFonts.outfit(color: c.textTertiary),
                 ),
               ),
@@ -101,7 +102,7 @@ class HiddenSongsScreen extends StatelessWidget {
                   context.read<MusicProvider>().unhideSong(songId);
                 },
                 child: Text(
-                  'Khôi phục',
+                  AppStrings.restore,
                   style: GoogleFonts.outfit(
                     color: c.primary,
                     fontWeight: FontWeight.w600,
@@ -129,7 +130,7 @@ class _EmptyState extends StatelessWidget {
           Icon(Icons.visibility_off_rounded, color: c.textDisabled, size: 52),
           const SizedBox(height: 14),
           Text(
-            'Không có bài hát nào bị ẩn',
+            AppStrings.noHiddenSongs,
             style: GoogleFonts.outfit(color: c.textTertiary, fontSize: 15),
           ),
         ],
@@ -185,7 +186,7 @@ class _HiddenTile extends StatelessWidget {
         onPressed: onRestore,
         icon: Icon(Icons.restore_rounded, size: 16, color: c.primary),
         label: Text(
-          'Khôi phục',
+          AppStrings.restore,
           style: GoogleFonts.outfit(
             fontSize: 13,
             color: c.primary,

@@ -14,9 +14,14 @@ import '../widgets/bottom_nav_style_selector_sheet.dart';
 import '../widgets/theme_selector_sheet.dart';
 import 'hidden_songs_screen.dart';
 import 'onboarding_screen.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
+
+  /// Đọc một lần cho cả vòng đời app — build() có thể chạy lại nhiều lần.
+  static final Future<PackageInfo> _packageInfo = PackageInfo.fromPlatform();
 
   @override
   Widget build(BuildContext context) {
@@ -45,21 +50,21 @@ class ProfileScreen extends StatelessWidget {
                       children: [
                         _StatCard(
                           value: '$totalSongs',
-                          label: 'Bài hát',
+                          label: AppStrings.songs,
                           icon: Icons.music_note_rounded,
                           color: c.primary,
                         ),
                         const SizedBox(width: 12),
                         _StatCard(
                           value: '$totalArtists',
-                          label: 'Nghệ sĩ',
+                          label: AppStrings.artist,
                           icon: Icons.person_rounded,
                           color: c.secondary,
                         ),
                         const SizedBox(width: 12),
                         _StatCard(
                           value: '$totalAlbums',
-                          label: 'Album',
+                          label: AppStrings.album,
                           icon: Icons.album_rounded,
                           color: c.tertiary,
                         ),
@@ -72,7 +77,7 @@ class ProfileScreen extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
                     child: Text(
-                      'Chức năng',
+                      AppStrings.features,
                       style: GoogleFonts.outfit(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -91,8 +96,8 @@ class ProfileScreen extends StatelessWidget {
                         _ActionTile(
                           icon: Icons.refresh_rounded,
                           iconColor: c.primary,
-                          title: 'Quét lại nhạc',
-                          subtitle: 'Cập nhật thư viện từ bộ nhớ máy',
+                          title: AppStrings.rescanMusic,
+                          subtitle: AppStrings.rescanMusicSubtitle,
                           onTap:
                               () => Navigator.of(context).push(
                                 MaterialPageRoute(
@@ -104,8 +109,8 @@ class ProfileScreen extends StatelessWidget {
                         _ActionTile(
                           icon: Icons.download_rounded,
                           iconColor: c.secondary,
-                          title: 'Tải nhạc',
-                          subtitle: 'Tải âm thanh dễ dàng chỉ từ URL',
+                          title: AppStrings.downloadMusic,
+                          subtitle: AppStrings.downloadMusicSubtitle,
                           onTap:
                               () => Navigator.of(context).push(
                                 MaterialPageRoute(
@@ -118,18 +123,24 @@ class ProfileScreen extends StatelessWidget {
                         _ActionTile(
                           icon: Icons.settings_rounded,
                           iconColor: c.textSecondary,
-                          title: 'Cài đặt',
-                          subtitle: 'Tùy chỉnh giao diện và ứng dụng',
+                          title: AppStrings.settings,
+                          subtitle: AppStrings.settingsSubtitle,
                           onTap: () => _showSettings(context, music, c),
                           colors: c,
                         ),
-                        _ActionTile(
-                          icon: Icons.info_outline_rounded,
-                          iconColor: c.textTertiary,
-                          title: 'Về ứng dụng',
-                          subtitle: 'Muzicz Audio v1.0.0',
-                          onTap: () => _showAbout(context),
-                          colors: c,
+                        FutureBuilder<PackageInfo>(
+                          future: _packageInfo,
+                          builder: (context, snap) {
+                            final version = snap.data?.version;
+                            return _ActionTile(
+                              icon: Icons.info_outline_rounded,
+                              iconColor: c.textTertiary,
+                              title: AppStrings.about,
+                              subtitle: AppStrings.appVersion(version ?? '…'),
+                              onTap: () => _showAbout(context, version),
+                              colors: c,
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -167,12 +178,12 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  void _showAbout(BuildContext context) {
+  void _showAbout(BuildContext context, String? version) {
     showAboutDialog(
       context: context,
-      applicationName: 'Muzizc Audio',
-      applicationVersion: '1.0.0',
-      applicationLegalese: '© 2026 Muzizc Audio',
+      applicationName: AppStrings.appName,
+      applicationVersion: version ?? '',
+      applicationLegalese: AppStrings.copyright,
     );
   }
 }
@@ -222,7 +233,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
           const SizedBox(height: 16),
 
           Text(
-            'Cài đặt',
+            AppStrings.settings,
             style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -233,7 +244,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
 
           // ── Giao diện ─────────────────────────────────────────────────
           Text(
-            'Giao diện',
+            AppStrings.appearance,
             style: GoogleFonts.outfit(
               fontSize: 12,
               color: c.textTertiary,
@@ -246,11 +257,11 @@ class _SettingsSheetState extends State<_SettingsSheet> {
           _SettingsTappableRow(
             icon: themeMode.icon,
             iconColor: c.primary,
-            label: 'Bộ màu sắc',
+            label: AppStrings.colorScheme,
             subtitle: switch (themeMode) {
-              AppThemeMode.dark => 'Dark — nền tối',
-              AppThemeMode.amoled => 'AMOLED — pure black',
-              AppThemeMode.light => 'Light — nền sáng',
+              AppThemeMode.dark => AppStrings.themeDarkLabel,
+              AppThemeMode.amoled => AppStrings.themeAmoledLabel,
+              AppThemeMode.light => AppStrings.themeLightLabel,
             },
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
@@ -289,7 +300,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
           _SettingsTappableRow(
             icon: Icons.auto_awesome_rounded,
             iconColor: c.secondary,
-            label: 'Đồ họa',
+            label: AppStrings.graphics,
             subtitle: themeProvider.bottomNavStyle.label,
             trailing: Icon(
               Icons.chevron_right_rounded,
@@ -308,7 +319,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
             _SettingsTappableRow(
               icon: Icons.graphic_eq_rounded,
               iconColor: c.tertiary,
-              label: 'Music Visual',
+              label: AppStrings.musicVisual,
               subtitle: context.watch<VisualModeProvider>().mode.label,
               trailing: Icon(
                 Icons.chevron_right_rounded,
@@ -327,7 +338,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
 
           // ── Thư viện nhạc ─────────────────────────────────────────────
           Text(
-            'Thư viện nhạc',
+            AppStrings.musicLibrary,
             style: GoogleFonts.outfit(
               fontSize: 12,
               color: c.textTertiary,
@@ -337,8 +348,8 @@ class _SettingsSheetState extends State<_SettingsSheet> {
           const SizedBox(height: 8),
 
           _SettingsRow(
-            label: 'Lọc file dưới 30 giây',
-            subtitle: 'Bỏ qua nhạc chuông, thông báo',
+            label: AppStrings.filterShortFiles,
+            subtitle: AppStrings.filterShortFilesSubtitle,
             value: true,
             onChanged: (_) {},
             colors: c,
@@ -349,8 +360,8 @@ class _SettingsSheetState extends State<_SettingsSheet> {
           _SettingsTappableRow(
             icon: Icons.visibility_off_rounded,
             iconColor: c.textSecondary,
-            label: 'Bài hát đã ẩn',
-            subtitle: 'Xem và khôi phục bài hát bị ẩn',
+            label: AppStrings.hiddenSongs,
+            subtitle: AppStrings.hiddenSongsSubtitle,
             trailing: Icon(
               Icons.chevron_right_rounded,
               color: c.textDisabled,
@@ -523,7 +534,7 @@ class _ProfileHeader extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Thính giả',
+                            AppStrings.listener,
                             style: GoogleFonts.outfit(
                               fontSize: 22,
                               fontWeight: FontWeight.w700,
@@ -532,7 +543,7 @@ class _ProfileHeader extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            'Nocturne Audio',
+                            AppStrings.profileTagline,
                             style: GoogleFonts.outfit(
                               fontSize: 13,
                               color: c.textTertiary,

@@ -7,6 +7,7 @@ import '../models/song_item.dart';
 import '../providers/music_provider.dart';
 import '../providers/player_provider.dart';
 import 'add_to_playlist_sheet.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 class MusicListTile extends StatelessWidget {
   const MusicListTile({
@@ -331,7 +332,8 @@ class _SongContextMenu extends StatelessWidget {
                     ? Icons.favorite_rounded
                     : Icons.favorite_border_rounded,
             iconColor: isFavorite ? c.tertiary : null,
-            label: isFavorite ? 'Bỏ yêu thích' : 'Thêm vào yêu thích',
+            label:
+                isFavorite ? AppStrings.unfavorite : AppStrings.addToFavorites,
             onTap: () {
               onFavoriteToggle();
               Navigator.pop(context);
@@ -340,7 +342,7 @@ class _SongContextMenu extends StatelessWidget {
 
           _ContextMenuItem(
             icon: Icons.playlist_add_rounded,
-            label: 'Thêm vào danh sách phát',
+            label: AppStrings.addToPlaylist,
             onTap: () {
               Navigator.pop(context);
               showModalBottomSheet(
@@ -358,7 +360,7 @@ class _SongContextMenu extends StatelessWidget {
 
           _ContextMenuItem(
             icon: Icons.queue_music_rounded,
-            label: 'Phát tiếp theo',
+            label: AppStrings.playNext,
             onTap: () {
               final player = parentContext.read<PlayerProvider>();
               if (player.currentSong == null) {
@@ -368,7 +370,7 @@ class _SongContextMenu extends StatelessWidget {
                 ScaffoldMessenger.of(parentContext).showSnackBar(
                   SnackBar(
                     content: Text(
-                      'Đã thêm "${song.title}" vào hàng chờ',
+                      AppStrings.addedToQueue(song.title),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -388,7 +390,7 @@ class _SongContextMenu extends StatelessWidget {
 
           _ContextMenuItem(
             icon: Icons.info_outline_rounded,
-            label: 'Chi tiết bài hát',
+            label: AppStrings.songDetails,
             onTap: () {
               Navigator.pop(context);
               _showSongInfo(parentContext);
@@ -415,7 +417,7 @@ class _SongContextMenu extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Thông tin bài hát',
+                  AppStrings.songInfo,
                   style: TextStyle(
                     color: c.textPrimary,
                     fontSize: 16,
@@ -423,11 +425,11 @@ class _SongContextMenu extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                _infoRow(context, 'Tên bài', song.title),
-                _infoRow(context, 'Nghệ sĩ', song.artist),
-                _infoRow(context, 'Album', song.album),
-                _infoRow(context, 'Thời lượng', song.durationFormatted),
-                _infoRow(context, 'Đường dẫn', song.data),
+                _infoRow(context, AppStrings.fieldTitle, song.title),
+                _infoRow(context, AppStrings.artist, song.artist),
+                _infoRow(context, AppStrings.album, song.album),
+                _infoRow(context, AppStrings.duration, song.durationFormatted),
+                _infoRow(context, AppStrings.filePath, song.data),
                 const SizedBox(height: 8),
               ],
             ),

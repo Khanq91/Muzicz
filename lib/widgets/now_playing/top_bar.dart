@@ -8,6 +8,7 @@ import '../add_to_playlist_sheet.dart';
 import 'sheets/album_songs_sheet.dart';
 import 'sheets/edit_song_sheet.dart';
 import 'sheets/song_info_sheet.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 class TopBar extends StatelessWidget {
   const TopBar({super.key, required this.song});
@@ -22,7 +23,7 @@ class TopBar extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            tooltip: 'Đóng',
+            tooltip: AppStrings.close,
             icon: Icon(
               Icons.keyboard_arrow_down_rounded,
               size: 32,
@@ -34,7 +35,7 @@ class TopBar extends StatelessWidget {
             child: Column(
               children: [
                 Text(
-                  'ĐANG PHÁT',
+                  AppStrings.nowPlaying,
                   style: GoogleFonts.outfit(
                     fontSize: 10,
                     fontWeight: FontWeight.w300,
@@ -50,7 +51,9 @@ class TopBar extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          song.album.isNotEmpty ? song.album : 'Từ thư viện',
+                          song.album.isNotEmpty
+                              ? song.album
+                              : AppStrings.fromLibrary,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.outfit(
@@ -109,7 +112,7 @@ class TopBar extends StatelessWidget {
                 case 'share':
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Chia sẻ: ${song.title}'),
+                      content: Text(AppStrings.shareText(song.title)),
                       duration: const Duration(seconds: 2),
                       backgroundColor: c.surfaceElevated,
                     ),
@@ -126,28 +129,38 @@ class TopBar extends StatelessWidget {
                   isFav
                       ? Icons.favorite_rounded
                       : Icons.favorite_border_rounded,
-                  isFav ? 'Bỏ yêu thích' : 'Yêu thích',
+                  isFav ? AppStrings.unfavorite : AppStrings.favorites,
                   iconColor: isFav ? c.tertiary : null,
                 ),
                 _popItem(
                   context,
                   'playlist',
                   Icons.playlist_add_rounded,
-                  'Thêm vào danh sách phát',
+                  AppStrings.addToPlaylist,
                 ),
-                _popItem(context, 'edit', Icons.edit_rounded, 'Sửa thông tin'),
+                _popItem(
+                  context,
+                  'edit',
+                  Icons.edit_rounded,
+                  AppStrings.editInfo,
+                ),
                 _popItem(
                   context,
                   'hide',
                   Icons.visibility_off_rounded,
-                  'Ẩn khỏi thư viện',
+                  AppStrings.hideFromLibrary,
                 ),
-                _popItem(context, 'share', Icons.share_rounded, 'Chia sẻ'),
+                _popItem(
+                  context,
+                  'share',
+                  Icons.share_rounded,
+                  AppStrings.share,
+                ),
                 _popItem(
                   context,
                   'info',
                   Icons.info_outline_rounded,
-                  'Thông tin bài hát',
+                  AppStrings.songInfo,
                 ),
               ];
             },
@@ -191,21 +204,21 @@ class TopBar extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
             ),
             title: Text(
-              'Ẩn bài hát?',
+              AppStrings.hideSongTitle,
               style: GoogleFonts.outfit(
                 color: c.textPrimary,
                 fontWeight: FontWeight.w600,
               ),
             ),
             content: Text(
-              '"${song.title}" sẽ bị ẩn khỏi thư viện. File gốc không bị xóa. Có thể quét lại để khôi phục.',
+              AppStrings.hideSongBody(song.title),
               style: GoogleFonts.outfit(color: c.textSecondary, height: 1.6),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: Text(
-                  'Hủy',
+                  AppStrings.cancel,
                   style: GoogleFonts.outfit(color: c.textTertiary),
                 ),
               ),
@@ -216,7 +229,7 @@ class TopBar extends StatelessWidget {
                   Navigator.pop(context);
                 },
                 child: Text(
-                  'Ẩn',
+                  AppStrings.hide,
                   style: GoogleFonts.outfit(
                     color: c.tertiary,
                     fontWeight: FontWeight.w600,

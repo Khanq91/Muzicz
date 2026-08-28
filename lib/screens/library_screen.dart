@@ -14,6 +14,7 @@ import 'artist_detail_screen.dart';
 import 'now_playing_screen.dart';
 import 'onboarding_screen.dart';
 import 'playlist_screen.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 enum SortType { az, recentlyAdded, duration }
 
@@ -106,8 +107,8 @@ class _LibraryScreenState extends State<LibraryScreen>
       SnackBar(
         content: Text(
           allWereFav
-              ? 'Đã thêm ${_selectedIds.length} bài vào yêu thích'
-              : 'Đã bỏ ${_selectedIds.length} bài khỏi yêu thích',
+              ? AppStrings.addedToFavorites(_selectedIds.length)
+              : AppStrings.removedFromFavorites(_selectedIds.length),
           style: GoogleFonts.outfit(fontSize: 13),
         ),
         duration: const Duration(seconds: 2),
@@ -134,14 +135,14 @@ class _LibraryScreenState extends State<LibraryScreen>
               borderRadius: BorderRadius.circular(16),
             ),
             title: Text(
-              'Ẩn $count bài hát?',
+              AppStrings.hideSongsTitle(count),
               style: GoogleFonts.outfit(
                 color: c.textPrimary,
                 fontWeight: FontWeight.w600,
               ),
             ),
             content: Text(
-              'Các bài hát này sẽ bị ẩn khỏi thư viện. File gốc không bị xóa.',
+              AppStrings.hideSongsBody,
               style: GoogleFonts.outfit(
                 color: c.textSecondary,
                 fontSize: 14,
@@ -152,14 +153,14 @@ class _LibraryScreenState extends State<LibraryScreen>
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
                 child: Text(
-                  'Hủy',
+                  AppStrings.cancel,
                   style: GoogleFonts.outfit(color: c.textTertiary),
                 ),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
                 child: Text(
-                  'Ẩn',
+                  AppStrings.hide,
                   style: GoogleFonts.outfit(
                     color: c.tertiary,
                     fontWeight: FontWeight.w600,
@@ -177,7 +178,7 @@ class _LibraryScreenState extends State<LibraryScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Đã ẩn $count bài hát',
+          AppStrings.hiddenSongsDone(count),
           style: GoogleFonts.outfit(fontSize: 13),
         ),
         duration: const Duration(seconds: 2),
@@ -256,7 +257,7 @@ class _LibraryScreenState extends State<LibraryScreen>
                     if (widget.isEmbedded) const SizedBox(width: 16),
                     Expanded(
                       child: Text(
-                        'Thư viện',
+                        AppStrings.library,
                         style: GoogleFonts.outfit(
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
@@ -282,9 +283,12 @@ class _LibraryScreenState extends State<LibraryScreen>
                       onSelected: (t) => setState(() => _sortType = t),
                       itemBuilder:
                           (_) => [
-                            _menuItem(SortType.az, 'A → Z'),
-                            _menuItem(SortType.recentlyAdded, 'Mới thêm'),
-                            _menuItem(SortType.duration, 'Thời lượng'),
+                            _menuItem(SortType.az, AppStrings.sortAZ),
+                            _menuItem(
+                              SortType.recentlyAdded,
+                              AppStrings.sortNewest,
+                            ),
+                            _menuItem(SortType.duration, AppStrings.duration),
                           ],
                     ),
                   ],
@@ -412,7 +416,7 @@ class _LibrarySearchBar extends StatelessWidget {
                         context.read<MusicProvider>().setLibrarySearchQuery(q),
                 style: GoogleFonts.outfit(color: c.textPrimary, fontSize: 14),
                 decoration: InputDecoration(
-                  hintText: 'Tìm trong thư viện…',
+                  hintText: AppStrings.librarySearchHint,
                   hintStyle: GoogleFonts.outfit(
                     color: c.textDisabled,
                     fontSize: 14,
@@ -469,7 +473,7 @@ class _LibrarySearchBar extends StatelessWidget {
                             ),
                             const SizedBox(width: 5),
                             Text(
-                              'Tìm trong thư viện cục bộ · $songCount bài',
+                              AppStrings.searchLocalLibrary(songCount),
                               style: GoogleFonts.outfit(
                                 fontSize: 11,
                                 color: c.textDisabled,
@@ -516,7 +520,9 @@ class _SelectionHeader extends StatelessWidget {
           const SizedBox(width: 4),
           Expanded(
             child: Text(
-              count == 0 ? 'Chọn bài hát' : '$count bài đã chọn',
+              count == 0
+                  ? AppStrings.selectSongs
+                  : AppStrings.selectedCount(count),
               style: GoogleFonts.outfit(
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
@@ -527,7 +533,7 @@ class _SelectionHeader extends StatelessWidget {
           TextButton(
             onPressed: onToggleSelectAll,
             child: Text(
-              allSelected ? 'Bỏ chọn tất cả' : 'Chọn tất cả',
+              allSelected ? AppStrings.deselectAll : AppStrings.selectAll,
               style: GoogleFonts.outfit(
                 fontSize: 14,
                 color: c.primary,
@@ -570,17 +576,17 @@ class _SelectionActionBar extends StatelessWidget {
         children: [
           _ActionBarBtn(
             icon: Icons.playlist_add_rounded,
-            label: 'Playlist',
+            label: AppStrings.playlist,
             onTap: enabled ? onAddToPlaylist : null,
           ),
           _ActionBarBtn(
             icon: Icons.favorite_rounded,
-            label: 'Yêu thích',
+            label: AppStrings.favorites,
             onTap: enabled ? onFavorite : null,
           ),
           _ActionBarBtn(
             icon: Icons.visibility_off_rounded,
-            label: 'Ẩn',
+            label: AppStrings.hide,
             onTap: enabled ? onHide : null,
             isDestructive: true,
           ),
@@ -676,7 +682,7 @@ class _BulkPlaylistSheet extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Thêm vào danh sách phát',
+                        AppStrings.addToPlaylist,
                         style: GoogleFonts.outfit(
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
@@ -684,7 +690,7 @@ class _BulkPlaylistSheet extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '${songs.length} bài hát',
+                        AppStrings.songCount(songs.length),
                         style: GoogleFonts.outfit(
                           fontSize: 12,
                           color: c.textTertiary,
@@ -718,7 +724,7 @@ class _BulkPlaylistSheet extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Chưa có danh sách phát nào.',
+                      AppStrings.noPlaylists,
                       style: GoogleFonts.outfit(
                         color: c.textTertiary,
                         fontSize: 14,
@@ -762,7 +768,7 @@ class _BulkPlaylistSheet extends StatelessWidget {
                         ),
                       ),
                       subtitle: Text(
-                        '${pl.songCount} bài hát',
+                        AppStrings.songCount(pl.songCount),
                         style: GoogleFonts.outfit(
                           fontSize: 12,
                           color: c.textTertiary,
@@ -776,7 +782,10 @@ class _BulkPlaylistSheet extends StatelessWidget {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              'Đã thêm ${songs.length} bài vào "${pl.name}"',
+                              AppStrings.addedSongsToPlaylist(
+                                songs.length,
+                                pl.name,
+                              ),
                               style: GoogleFonts.outfit(fontSize: 13),
                             ),
                             duration: const Duration(seconds: 2),
@@ -813,11 +822,23 @@ class _LibraryTabBar extends StatelessWidget {
       isScrollable: true,
       tabAlignment: TabAlignment.start,
       tabs: [
-        _CountTab(label: 'Bài hát', count: music.allSongs.length),
-        _CountTab(label: 'DS Phát', count: music.playlists.length),
-        _CountTab(label: 'Album', count: music.sortedAlbumGroups.length),
-        _CountTab(label: 'Nghệ sĩ', count: music.sortedArtistGroups.length),
-        _CountTab(label: 'Thư mục', count: music.sortedFolderGroups.length),
+        _CountTab(label: AppStrings.songs, count: music.allSongs.length),
+        _CountTab(
+          label: AppStrings.tabPlaylistsShort,
+          count: music.playlists.length,
+        ),
+        _CountTab(
+          label: AppStrings.album,
+          count: music.sortedAlbumGroups.length,
+        ),
+        _CountTab(
+          label: AppStrings.artist,
+          count: music.sortedArtistGroups.length,
+        ),
+        _CountTab(
+          label: AppStrings.folders,
+          count: music.sortedFolderGroups.length,
+        ),
       ],
     );
   }
@@ -902,8 +923,8 @@ class _SongsTab extends StatelessWidget {
         icon: Icons.music_note_rounded,
         message:
             music.librarySearchQuery.isEmpty
-                ? 'Chưa có nhạc nào trong thư viện.'
-                : 'Không tìm thấy kết quả.',
+                ? AppStrings.emptyLibrary
+                : AppStrings.noResultsDot,
         showSearchTip: music.librarySearchQuery.isNotEmpty,
         searchQuery: music.librarySearchQuery,
         onScanTap: music.librarySearchQuery.isEmpty ? onScanTap : null,
@@ -968,7 +989,7 @@ class _AlbumsTab extends StatelessWidget {
     if (albums.isEmpty) {
       return _EmptyState(
         icon: Icons.album_rounded,
-        message: 'Không có album nào.',
+        message: AppStrings.noAlbums,
         onScanTap: onScanTap,
       );
     }
@@ -1041,7 +1062,7 @@ class _AlbumsTab extends StatelessWidget {
                 ),
               ),
               Text(
-                '${songs.length} bài',
+                AppStrings.songCountShort(songs.length),
                 style: GoogleFonts.outfit(fontSize: 11, color: c.textTertiary),
               ),
             ],
@@ -1066,7 +1087,7 @@ class _ArtistsTab extends StatelessWidget {
     if (artists.isEmpty) {
       return _EmptyState(
         icon: Icons.person_rounded,
-        message: 'Không có nghệ sĩ nào.',
+        message: AppStrings.noArtists,
         onScanTap: onScanTap,
       );
     }
@@ -1120,7 +1141,7 @@ class _ArtistsTab extends StatelessWidget {
             ),
           ),
           subtitle: Text(
-            '${songs.length} bài hát',
+            AppStrings.songCount(songs.length),
             style: GoogleFonts.outfit(fontSize: 12, color: c.textTertiary),
           ),
           trailing: Icon(
@@ -1158,7 +1179,7 @@ class _FoldersTab extends StatelessWidget {
     if (folders.isEmpty) {
       return _EmptyState(
         icon: Icons.folder_rounded,
-        message: 'Không có thư mục nào.',
+        message: AppStrings.noFolders,
         onScanTap: onScanTap,
       );
     }
@@ -1192,7 +1213,7 @@ class _FoldersTab extends StatelessWidget {
             ),
           ),
           subtitle: Text(
-            '${entry.value.length} bài hát',
+            AppStrings.songCount(entry.value.length),
             style: GoogleFonts.outfit(fontSize: 12, color: c.textTertiary),
           ),
           onTap: () {
@@ -1285,7 +1306,7 @@ class _EmptyState extends StatelessWidget {
               onPressed: onScanTap,
               icon: const Icon(Icons.search_rounded, size: 18),
               label: Text(
-                'Quét ngay',
+                AppStrings.scanNow,
                 style: GoogleFonts.outfit(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -1317,7 +1338,7 @@ class _EmptyState extends StatelessWidget {
               child: Column(
                 children: [
                   Text(
-                    'Gợi ý tìm kiếm:',
+                    AppStrings.searchSuggestions,
                     style: GoogleFonts.outfit(
                       fontSize: 12,
                       color: c.textTertiary,
@@ -1325,7 +1346,7 @@ class _EmptyState extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Thử tìm bằng tên nghệ sĩ hoặc album',
+                    AppStrings.searchTip,
                     textAlign: TextAlign.center,
                     style: GoogleFonts.outfit(
                       fontSize: 12,
@@ -1343,7 +1364,7 @@ class _EmptyState extends StatelessWidget {
               },
               icon: Icon(Icons.close_rounded, size: 16, color: c.primary),
               label: Text(
-                'Xóa tìm kiếm',
+                AppStrings.clearSearch,
                 style: GoogleFonts.outfit(
                   color: c.primary,
                   fontWeight: FontWeight.w600,

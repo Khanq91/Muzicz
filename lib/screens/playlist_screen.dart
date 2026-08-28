@@ -10,6 +10,7 @@ import '../providers/music_provider.dart';
 import '../providers/player_provider.dart';
 import '../widgets/music_list_tile.dart';
 import 'now_playing_screen.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 /// Tab content: list of all playlists
 class PlaylistsTab extends StatelessWidget {
@@ -34,7 +35,7 @@ class PlaylistsTab extends StatelessWidget {
                   ),
                   const SizedBox(height: 14),
                   Text(
-                    'Chưa có danh sách phát nào.\nNhấn + để tạo mới.',
+                    AppStrings.noPlaylistsCreateHint,
                     textAlign: TextAlign.center,
                     style: GoogleFonts.outfit(
                       color: c.textTertiary,
@@ -85,14 +86,14 @@ class PlaylistsTab extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
             ),
             title: Text(
-              'Xóa "${pl.name}"?',
+              AppStrings.deletePlaylistTitle(pl.name),
               style: GoogleFonts.outfit(
                 color: c.textPrimary,
                 fontWeight: FontWeight.w600,
               ),
             ),
             content: Text(
-              'Danh sách phát sẽ bị xóa. Các bài hát trong máy không bị ảnh hưởng.',
+              AppStrings.deletePlaylistBody,
               style: GoogleFonts.outfit(
                 color: c.textSecondary,
                 fontSize: 14,
@@ -103,14 +104,14 @@ class PlaylistsTab extends StatelessWidget {
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
                 child: Text(
-                  'Hủy',
+                  AppStrings.cancel,
                   style: GoogleFonts.outfit(color: c.textTertiary),
                 ),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
                 child: Text(
-                  'Xóa',
+                  AppStrings.delete,
                   style: GoogleFonts.outfit(
                     color: c.tertiary,
                     fontWeight: FontWeight.w600,
@@ -126,7 +127,7 @@ class PlaylistsTab extends StatelessWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Đã xóa "${pl.name}"',
+          AppStrings.deletedPlaylist(pl.name),
           style: GoogleFonts.outfit(fontSize: 13),
         ),
         duration: const Duration(seconds: 2),
@@ -166,7 +167,10 @@ class _PlaylistTile extends StatelessWidget {
         ),
       ),
       subtitle: Text(
-        '${playlist.songCount} bài · ${playlist.totalDuration.compact}',
+        AppStrings.playlistMeta(
+          playlist.songCount,
+          playlist.totalDuration.compact,
+        ),
         style: GoogleFonts.outfit(fontSize: 12, color: c.textTertiary),
       ),
       trailing: PopupMenuButton<String>(
@@ -188,7 +192,7 @@ class _PlaylistTile extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      'Xóa',
+                      AppStrings.delete,
                       style: GoogleFonts.outfit(
                         color: c.tertiary,
                         fontSize: 14,
@@ -344,7 +348,7 @@ class _CreatePlaylistFab extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
             ),
             title: Text(
-              'Tạo danh sách phát',
+              AppStrings.createPlaylist,
               style: GoogleFonts.outfit(
                 color: c.textPrimary,
                 fontWeight: FontWeight.w600,
@@ -355,7 +359,7 @@ class _CreatePlaylistFab extends StatelessWidget {
               autofocus: true,
               style: GoogleFonts.outfit(color: c.textPrimary),
               decoration: InputDecoration(
-                hintText: 'Tên danh sách…',
+                hintText: AppStrings.playlistNameHint,
                 hintStyle: GoogleFonts.outfit(color: c.textDisabled),
                 filled: true,
                 fillColor: c.surfaceElevated,
@@ -373,7 +377,7 @@ class _CreatePlaylistFab extends StatelessWidget {
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: Text(
-                  'Hủy',
+                  AppStrings.cancel,
                   style: GoogleFonts.outfit(color: c.textTertiary),
                 ),
               ),
@@ -385,7 +389,7 @@ class _CreatePlaylistFab extends StatelessWidget {
                   if (context.mounted) Navigator.pop(context);
                 },
                 child: Text(
-                  'Tạo',
+                  AppStrings.create,
                   style: GoogleFonts.outfit(
                     color: c.primary,
                     fontWeight: FontWeight.w600,
@@ -450,7 +454,7 @@ class PlaylistDetailScreen extends StatelessWidget {
                   children: [
                     Expanded(
                       child: _PlayButton(
-                        label: 'Phát tất cả',
+                        label: AppStrings.playAll,
                         icon: Icons.play_arrow_rounded,
                         onTap: () {
                           player.playSongs(playlist.songs);
@@ -483,7 +487,7 @@ class PlaylistDetailScreen extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: _PlayButton(
-                        label: 'Ngẫu nhiên',
+                        label: AppStrings.shuffle,
                         icon: Icons.shuffle_rounded,
                         onTap: () async {
                           await player.playSongsShuffled(playlist.songs);
@@ -527,7 +531,7 @@ class PlaylistDetailScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _PlayButton(
-                      label: 'Shuffle Loop',
+                      label: AppStrings.shuffleLoop,
                       icon: Icons.all_inclusive_rounded,
                       onTap: () async {
                         await player.enableShuffleLoop(playlist.songs);
@@ -580,7 +584,7 @@ class PlaylistDetailScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    'Shuffle Loop',
+                                    AppStrings.shuffleLoop,
                                     style: GoogleFonts.outfit(
                                       color: c.textPrimary,
                                       fontWeight: FontWeight.w600,
@@ -590,7 +594,7 @@ class PlaylistDetailScreen extends StatelessWidget {
                                 ],
                               ),
                               content: Text(
-                                'Phát ngẫu nhiên toàn bộ danh sách. Khi hết, tự động xáo bài và phát lại từ đầu — không trùng lặp theo chu kì.',
+                                AppStrings.shuffleLoopDescription,
                                 style: GoogleFonts.outfit(
                                   color: c.textSecondary,
                                   fontSize: 14,
@@ -601,7 +605,7 @@ class PlaylistDetailScreen extends StatelessWidget {
                                 TextButton(
                                   onPressed: () => Navigator.pop(context),
                                   child: Text(
-                                    'OK',
+                                    AppStrings.ok,
                                     style: GoogleFonts.outfit(
                                       color: c.primary,
                                       fontWeight: FontWeight.w600,
@@ -639,7 +643,7 @@ class PlaylistDetailScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '${playlist.songCount} bài hát',
+                    AppStrings.songCount(playlist.songCount),
                     style: GoogleFonts.outfit(
                       color: c.textTertiary,
                       fontSize: 13,
@@ -652,7 +656,7 @@ class PlaylistDetailScreen extends StatelessWidget {
                         Icon(Icons.add_rounded, color: c.primary, size: 18),
                         const SizedBox(width: 4),
                         Text(
-                          'Thêm bài',
+                          AppStrings.addSongs,
                           style: GoogleFonts.outfit(
                             color: c.primary,
                             fontSize: 13,
@@ -679,7 +683,7 @@ class PlaylistDetailScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Danh sách trống.\nNhấn "Thêm bài" để bắt đầu.',
+                      AppStrings.emptyPlaylistHint,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.outfit(
                         color: c.textTertiary,
@@ -766,7 +770,7 @@ class PlaylistDetailScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
             ),
             title: Text(
-              'Đổi tên',
+              AppStrings.rename,
               style: GoogleFonts.outfit(
                 color: c.textPrimary,
                 fontWeight: FontWeight.w600,
@@ -793,7 +797,7 @@ class PlaylistDetailScreen extends StatelessWidget {
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: Text(
-                  'Hủy',
+                  AppStrings.cancel,
                   style: GoogleFonts.outfit(color: c.textTertiary),
                 ),
               ),
@@ -806,7 +810,7 @@ class PlaylistDetailScreen extends StatelessWidget {
                   }
                 },
                 child: Text(
-                  'Lưu',
+                  AppStrings.save,
                   style: GoogleFonts.outfit(
                     color: c.primary,
                     fontWeight: FontWeight.w600,
@@ -855,7 +859,7 @@ class PlaylistDetailScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Thêm bài hát',
+                      AppStrings.addSongsTitle,
                       style: GoogleFonts.outfit(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -868,7 +872,7 @@ class PlaylistDetailScreen extends StatelessWidget {
                           available.isEmpty
                               ? Center(
                                 child: Text(
-                                  'Tất cả bài hát đã có trong danh sách.',
+                                  AppStrings.allSongsAlreadyInPlaylist,
                                   style: GoogleFonts.outfit(
                                     color: c.textTertiary,
                                   ),
@@ -1003,7 +1007,7 @@ class _PlaylistHeader extends StatelessWidget {
                 ),
               ),
               Text(
-                '${playlist.songCount} bài hát',
+                AppStrings.songCount(playlist.songCount),
                 style: GoogleFonts.outfit(
                   fontSize: 14,
                   color: c.onPlayerHigh,

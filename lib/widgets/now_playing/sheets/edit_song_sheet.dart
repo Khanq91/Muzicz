@@ -4,6 +4,7 @@ import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:provider/provider.dart';
 import '../../../models/song_item.dart';
 import '../../../providers/music_provider.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 /// Mở sheet "Sửa thông tin" (tên bài / nghệ sĩ) cho [song].
 void showEditSongSheet(BuildContext context, SongItem song) {
@@ -61,7 +62,7 @@ class _EditSongSheetState extends State<EditSongSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Sửa thông tin',
+            AppStrings.editInfo,
             style: GoogleFonts.outfit(
               fontSize: 16,
               fontWeight: FontWeight.w700,
@@ -69,9 +70,9 @@ class _EditSongSheetState extends State<EditSongSheet> {
             ),
           ),
           const SizedBox(height: 16),
-          _metaField(context, 'Tên bài hát', _titleCtrl),
+          _metaField(context, AppStrings.songTitle, _titleCtrl),
           const SizedBox(height: 12),
-          _metaField(context, 'Nghệ sĩ', _artistCtrl),
+          _metaField(context, AppStrings.artist, _artistCtrl),
           const SizedBox(height: 20),
           Row(
             children: [
@@ -79,7 +80,7 @@ class _EditSongSheetState extends State<EditSongSheet> {
                 child: TextButton(
                   onPressed: () => Navigator.pop(context),
                   child: Text(
-                    'Hủy',
+                    AppStrings.cancel,
                     style: GoogleFonts.outfit(color: c.textTertiary),
                   ),
                 ),
@@ -101,7 +102,7 @@ class _EditSongSheetState extends State<EditSongSheet> {
                     Navigator.pop(context);
                   },
                   child: Text(
-                    'Lưu',
+                    AppStrings.save,
                     style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
                   ),
                 ),

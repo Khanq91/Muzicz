@@ -14,6 +14,7 @@ import '../widgets/now_playing/sheets/queue_sheet.dart';
 import '../widgets/now_playing/song_info.dart';
 import '../widgets/now_playing/swipe_hint.dart';
 import '../widgets/now_playing/top_bar.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 class NowPlayingScreen extends StatefulWidget {
   const NowPlayingScreen({super.key});
@@ -183,7 +184,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           leading: IconButton(
-            tooltip: 'Đóng',
+            tooltip: AppStrings.close,
             icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 32),
             onPressed: () => Navigator.pop(context),
           ),
@@ -214,9 +215,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
         body: Stack(
           children: [
             Positioned.fill(child: BlurredBackground(albumId: song.albumId)),
-            Positioned.fill(
-              child: Container(color: c.scrimDark),
-            ),
+            Positioned.fill(child: Container(color: c.scrimDark)),
             SafeArea(
               child: FadeTransition(
                 opacity: CurvedAnimation(

@@ -9,6 +9,7 @@ import '../providers/player_provider.dart';
 import '../providers/theme_provider.dart';
 import '../services/audio_handler.dart';
 import '../screens/now_playing_screen.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 class MiniPlayer extends StatelessWidget {
   const MiniPlayer({super.key});
@@ -183,7 +184,7 @@ class _CloseButton extends StatelessWidget {
     final c = context.appColors;
     return Semantics(
       button: true,
-      label: 'Đóng trình phát',
+      label: AppStrings.closePlayer,
       child: GestureDetector(
         onTap: () {
           HapticFeedback.lightImpact();
@@ -225,7 +226,7 @@ class _CloseButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
             ),
             title: Text(
-              'Dừng phát nhạc?',
+              AppStrings.stopPlaybackTitle,
               style: TextStyle(
                 color: c.textPrimary,
                 fontSize: 16,
@@ -233,13 +234,16 @@ class _CloseButton extends StatelessWidget {
               ),
             ),
             content: Text(
-              'Hàng chờ hiện tại sẽ bị xóa.',
+              AppStrings.stopPlaybackBody,
               style: TextStyle(color: c.textTertiary, fontSize: 14),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: Text('Hủy', style: TextStyle(color: c.textTertiary)),
+                child: Text(
+                  AppStrings.cancel,
+                  style: TextStyle(color: c.textTertiary),
+                ),
               ),
               TextButton(
                 onPressed: () {
@@ -247,7 +251,7 @@ class _CloseButton extends StatelessWidget {
                   context.read<PlayerProvider>().stopAndClear();
                 },
                 child: Text(
-                  'Dừng',
+                  AppStrings.stop,
                   style: TextStyle(
                     color: c.tertiary,
                     fontWeight: FontWeight.w600,
@@ -308,7 +312,7 @@ class _MiniControls extends StatelessWidget {
       children: [
         _ControlButton(
           icon: Icons.skip_previous_rounded,
-          label: 'Bài trước',
+          label: AppStrings.previousTrack,
           onTap: () {
             player.skipToPrevious();
             HapticFeedback.selectionClick();
@@ -321,7 +325,7 @@ class _MiniControls extends StatelessWidget {
         const SizedBox(width: 2),
         _ControlButton(
           icon: Icons.skip_next_rounded,
-          label: 'Bài tiếp theo',
+          label: AppStrings.nextTrack,
           onTap: () {
             player.skipToNext();
             HapticFeedback.selectionClick();
@@ -352,7 +356,9 @@ class _SmartPlayPauseButton extends StatelessWidget {
         return Semantics(
           button: true,
           label:
-              isLoading ? 'Đang tải' : (player.isPlaying ? 'Tạm dừng' : 'Phát'),
+              isLoading
+                  ? AppStrings.loading
+                  : (player.isPlaying ? AppStrings.pause : AppStrings.play),
           child: GestureDetector(
             onTap: () {
               if (!isLoading) {

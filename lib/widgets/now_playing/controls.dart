@@ -6,6 +6,7 @@ import 'package:muziczz/utils/duration_format.dart';
 import 'package:provider/provider.dart';
 import '../../providers/player_provider.dart';
 import '../../services/audio_handler.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 class ControlsSection extends StatelessWidget {
   const ControlsSection({super.key, required this.player});
@@ -27,7 +28,7 @@ class ControlsSection extends StatelessWidget {
         children: [
           IconBtn(
             icon: Icons.shuffle_rounded,
-            label: 'Phát ngẫu nhiên',
+            label: AppStrings.shufflePlay,
             toggled: shuffleEnabled,
             color: shuffleEnabled ? c.primary : c.onPlayerLow,
             size: 24,
@@ -38,7 +39,7 @@ class ControlsSection extends StatelessWidget {
           ),
           IconBtn(
             icon: Icons.skip_previous_rounded,
-            label: 'Bài trước',
+            label: AppStrings.previousTrack,
             color: c.onPlayer,
             size: 36,
             onTap: () {
@@ -49,7 +50,7 @@ class ControlsSection extends StatelessWidget {
           PlayButton(player: player),
           IconBtn(
             icon: Icons.skip_next_rounded,
-            label: 'Bài tiếp theo',
+            label: AppStrings.nextTrack,
             color: c.onPlayer,
             size: 36,
             onTap: () {
@@ -62,7 +63,10 @@ class ControlsSection extends StatelessWidget {
                 repeatMode == RepeatMode.one
                     ? Icons.repeat_one_rounded
                     : Icons.repeat_rounded,
-            label: repeatMode == RepeatMode.one ? 'Lặp lại một bài' : 'Lặp lại',
+            label:
+                repeatMode == RepeatMode.one
+                    ? AppStrings.repeatOne
+                    : AppStrings.repeat,
             toggled: repeatMode != RepeatMode.none,
             color: repeatMode == RepeatMode.one ? c.primary : c.onPlayerLow,
             size: 24,
@@ -115,7 +119,7 @@ class _PlayButtonState extends State<PlayButton>
     final isPlaying = context.select<PlayerProvider, bool>((p) => p.isPlaying);
     return Semantics(
       button: true,
-      label: isPlaying ? 'Tạm dừng' : 'Phát',
+      label: isPlaying ? AppStrings.pause : AppStrings.play,
       child: GestureDetector(
         onTapDown: (_) => _ctrl.forward(),
         onTapUp: (_) async {

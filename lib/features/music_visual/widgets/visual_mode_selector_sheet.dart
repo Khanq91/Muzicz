@@ -7,6 +7,7 @@ import '../../../theme/app_colors_data.dart';
 import '../core/visual_feature_flag.dart';
 import '../providers/visual_mode_provider.dart';
 import '../poc/android_visualizer_poc_screen.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 class VisualModeSelectorSheet extends StatefulWidget {
   const VisualModeSelectorSheet({super.key});
@@ -86,7 +87,7 @@ class _VisualModeSelectorSheetState extends State<VisualModeSelectorSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Music Visual',
+                      AppStrings.musicVisual,
                       style: GoogleFonts.outfit(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -94,7 +95,7 @@ class _VisualModeSelectorSheetState extends State<VisualModeSelectorSheet> {
                       ),
                     ),
                     Text(
-                      'Chọn phong cách hiển thị khi phát nhạc',
+                      AppStrings.visualModeSubtitle,
                       style: GoogleFonts.outfit(
                         fontSize: 13,
                         color: c.textTertiary,
@@ -120,7 +121,7 @@ class _VisualModeSelectorSheetState extends State<VisualModeSelectorSheet> {
                     ),
                   ),
                   child: Text(
-                    'Áp dụng',
+                    AppStrings.apply,
                     style: GoogleFonts.outfit(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
@@ -145,10 +146,8 @@ class _VisualModeSelectorSheetState extends State<VisualModeSelectorSheet> {
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 8),
               leading: Icon(Icons.science_rounded, color: c.primary),
-              title: const Text('Android Visualizer POC'),
-              subtitle: const Text(
-                'Harness riêng; quyền mic chỉ hỏi trong sub-toggle Realtime RMS',
-              ),
+              title: const Text(AppStrings.visualizerPocTitle),
+              subtitle: const Text(AppStrings.visualizerPocSubtitle),
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () {
                 Navigator.pop(context);
@@ -242,8 +241,8 @@ class _VisualModeOption extends StatelessWidget {
                     ),
                     Text(
                       mode.enablesReactiveVisual
-                          ? 'Hiệu ứng âm nhạc — đang phát triển'
-                          : 'Giao diện phát nhạc hiện tại',
+                          ? AppStrings.visualModeFancyDesc
+                          : AppStrings.visualModeNormalDesc,
                       style: GoogleFonts.outfit(
                         fontSize: 12,
                         color: c.textTertiary,
@@ -283,7 +282,7 @@ class _CurrentBadge extends StatelessWidget {
       borderRadius: BorderRadius.circular(6),
     ),
     child: Text(
-      'Hiện tại',
+      AppStrings.current,
       style: GoogleFonts.outfit(
         fontSize: 10,
         fontWeight: FontWeight.w600,

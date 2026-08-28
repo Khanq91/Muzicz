@@ -8,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../screens/onboarding_screen.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
 import '../core/app_router.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 class DownloaderGatewayScreen extends StatefulWidget {
   const DownloaderGatewayScreen({super.key});
@@ -91,7 +92,7 @@ class _DownloaderGatewayScreenState extends State<DownloaderGatewayScreen>
                       onPressed: () => Navigator.pop(context),
                     ),
                     Text(
-                      'Tải nhạc',
+                      AppStrings.downloadMusic,
                       style: GoogleFonts.outfit(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
@@ -119,11 +120,11 @@ class _DownloaderGatewayScreenState extends State<DownloaderGatewayScreen>
                       // ── Nút tải từ URL ──────────────────
                       _GatewayButton(
                         icon: Icons.link_rounded,
-                        label: 'Tải nhạc từ URL',
-                        subtitle: 'YouTube · TikTok · Instagram và hơn thế nữa',
+                        label: AppStrings.downloadFromUrl,
+                        subtitle: AppStrings.gatewayDownloadSubtitle,
                         gradient: c.primaryGradient,
                         enabled: _isOnline,
-                        disabledReason: 'Cần kết nối mạng để tải nhạc',
+                        disabledReason: AppStrings.gatewayNeedNetwork,
                         onTap: _goToDownloader,
                       ),
                       const SizedBox(height: 14),
@@ -131,8 +132,8 @@ class _DownloaderGatewayScreenState extends State<DownloaderGatewayScreen>
                       // ── Nút quét lại ────────────────────
                       _GatewayButton(
                         icon: Icons.refresh_rounded,
-                        label: 'Quét lại thư viện',
-                        subtitle: 'Cập nhật nhạc từ bộ nhớ thiết bị',
+                        label: AppStrings.rescanLibrary,
+                        subtitle: AppStrings.rescanLibrarySubtitle,
                         gradient: c.randomMixGradient,
                         enabled: true,
                         onTap: _goToRescan,
@@ -159,7 +160,7 @@ class _NetworkStatusCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.appColors;
     final color = isOnline ? c.success : c.error;
-    final label = isOnline ? 'Đang kết nối mạng' : 'Không có mạng';
+    final label = isOnline ? AppStrings.networkOnline : AppStrings.networkOffline;
     final icon = isOnline ? Icons.wifi_rounded : Icons.wifi_off_rounded;
 
     return AnimatedContainer(
@@ -198,8 +199,8 @@ class _NetworkStatusCard extends StatelessWidget {
                 ),
                 Text(
                   isOnline
-                      ? 'Sẵn sàng tải nhạc'
-                      : 'Kết nối Wi-Fi hoặc dữ liệu di động để tiếp tục',
+                      ? AppStrings.networkReady
+                      : AppStrings.networkConnectHint,
                   style: GoogleFonts.outfit(
                     fontSize: 12,
                     color: color.withValues(alpha: 0.8),
@@ -259,7 +260,7 @@ class _InfoCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'Lưu ý',
+                AppStrings.note,
                 style: GoogleFonts.outfit(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -272,23 +273,23 @@ class _InfoCard extends StatelessWidget {
           _InfoRow(
             icon: Icons.download_rounded,
             text:
-                'File tải về được lưu vào thư mục Downloads (Có thể tùy chỉnh) trên thiết bị.',
+                AppStrings.gatewayNoteStorage,
           ),
           const SizedBox(height: 8),
           _InfoRow(
             icon: Icons.audio_file_rounded,
-            text: 'Hỗ trợ tách audio M4A từ video — không mất chất lượng.',
+            text: AppStrings.gatewayNoteAudio,
           ),
           const SizedBox(height: 8),
           _InfoRow(
             icon: Icons.wifi_rounded,
-            text: 'Tải nhạc từ URL yêu cầu kết nối Internet.',
+            text: AppStrings.gatewayNoteInternet,
             highlight: !isOnline,
           ),
           const SizedBox(height: 8),
           _InfoRow(
             icon: Icons.folder_rounded,
-            text: 'Quét lại thư viện không cần mạng — chỉ đọc từ bộ nhớ máy.',
+            text: AppStrings.gatewayNoteRescan,
           ),
         ],
       ),

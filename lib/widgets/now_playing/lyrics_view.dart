@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../providers/lyrics_provider.dart';
 import '../../providers/player_provider.dart';
 import '../../services/audio_handler.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 // ════════════════════════════════════════════════════════════════════════════
 // LyricsView
@@ -80,7 +81,7 @@ class _LyricsViewState extends State<LyricsView> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Đang tải lời bài hát…',
+              AppStrings.lyricsLoading,
               style: GoogleFonts.outfit(fontSize: 12, color: c.onPlayerLow),
             ),
           ],
@@ -106,8 +107,8 @@ class _LyricsViewState extends State<LyricsView> {
             const SizedBox(height: 8),
             Text(
               lp.status == LyricsStatus.error
-                  ? 'Không thể tải lời bài hát'
-                  : 'Không có lời bài hát',
+                  ? AppStrings.lyricsError
+                  : AppStrings.lyricsNone,
               textAlign: TextAlign.center,
               style: GoogleFonts.outfit(fontSize: 12, color: c.onPlayerSubtle),
             ),

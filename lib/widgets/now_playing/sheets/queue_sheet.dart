@@ -5,6 +5,7 @@ import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/player_provider.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 class QueueSheet extends StatelessWidget {
   const QueueSheet({super.key, required this.onClose, required this.useBlur});
@@ -34,7 +35,7 @@ class QueueSheet extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Hàng chờ phát',
+                        AppStrings.queue,
                         style: GoogleFonts.outfit(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
@@ -42,7 +43,7 @@ class QueueSheet extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '${player.queue.length} bài hát',
+                        AppStrings.songCount(player.queue.length),
                         style: GoogleFonts.outfit(
                           fontSize: 12,
                           color: c.textTertiary,
@@ -52,7 +53,7 @@ class QueueSheet extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  tooltip: 'Thu gọn hàng chờ',
+                  tooltip: AppStrings.collapseQueue,
                   onPressed: onClose,
                   icon: Icon(
                     Icons.keyboard_arrow_down_rounded,
@@ -122,7 +123,7 @@ class QueueSheet extends StatelessWidget {
                           )
                           : Semantics(
                             button: true,
-                            label: 'Xóa khỏi hàng chờ',
+                            label: AppStrings.removeFromQueue,
                             child: GestureDetector(
                               onTap: () => player.removeFromQueue(i),
                               behavior: HitTestBehavior.opaque,

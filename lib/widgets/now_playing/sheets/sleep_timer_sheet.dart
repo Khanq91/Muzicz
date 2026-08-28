@@ -3,16 +3,17 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/player_provider.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 class SleepTimerSheet extends StatelessWidget {
   const SleepTimerSheet({super.key});
-  static const _presets = [
-    (label: '5 phút', duration: Duration(minutes: 5)),
-    (label: '10 phút', duration: Duration(minutes: 10)),
-    (label: '15 phút', duration: Duration(minutes: 15)),
-    (label: '30 phút', duration: Duration(minutes: 30)),
-    (label: '45 phút', duration: Duration(minutes: 45)),
-    (label: '60 phút', duration: Duration(hours: 1)),
+  static final _presets = [
+    (label: AppStrings.minutes(5), duration: Duration(minutes: 5)),
+    (label: AppStrings.minutes(10), duration: Duration(minutes: 10)),
+    (label: AppStrings.minutes(15), duration: Duration(minutes: 15)),
+    (label: AppStrings.minutes(30), duration: Duration(minutes: 30)),
+    (label: AppStrings.minutes(45), duration: Duration(minutes: 45)),
+    (label: AppStrings.minutes(60), duration: Duration(hours: 1)),
   ];
 
   @override
@@ -40,7 +41,7 @@ class SleepTimerSheet extends StatelessWidget {
           Row(
             children: [
               Text(
-                'Hẹn giờ tắt nhạc',
+                AppStrings.sleepTimerTitle,
                 style: GoogleFonts.outfit(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
@@ -55,7 +56,7 @@ class SleepTimerSheet extends StatelessWidget {
                     Navigator.pop(context);
                   },
                   child: Text(
-                    'Hủy hẹn giờ',
+                    AppStrings.cancelSleepTimer,
                     style: GoogleFonts.outfit(color: c.tertiary, fontSize: 14),
                   ),
                 ),
@@ -76,7 +77,7 @@ class SleepTimerSheet extends StatelessWidget {
                   Icon(Icons.bedtime_rounded, color: c.primary, size: 20),
                   const SizedBox(width: 10),
                   Text(
-                    'Dừng sau ',
+                    AppStrings.stopAfterPrefix,
                     style: GoogleFonts.outfit(
                       color: c.textSecondary,
                       fontSize: 14,
@@ -96,7 +97,7 @@ class SleepTimerSheet extends StatelessWidget {
           ],
           const SizedBox(height: 16),
           Text(
-            'Chọn thời gian',
+            AppStrings.chooseDuration,
             style: GoogleFonts.outfit(fontSize: 13, color: c.textTertiary),
           ),
           const SizedBox(height: 10),
@@ -142,8 +143,8 @@ class SleepTimerSheet extends StatelessWidget {
   String _formatRemaining(Duration d) {
     final m = d.inMinutes;
     final s = d.inSeconds % 60;
-    if (m == 0) return '${s}s';
-    if (s == 0) return '$m phút';
+    if (m == 0) return AppStrings.seconds(s);
+    if (s == 0) return AppStrings.minutes(m);
     return '$m:${s.toString().padLeft(2, '0')}';
   }
 }

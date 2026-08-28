@@ -8,6 +8,7 @@ import '../providers/music_provider.dart';
 import '../providers/player_provider.dart';
 import '../widgets/music_list_tile.dart';
 import 'now_playing_screen.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 class AlbumDetailScreen extends StatelessWidget {
   const AlbumDetailScreen({
@@ -65,7 +66,7 @@ class AlbumDetailScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _ActionButton(
-                      label: 'Phát tất cả',
+                      label: AppStrings.playAll,
                       icon: Icons.play_arrow_rounded,
                       primary: true,
                       onTap: () {
@@ -78,7 +79,7 @@ class AlbumDetailScreen extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _ActionButton(
-                      label: 'Ngẫu nhiên',
+                      label: AppStrings.shuffle,
                       icon: Icons.shuffle_rounded,
                       primary: false,
                       onTap: () async {
@@ -102,7 +103,7 @@ class AlbumDetailScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _ActionButton(
-                      label: 'Shuffle Loop',
+                      label: AppStrings.shuffleLoop,
                       icon: Icons.all_inclusive_rounded,
                       primary: false,
                       onTap: () async {
@@ -134,7 +135,7 @@ class AlbumDetailScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    'Shuffle Loop',
+                                    AppStrings.shuffleLoop,
                                     style: GoogleFonts.outfit(
                                       color: c.textPrimary,
                                       fontWeight: FontWeight.w600,
@@ -144,7 +145,7 @@ class AlbumDetailScreen extends StatelessWidget {
                                 ],
                               ),
                               content: Text(
-                                'Phát ngẫu nhiên toàn bộ danh sách. Khi hết, tự động xáo bài và phát lại từ đầu — không trùng lặp theo chu kì.',
+                                AppStrings.shuffleLoopDescription,
                                 style: GoogleFonts.outfit(
                                   color: c.textSecondary,
                                   fontSize: 14,
@@ -155,7 +156,7 @@ class AlbumDetailScreen extends StatelessWidget {
                                 TextButton(
                                   onPressed: () => Navigator.pop(context),
                                   child: Text(
-                                    'OK',
+                                    AppStrings.ok,
                                     style: GoogleFonts.outfit(
                                       color: c.primary,
                                       fontWeight: FontWeight.w600,
@@ -195,7 +196,7 @@ class AlbumDetailScreen extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
               child: Text(
-                '${songs.length} bài hát',
+                AppStrings.songCount(songs.length),
                 style: GoogleFonts.outfit(
                   fontSize: 13,
                   color: c.textTertiary,
@@ -335,7 +336,7 @@ class _AlbumHeader extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                '$artistName · $songCount bài hát',
+                AppStrings.albumHeaderSubtitle(artistName, songCount),
                 textAlign: TextAlign.center,
                 style: GoogleFonts.outfit(
                   fontSize: 13,
@@ -382,11 +383,7 @@ class _ActionButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              color: primary ? c.onPlayer : c.textSecondary,
-              size: 20,
-            ),
+            Icon(icon, color: primary ? c.onPlayer : c.textSecondary, size: 20),
             const SizedBox(width: 6),
             Text(
               label,

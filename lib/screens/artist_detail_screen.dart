@@ -9,6 +9,7 @@ import '../providers/music_provider.dart';
 import '../providers/player_provider.dart';
 import '../widgets/music_list_tile.dart';
 import 'now_playing_screen.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 class ArtistDetailScreen extends StatelessWidget {
   const ArtistDetailScreen({
@@ -73,7 +74,7 @@ class ArtistDetailScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _ActionButton(
-                      label: 'Phát tất cả',
+                      label: AppStrings.playAll,
                       icon: Icons.play_arrow_rounded,
                       primary: true,
                       onTap: () {
@@ -86,7 +87,7 @@ class ArtistDetailScreen extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _ActionButton(
-                      label: 'Ngẫu nhiên',
+                      label: AppStrings.shuffle,
                       icon: Icons.shuffle_rounded,
                       primary: false,
                       onTap: () async {
@@ -108,7 +109,7 @@ class ArtistDetailScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _ActionButton(
-                      label: 'Shuffle Loop',
+                      label: AppStrings.shuffleLoop,
                       icon: Icons.all_inclusive_rounded,
                       primary: false,
                       onTap: () async {
@@ -140,7 +141,7 @@ class ArtistDetailScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    'Shuffle Loop',
+                                    AppStrings.shuffleLoop,
                                     style: GoogleFonts.outfit(
                                       color: c.textPrimary,
                                       fontWeight: FontWeight.w600,
@@ -150,7 +151,7 @@ class ArtistDetailScreen extends StatelessWidget {
                                 ],
                               ),
                               content: Text(
-                                'Phát ngẫu nhiên toàn bộ danh sách. Khi hết, tự động xáo bài và phát lại từ đầu — không trùng lặp theo chu kì.',
+                                AppStrings.shuffleLoopDescription,
                                 style: GoogleFonts.outfit(
                                   color: c.textSecondary,
                                   fontSize: 14,
@@ -161,7 +162,7 @@ class ArtistDetailScreen extends StatelessWidget {
                                 TextButton(
                                   onPressed: () => Navigator.pop(context),
                                   child: Text(
-                                    'OK',
+                                    AppStrings.ok,
                                     style: GoogleFonts.outfit(
                                       color: c.primary,
                                       fontWeight: FontWeight.w600,
@@ -202,7 +203,7 @@ class ArtistDetailScreen extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 10),
                 child: Text(
-                  'Album',
+                  AppStrings.album,
                   style: GoogleFonts.outfit(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -267,7 +268,7 @@ class ArtistDetailScreen extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              '${entry.value.length} bài',
+                              AppStrings.songCountShort(entry.value.length),
                               style: GoogleFonts.outfit(
                                 fontSize: 11,
                                 color: c.textTertiary,
@@ -288,7 +289,7 @@ class ArtistDetailScreen extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
               child: Text(
-                'Tất cả bài hát (${songs.length})',
+                AppStrings.allSongsWithCount(songs.length),
                 style: GoogleFonts.outfit(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -431,7 +432,7 @@ class _ArtistHeader extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                '$songCount bài hát · $albumCount album',
+                AppStrings.artistStats(songCount, albumCount),
                 textAlign: TextAlign.center,
                 style: GoogleFonts.outfit(
                   fontSize: 13,

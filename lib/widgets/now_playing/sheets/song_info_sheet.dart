@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
 import '../../../models/song_item.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 /// Mở sheet "Thông tin bài hát" cho [song].
 void showSongInfoSheet(BuildContext context, SongItem song) {
@@ -30,7 +31,7 @@ class SongInfoSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Thông tin bài hát',
+            AppStrings.songInfo,
             style: GoogleFonts.outfit(
               fontSize: 16,
               fontWeight: FontWeight.w700,
@@ -38,10 +39,10 @@ class SongInfoSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          _infoRow(context, 'Tên bài', song.title),
-          _infoRow(context, 'Nghệ sĩ', song.artist),
-          _infoRow(context, 'Album', song.album),
-          _infoRow(context, 'Thời lượng', song.durationFormatted),
+          _infoRow(context, AppStrings.fieldTitle, song.title),
+          _infoRow(context, AppStrings.artist, song.artist),
+          _infoRow(context, AppStrings.album, song.album),
+          _infoRow(context, AppStrings.duration, song.durationFormatted),
           const SizedBox(height: 8),
         ],
       ),

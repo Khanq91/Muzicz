@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../models/song_item.dart';
 import '../../providers/music_provider.dart';
 import '../add_to_playlist_sheet.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 class SongInfo extends StatelessWidget {
   const SongInfo({super.key, required this.song});
@@ -50,7 +51,7 @@ class SongInfo extends StatelessWidget {
             ),
           ),
           IconButton(
-            tooltip: 'Thêm vào danh sách phát',
+            tooltip: AppStrings.addToPlaylist,
             onPressed: () {
               showModalBottomSheet(
                 context: context,
@@ -73,7 +74,7 @@ class SongInfo extends StatelessWidget {
             child: Semantics(
               toggled: isFav,
               child: IconButton(
-                tooltip: isFav ? 'Bỏ yêu thích' : 'Yêu thích',
+                tooltip: isFav ? AppStrings.unfavorite : AppStrings.favorites,
                 onPressed: () {
                   music.toggleFavorite(song.id);
                   HapticFeedback.selectionClick();
