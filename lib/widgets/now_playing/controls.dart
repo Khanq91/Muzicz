@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:muziczz/utils/duration_format.dart';
+import 'package:provider/provider.dart';
 import '../../providers/player_provider.dart';
 import '../../services/audio_handler.dart';
 
@@ -13,6 +14,12 @@ class ControlsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
+    // `player` is only used for actions; the rendered bits are selected so
+    // this row rebuilds on shuffle/repeat changes, not on every notify.
+    final (shuffleEnabled, repeatMode) = context
+        .select<PlayerProvider, (bool, RepeatMode)>(
+          (p) => (p.shuffleEnabled, p.repeatMode),
+        );
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
@@ -21,8 +28,8 @@ class ControlsSection extends StatelessWidget {
           IconBtn(
             icon: Icons.shuffle_rounded,
             label: 'Phát ngẫu nhiên',
-            toggled: player.shuffleEnabled,
-            color: player.shuffleEnabled ? c.primary : c.onPlayerLow,
+            toggled: shuffleEnabled,
+            color: shuffleEnabled ? c.primary : c.onPlayerLow,
             size: 24,
             onTap: () {
               player.toggleShuffle();
@@ -52,16 +59,12 @@ class ControlsSection extends StatelessWidget {
           ),
           IconBtn(
             icon:
-                player.repeatMode == RepeatMode.one
+                repeatMode == RepeatMode.one
                     ? Icons.repeat_one_rounded
                     : Icons.repeat_rounded,
-            label:
-                player.repeatMode == RepeatMode.one
-                    ? 'Lặp lại một bài'
-                    : 'Lặp lại',
-            toggled: player.repeatMode != RepeatMode.none,
-            color:
-                player.repeatMode == RepeatMode.one ? c.primary : c.onPlayerLow,
+            label: repeatMode == RepeatMode.one ? 'Lặp lại một bài' : 'Lặp lại',
+            toggled: repeatMode != RepeatMode.none,
+            color: repeatMode == RepeatMode.one ? c.primary : c.onPlayerLow,
             size: 24,
             onTap: () {
               player.toggleRepeat();
@@ -109,9 +112,10 @@ class _PlayButtonState extends State<PlayButton>
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
+    final isPlaying = context.select<PlayerProvider, bool>((p) => p.isPlaying);
     return Semantics(
       button: true,
-      label: widget.player.isPlaying ? 'Tạm dừng' : 'Phát',
+      label: isPlaying ? 'Tạm dừng' : 'Phát',
       child: GestureDetector(
         onTapDown: (_) => _ctrl.forward(),
         onTapUp: (_) async {
@@ -141,10 +145,8 @@ class _PlayButtonState extends State<PlayButton>
               transitionBuilder:
                   (child, anim) => ScaleTransition(scale: anim, child: child),
               child: Icon(
-                widget.player.isPlaying
-                    ? Icons.pause_rounded
-                    : Icons.play_arrow_rounded,
-                key: ValueKey(widget.player.isPlaying),
+                isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                key: ValueKey(isPlaying),
                 color: c.background,
                 size: 38,
               ),

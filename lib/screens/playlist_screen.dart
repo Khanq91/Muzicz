@@ -407,7 +407,10 @@ class PlaylistDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final music = context.watch<MusicProvider>();
-    final player = context.watch<PlayerProvider>();
+    // Player state is only rendered per tile (isActive); read it here so a
+    // play/pause, track change or sleep-timer tick does not rebuild the
+    // SliverAppBar, header image, buttons and the whole list.
+    final player = context.read<PlayerProvider>();
     final playlist = music.playlists.firstWhere((p) => p.id == playlistId);
     final c = context.appColors;
     return Scaffold(
@@ -692,45 +695,52 @@ class PlaylistDetailScreen extends StatelessWidget {
             SliverList(
               delegate: SliverChildBuilderDelegate((_, i) {
                 final song = playlist.songs[i];
-                return MusicListTile(
-                  song: song,
-                  isActive: player.currentSong?.id == song.id,
-                  onTap: () {
-                    player.playSongs(playlist.songs, specificSong: song);
-                    music.onSongPlayed(song.id);
-                    Navigator.of(context).push(
-                      PageRouteBuilder(
-                        pageBuilder: (_, anim, __) => const NowPlayingScreen(),
-                        transitionDuration: const Duration(milliseconds: 400),
-                        transitionsBuilder:
-                            (_, anim, __, child) => SlideTransition(
-                              position: Tween<Offset>(
-                                begin: const Offset(0, 1),
-                                end: Offset.zero,
-                              ).animate(
-                                CurvedAnimation(
-                                  parent: anim,
-                                  curve: Curves.easeOutCubic,
-                                ),
+                return Selector<PlayerProvider, int?>(
+                  selector: (_, p) => p.currentSong?.id,
+                  builder:
+                      (_, activeId, __) => MusicListTile(
+                        song: song,
+                        isActive: activeId == song.id,
+                        onTap: () {
+                          player.playSongs(playlist.songs, specificSong: song);
+                          music.onSongPlayed(song.id);
+                          Navigator.of(context).push(
+                            PageRouteBuilder(
+                              pageBuilder:
+                                  (_, anim, __) => const NowPlayingScreen(),
+                              transitionDuration: const Duration(
+                                milliseconds: 400,
                               ),
-                              child: child,
+                              transitionsBuilder:
+                                  (_, anim, __, child) => SlideTransition(
+                                    position: Tween<Offset>(
+                                      begin: const Offset(0, 1),
+                                      end: Offset.zero,
+                                    ).animate(
+                                      CurvedAnimation(
+                                        parent: anim,
+                                        curve: Curves.easeOutCubic,
+                                      ),
+                                    ),
+                                    child: child,
+                                  ),
                             ),
+                          );
+                        },
+                        trailing: GestureDetector(
+                          onTap: () {
+                            music.removeFromPlaylist(playlistId, song.id);
+                          },
+                          child: Padding(
+                            padding: EdgeInsets.all(8),
+                            child: Icon(
+                              Icons.remove_circle_outline_rounded,
+                              color: c.textDisabled,
+                              size: 20,
+                            ),
+                          ),
+                        ),
                       ),
-                    );
-                  },
-                  trailing: GestureDetector(
-                    onTap: () {
-                      music.removeFromPlaylist(playlistId, song.id);
-                    },
-                    child: Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Icon(
-                        Icons.remove_circle_outline_rounded,
-                        color: c.textDisabled,
-                        size: 20,
-                      ),
-                    ),
-                  ),
                 );
               }, childCount: playlist.songs.length),
             ),

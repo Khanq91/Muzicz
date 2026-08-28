@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:provider/provider.dart';
-import '../../providers/lyrics_provider.dart';
 import '../../providers/player_provider.dart';
 import 'sheets/sleep_timer_sheet.dart';
 import 'sheets/speed_sheet.dart';
@@ -14,7 +13,6 @@ class ExpandablePillBar extends StatefulWidget {
   const ExpandablePillBar({
     super.key,
     required this.player,
-    required this.lyricsProvider,
     required this.onQueueTap,
     required this.onLyricsTap,
     required this.showingLyrics,
@@ -22,7 +20,6 @@ class ExpandablePillBar extends StatefulWidget {
   });
 
   final PlayerProvider player;
-  final LyricsProvider lyricsProvider;
   final VoidCallback onQueueTap;
   final VoidCallback onLyricsTap;
   final bool showingLyrics;
@@ -73,8 +70,10 @@ class _ExpandablePillBarState extends State<ExpandablePillBar> {
 
     final lyricsActive = widget.showingLyrics;
     final queueActive = widget.queueVisible;
-    final speedActive = widget.player.speed != 1.0;
-    final timerActive = widget.player.sleepTimerActive;
+    final (speedActive, timerActive) = context
+        .select<PlayerProvider, (bool, bool)>(
+          (p) => (p.speed != 1.0, p.sleepTimerActive),
+        );
 
     return Center(
       child: AnimatedContainer(

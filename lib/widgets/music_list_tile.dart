@@ -35,8 +35,6 @@ class MusicListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final musicProvider = context.watch<MusicProvider>();
-    final isFav = musicProvider.isFavorite(song.id);
     final c = context.appColors;
 
     final bgColor =
@@ -56,7 +54,15 @@ class MusicListTile extends StatelessWidget {
                 : (onLongPress ??
                     () {
                       HapticFeedback.mediumImpact();
-                      _showContextMenu(context, isFav, musicProvider);
+                      // isFav is only shown inside the menu, so read it here
+                      // instead of watching MusicProvider from every tile
+                      // (onSongPlayed/toggleFavorite notified all of them).
+                      final music = context.read<MusicProvider>();
+                      _showContextMenu(
+                        context,
+                        music.isFavorite(song.id),
+                        music,
+                      );
                     }),
         borderRadius: BorderRadius.circular(12),
         splashColor: c.primary.withValues(alpha: 0.1),

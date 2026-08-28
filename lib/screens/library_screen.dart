@@ -39,8 +39,9 @@ class _LibraryScreenState extends State<LibraryScreen>
   @override
   void initState() {
     super.initState();
+    // No listener here: TabBar and _FadeTabBarView follow the controller on
+    // their own, so a tab change must not rebuild the whole screen.
     _tabCtrl = TabController(length: 5, vsync: this);
-    _tabCtrl.addListener(() => setState(() {}));
   }
 
   @override
@@ -218,7 +219,6 @@ class _LibraryScreenState extends State<LibraryScreen>
   Widget build(BuildContext context) {
     final music = context.watch<MusicProvider>();
     final isScanning = music.status == LibraryStatus.scanning;
-    final hasSearchText = _searchCtrl.text.isNotEmpty;
     final c = context.appColors;
 
     // Tổng bài đang hiển thị (dùng cho "Chọn tất cả")
@@ -307,86 +307,7 @@ class _LibraryScreenState extends State<LibraryScreen>
 
             // ── Search bar + scope indicator — ẩn khi selecting ──
             if (!_isSelecting) ...[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-                child: TextField(
-                  controller: _searchCtrl,
-                  onChanged: (q) {
-                    context.read<MusicProvider>().setLibrarySearchQuery(q);
-                    setState(() {});
-                  },
-                  style: GoogleFonts.outfit(color: c.textPrimary, fontSize: 14),
-                  decoration: InputDecoration(
-                    hintText: 'Tìm trong thư viện…',
-                    hintStyle: GoogleFonts.outfit(
-                      color: c.textDisabled,
-                      fontSize: 14,
-                    ),
-                    prefixIcon: Icon(
-                      Icons.search_rounded,
-                      color: c.textTertiary,
-                      size: 20,
-                    ),
-                    suffixIcon:
-                        _searchCtrl.text.isNotEmpty
-                            ? GestureDetector(
-                              onTap: () {
-                                _searchCtrl.clear();
-                                context
-                                    .read<MusicProvider>()
-                                    .setLibrarySearchQuery('');
-                                setState(() {});
-                              },
-                              child: Icon(
-                                Icons.close_rounded,
-                                color: c.textTertiary,
-                                size: 18,
-                              ),
-                            )
-                            : null,
-                    filled: true,
-                    fillColor: c.surfaceElevated,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: c.primary, width: 1),
-                    ),
-                  ),
-                ),
-              ),
-
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                height: hasSearchText ? 28 : 0,
-                curve: Curves.easeOut,
-                child:
-                    hasSearchText
-                        ? Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.storage_rounded,
-                                size: 12,
-                                color: c.textDisabled,
-                              ),
-                              const SizedBox(width: 5),
-                              Text(
-                                'Tìm trong thư viện cục bộ · ${context.watch<MusicProvider>().allSongs.length} bài',
-                                style: GoogleFonts.outfit(
-                                  fontSize: 11,
-                                  color: c.textDisabled,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                        : const SizedBox.shrink(),
-              ),
+              _LibrarySearchBar(controller: _searchCtrl),
 
               // ── TabBar ──────────────────────────────────────
               _LibraryTabBar(tabCtrl: _tabCtrl, music: music),
@@ -457,6 +378,111 @@ class _LibraryScreenState extends State<LibraryScreen>
           fontSize: 14,
         ),
       ),
+    );
+  }
+}
+
+// ── Search bar ────────────────────────────────────────────────────────────────
+
+/// Ô tìm kiếm + dòng chỉ báo phạm vi. Chỉ widget này rebuild theo text (qua
+/// ValueListenableBuilder trên controller) thay vì setState() rỗng cả màn hình
+/// (header, TabBar, tab content) trên mỗi phím gõ.
+class _LibrarySearchBar extends StatelessWidget {
+  const _LibrarySearchBar({required this.controller});
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.appColors;
+    final songCount = context.select<MusicProvider, int>(
+      (m) => m.allSongs.length,
+    );
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: controller,
+      builder: (context, value, _) {
+        final hasSearchText = value.text.isNotEmpty;
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+              child: TextField(
+                controller: controller,
+                onChanged:
+                    (q) =>
+                        context.read<MusicProvider>().setLibrarySearchQuery(q),
+                style: GoogleFonts.outfit(color: c.textPrimary, fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: 'Tìm trong thư viện…',
+                  hintStyle: GoogleFonts.outfit(
+                    color: c.textDisabled,
+                    fontSize: 14,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    color: c.textTertiary,
+                    size: 20,
+                  ),
+                  suffixIcon:
+                      hasSearchText
+                          ? GestureDetector(
+                            onTap: () {
+                              controller.clear();
+                              context
+                                  .read<MusicProvider>()
+                                  .setLibrarySearchQuery('');
+                            },
+                            child: Icon(
+                              Icons.close_rounded,
+                              color: c.textTertiary,
+                              size: 18,
+                            ),
+                          )
+                          : null,
+                  filled: true,
+                  fillColor: c.surfaceElevated,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: c.primary, width: 1),
+                  ),
+                ),
+              ),
+            ),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              height: hasSearchText ? 28 : 0,
+              curve: Curves.easeOut,
+              child:
+                  hasSearchText
+                      ? Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.storage_rounded,
+                              size: 12,
+                              color: c.textDisabled,
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              'Tìm trong thư viện cục bộ · $songCount bài',
+                              style: GoogleFonts.outfit(
+                                fontSize: 11,
+                                color: c.textDisabled,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                      : const SizedBox.shrink(),
+            ),
+          ],
+        );
+      },
     );
   }
 }

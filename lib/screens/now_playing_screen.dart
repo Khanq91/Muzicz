@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:provider/provider.dart';
 import '../features/music_visual/widgets/reactive_waveform_view.dart';
+import '../models/song_item.dart';
 import '../providers/lyrics_provider.dart';
 import '../providers/player_provider.dart';
 import '../widgets/now_playing/album_art_section.dart';
@@ -166,8 +167,14 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
 
   @override
   Widget build(BuildContext context) {
-    final player = context.watch<PlayerProvider>();
-    final song = player.currentSong;
+    // Only the current song is needed at this level. Children that render
+    // player/lyrics state subscribe to their own slice, so the sleep-timer
+    // tick (1/s) and each lyric line change no longer rebuild the whole
+    // screen (blurred background, flip card, queue sheet included).
+    final song = context.select<PlayerProvider, SongItem?>(
+      (p) => p.currentSong,
+    );
+    final player = _playerProvider;
     final c = context.appColors;
 
     if (song == null) {
@@ -183,9 +190,6 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
         ),
       );
     }
-
-    // Sync lyrics position
-    final lyricsProvider = context.watch<LyricsProvider>();
 
     return GestureDetector(
       onVerticalDragEnd: (d) {
@@ -236,7 +240,6 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
                               onTap: _toggleFlip,
                             ),
                             back: LyricsView(
-                              lyricsProvider: lyricsProvider,
                               player: player,
                               scrollCtrl: _lyricsScrollCtrl,
                               onScrollToLine: _scrollToCurrentLine,
@@ -253,7 +256,6 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
                           const SizedBox(height: 16),
                           ExpandablePillBar(
                             player: player,
-                            lyricsProvider: lyricsProvider,
                             onQueueTap: () {
                               if (_queueVisible) {
                                 _closeQueue();
@@ -290,7 +292,6 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
               height: MediaQuery.of(context).size.height * 0.6,
               child: RepaintBoundary(
                 child: QueueSheet(
-                  player: player,
                   onClose: _closeQueue,
                   useBlur: _queueFullyOpen,
                 ),

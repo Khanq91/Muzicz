@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
+import 'package:provider/provider.dart';
 import '../../providers/lyrics_provider.dart';
 import '../../providers/player_provider.dart';
 import '../../services/audio_handler.dart';
@@ -12,14 +13,12 @@ import '../../services/audio_handler.dart';
 class LyricsView extends StatefulWidget {
   const LyricsView({
     super.key,
-    required this.lyricsProvider,
     required this.player,
     required this.scrollCtrl,
     required this.onScrollToLine,
     required this.onTap,
   });
 
-  final LyricsProvider lyricsProvider;
   final PlayerProvider player;
   final ScrollController scrollCtrl;
   final void Function(int index) onScrollToLine;
@@ -36,7 +35,9 @@ class _LyricsViewState extends State<LyricsView> {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size.width * 0.70;
     final c = context.appColors;
-    final lp = widget.lyricsProvider;
+    // Subscribed here (not at NowPlayingScreen) so a lyric line change only
+    // rebuilds the lyrics card.
+    final lp = context.watch<LyricsProvider>();
 
     return GestureDetector(
       onTap: widget.onTap,

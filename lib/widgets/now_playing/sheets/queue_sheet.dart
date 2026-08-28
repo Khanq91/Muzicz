@@ -3,22 +3,20 @@ import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:on_audio_query/on_audio_query.dart';
+import 'package:provider/provider.dart';
 import '../../../providers/player_provider.dart';
 
 class QueueSheet extends StatelessWidget {
-  const QueueSheet({
-    super.key,
-    required this.player,
-    required this.onClose,
-    required this.useBlur,
-  });
-  final PlayerProvider player;
+  const QueueSheet({super.key, required this.onClose, required this.useBlur});
   final VoidCallback onClose;
   final bool useBlur;
 
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
+    // Queue order/active row must follow every queue notify; subscribing
+    // here keeps that off the NowPlayingScreen root.
+    final player = context.watch<PlayerProvider>();
     final sheetContent = Container(
       decoration: BoxDecoration(
         color: c.surface.withValues(alpha: useBlur ? 0.75 : 0.95),
