@@ -107,27 +107,30 @@ class SleepTimerSheet extends StatelessWidget {
             children:
                 _presets
                     .map(
-                      (p) => GestureDetector(
-                        onTap: () {
-                          player.setSleepTimer(p.duration);
-                          Navigator.pop(context);
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: c.surfaceElevated,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: c.border, width: 0.5),
-                          ),
-                          child: Text(
-                            p.label,
-                            style: GoogleFonts.outfit(
-                              fontSize: 14,
-                              color: c.textPrimary,
-                              fontWeight: FontWeight.w500,
+                      (p) => Semantics(
+                        button: true,
+                        child: GestureDetector(
+                          onTap: () {
+                            player.setSleepTimer(p.duration);
+                            Navigator.pop(context);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: c.surfaceElevated,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: c.border, width: 0.5),
+                            ),
+                            child: Text(
+                              p.label,
+                              style: GoogleFonts.outfit(
+                                fontSize: 14,
+                                color: c.textPrimary,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                         ),

@@ -60,37 +60,41 @@ class SpeedSheet extends StatelessWidget {
             children:
                 _speeds.map((s) {
                   final active = player.speed == s;
-                  return GestureDetector(
-                    onTap: () {
-                      player.setSpeed(s);
-                      Navigator.pop(context);
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      width: 72,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color:
-                            active
-                                ? c.primary.withValues(alpha: 0.18)
-                                : c.surfaceElevated,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: active ? c.primary : c.border,
-                          width: active ? 1.5 : 0.5,
+                  return Semantics(
+                    button: true,
+                    selected: active,
+                    child: GestureDetector(
+                      onTap: () {
+                        player.setSpeed(s);
+                        Navigator.pop(context);
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        width: 72,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color:
+                              active
+                                  ? c.primary.withValues(alpha: 0.18)
+                                  : c.surfaceElevated,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: active ? c.primary : c.border,
+                            width: active ? 1.5 : 0.5,
+                          ),
                         ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          s == 1.0
-                              ? AppStrings.speedNormal
-                              : AppStrings.speedMultiplier('$s'),
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.outfit(
-                            fontSize: s == 1.0 ? 10 : 15,
-                            fontWeight:
-                                active ? FontWeight.w700 : FontWeight.w400,
-                            color: active ? c.primary : c.textSecondary,
+                        child: Center(
+                          child: Text(
+                            s == 1.0
+                                ? AppStrings.speedNormal
+                                : AppStrings.speedMultiplier('$s'),
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.outfit(
+                              fontSize: s == 1.0 ? 10 : 15,
+                              fontWeight:
+                                  active ? FontWeight.w700 : FontWeight.w400,
+                              color: active ? c.primary : c.textSecondary,
+                            ),
                           ),
                         ),
                       ),

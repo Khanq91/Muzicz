@@ -42,17 +42,22 @@ class _LyricsViewState extends State<LyricsView> {
 
     return GestureDetector(
       onTap: widget.onTap,
-      child: SizedBox(
-        width: size,
-        height: size,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(size / 2),
-          child: Container(
-            decoration: BoxDecoration(
-              color: c.scrimStrong,
-              shape: BoxShape.circle,
+      child: Semantics(
+        button: true,
+        label: AppStrings.lyricsHint,
+        explicitChildNodes: true,
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(size / 2),
+            child: Container(
+              decoration: BoxDecoration(
+                color: c.scrimStrong,
+                shape: BoxShape.circle,
+              ),
+              child: _buildContent(context, lp, c, size),
             ),
-            child: _buildContent(context, lp, c, size),
           ),
         ),
       ),

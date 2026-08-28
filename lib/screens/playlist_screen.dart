@@ -319,19 +319,23 @@ class _CreatePlaylistFab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
-    return GestureDetector(
-      onTap: () => _showCreateDialog(context),
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: c.primaryGradient,
-          boxShadow: [
-            BoxShadow(color: c.primary, blurRadius: 16, offset: Offset(0, 4)),
-          ],
+    return Semantics(
+      button: true,
+      label: AppStrings.createPlaylist,
+      child: GestureDetector(
+        onTap: () => _showCreateDialog(context),
+        child: Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: c.primaryGradient,
+            boxShadow: [
+              BoxShadow(color: c.primary, blurRadius: 16, offset: Offset(0, 4)),
+            ],
+          ),
+          child: Icon(Icons.add_rounded, color: c.onPlayer, size: 28),
         ),
-        child: Icon(Icons.add_rounded, color: c.onPlayer, size: 28),
       ),
     );
   }
@@ -428,6 +432,7 @@ class PlaylistDetailScreen extends StatelessWidget {
             pinned: true,
             backgroundColor: c.background,
             leading: IconButton(
+              tooltip: AppStrings.back,
               icon: Icon(
                 Icons.arrow_back_ios_new_rounded,
                 size: 20,
@@ -437,6 +442,7 @@ class PlaylistDetailScreen extends StatelessWidget {
             ),
             actions: [
               IconButton(
+                tooltip: AppStrings.rename,
                 icon: Icon(Icons.edit_rounded, color: c.onPlayer, size: 22),
                 onPressed: () => _showEditDialog(context, music, playlist),
               ),
@@ -616,18 +622,22 @@ class PlaylistDetailScreen extends StatelessWidget {
                             ),
                       );
                     },
-                    child: Container(
-                      width: 40,
-                      height: 46,
-                      decoration: BoxDecoration(
-                        color: c.surfaceElevated,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: c.border, width: 0.5),
-                      ),
-                      child: Icon(
-                        Icons.info_outline_rounded,
-                        color: c.textTertiary,
-                        size: 20,
+                    child: Semantics(
+                      button: true,
+                      label: AppStrings.shuffleLoopInfo,
+                      child: Container(
+                        width: 40,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: c.surfaceElevated,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: c.border, width: 0.5),
+                        ),
+                        child: Icon(
+                          Icons.info_outline_rounded,
+                          color: c.textTertiary,
+                          size: 20,
+                        ),
                       ),
                     ),
                   ),
@@ -731,17 +741,16 @@ class PlaylistDetailScreen extends StatelessWidget {
                             ),
                           );
                         },
-                        trailing: GestureDetector(
-                          onTap: () {
-                            music.removeFromPlaylist(playlistId, song.id);
-                          },
-                          child: Padding(
-                            padding: EdgeInsets.all(8),
-                            child: Icon(
-                              Icons.remove_circle_outline_rounded,
-                              color: c.textDisabled,
-                              size: 20,
-                            ),
+                        // IconButton: 48dp target + tooltip/semantics label.
+                        trailing: IconButton(
+                          tooltip: AppStrings.removeFromPlaylist,
+                          onPressed:
+                              () =>
+                                  music.removeFromPlaylist(playlistId, song.id),
+                          icon: Icon(
+                            Icons.remove_circle_outline_rounded,
+                            color: c.textDisabled,
+                            size: 20,
                           ),
                         ),
                       ),

@@ -6,6 +6,7 @@ import 'package:on_audio_query/on_audio_query.dart';
 import '../../features/music_visual/widgets/reactive_cover_art_transform.dart';
 import '../../models/song_item.dart';
 import '../../providers/player_provider.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 // ════════════════════════════════════════════════════════════════════════════
 // AlbumArtSection — now tappable
@@ -29,48 +30,52 @@ class AlbumArtSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size.width * 0.70;
     final c = context.appColors;
-    return GestureDetector(
-      onTap: onTap,
-      child: Center(
-        // The two blurred shadows stay outside the rotating subtree so they
-        // are painted once, and the RepaintBoundary keeps the 60fps rotation
-        // in its own layer instead of invalidating the whole screen.
-        child: Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: c.primary.withValues(alpha: 0.3),
-                blurRadius: 60,
-                offset: const Offset(0, 20),
-              ),
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.5),
-                blurRadius: 40,
-                offset: const Offset(0, 16),
-              ),
-            ],
-          ),
-          child: RepaintBoundary(
-            child: ReactiveCoverArtTransform(
-              song: song,
-              player: player,
-              normalRotation: rotateCtrl,
-              child: ClipOval(
-                child: QueryArtworkWidget(
-                  id: song.albumId,
-                  type: ArtworkType.ALBUM,
-                  artworkFit: BoxFit.cover,
-                  artworkBorder: BorderRadius.zero,
-                  keepOldArtwork: true,
-                  nullArtworkWidget: Container(
-                    decoration: BoxDecoration(gradient: c.primaryGradient),
-                    child: Icon(
-                      Icons.music_note_rounded,
-                      color: c.onPlayerLow,
-                      size: 80,
+    return Semantics(
+      button: true,
+      label: AppStrings.albumArtHint,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Center(
+          // The two blurred shadows stay outside the rotating subtree so they
+          // are painted once, and the RepaintBoundary keeps the 60fps rotation
+          // in its own layer instead of invalidating the whole screen.
+          child: Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: c.primary.withValues(alpha: 0.3),
+                  blurRadius: 60,
+                  offset: const Offset(0, 20),
+                ),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  blurRadius: 40,
+                  offset: const Offset(0, 16),
+                ),
+              ],
+            ),
+            child: RepaintBoundary(
+              child: ReactiveCoverArtTransform(
+                song: song,
+                player: player,
+                normalRotation: rotateCtrl,
+                child: ClipOval(
+                  child: QueryArtworkWidget(
+                    id: song.albumId,
+                    type: ArtworkType.ALBUM,
+                    artworkFit: BoxFit.cover,
+                    artworkBorder: BorderRadius.zero,
+                    keepOldArtwork: true,
+                    nullArtworkWidget: Container(
+                      decoration: BoxDecoration(gradient: c.primaryGradient),
+                      child: Icon(
+                        Icons.music_note_rounded,
+                        color: c.onPlayerLow,
+                        size: 80,
+                      ),
                     ),
                   ),
                 ),

@@ -133,22 +133,24 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
                 // ── Back button row ──────────────────────────
                 Row(
                   children: [
-                    GestureDetector(
-                      onTap:
+                    // 36dp visual inside the default 48dp tap target.
+                    IconButton(
+                      tooltip: AppStrings.back,
+                      onPressed:
                           () =>
                               Navigator.of(context, rootNavigator: true).pop(),
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: c.surfaceElevated,
+                      style: IconButton.styleFrom(
+                        backgroundColor: c.surfaceElevated,
+                        fixedSize: const Size(36, 36),
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          size: 16,
-                          color: c.textSecondary,
-                        ),
+                      ),
+                      icon: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        size: 16,
+                        color: c.textSecondary,
                       ),
                     ),
                   ],
@@ -511,6 +513,7 @@ class _Header extends StatelessWidget {
           children: [
             PrimaryIconButton(
               icon: Icons.folder_open_rounded,
+              semanticLabel: AppStrings.pickSaveFolder,
               onPressed: onPickFolder,
             ),
 

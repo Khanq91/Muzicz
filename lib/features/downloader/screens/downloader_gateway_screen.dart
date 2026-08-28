@@ -84,6 +84,7 @@ class _DownloaderGatewayScreenState extends State<DownloaderGatewayScreen>
                 child: Row(
                   children: [
                     IconButton(
+                      tooltip: AppStrings.back,
                       icon: Icon(
                         Icons.arrow_back_ios_new_rounded,
                         size: 20,
@@ -385,84 +386,93 @@ class _GatewayButtonState extends State<_GatewayButton>
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
-    return AnimatedOpacity(
-      duration: const Duration(milliseconds: 300),
-      opacity: widget.enabled ? 1.0 : 0.45,
-      child: GestureDetector(
-        onTapDown: widget.enabled ? (_) => _ctrl.forward() : null,
-        onTapUp:
-            widget.enabled
-                ? (_) async {
-                  await _ctrl.reverse();
-                  widget.onTap();
-                }
-                : null,
-        onTapCancel: widget.enabled ? () => _ctrl.reverse() : null,
-        child: ScaleTransition(
-          scale: _scale,
-          child: Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              gradient:
-                  widget.enabled
-                      ? widget.gradient
-                      : c.disabledGradient,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow:
-                  widget.enabled
-                      ? [
-                        BoxShadow(
-                          color: c.primary.withValues(alpha: 0.25),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                        ),
-                      ]
-                      : null,
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: c.onPlayer.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(12),
+    return Semantics(
+      button: true,
+      enabled: widget.enabled,
+      label: widget.label,
+      hint: widget.enabled ? widget.subtitle : widget.disabledReason,
+      onTap: widget.enabled ? widget.onTap : null,
+      // The texts inside are already carried by label/hint.
+      excludeSemantics: true,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 300),
+        opacity: widget.enabled ? 1.0 : 0.45,
+        child: GestureDetector(
+          onTapDown: widget.enabled ? (_) => _ctrl.forward() : null,
+          onTapUp:
+              widget.enabled
+                  ? (_) async {
+                    await _ctrl.reverse();
+                    widget.onTap();
+                  }
+                  : null,
+          onTapCancel: widget.enabled ? () => _ctrl.reverse() : null,
+          child: ScaleTransition(
+            scale: _scale,
+            child: Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                gradient:
+                    widget.enabled
+                        ? widget.gradient
+                        : c.disabledGradient,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow:
+                    widget.enabled
+                        ? [
+                          BoxShadow(
+                            color: c.primary.withValues(alpha: 0.25),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                        ]
+                        : null,
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: c.onPlayer.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(widget.icon, color: c.onPlayer, size: 24),
                   ),
-                  child: Icon(widget.icon, color: c.onPlayer, size: 24),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.label,
-                        style: GoogleFonts.outfit(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: c.onPlayer,
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.label,
+                          style: GoogleFonts.outfit(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: c.onPlayer,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        widget.enabled
-                            ? widget.subtitle
-                            : (widget.disabledReason ?? widget.subtitle),
-                        style: GoogleFonts.outfit(
-                          fontSize: 12,
-                          color: c.onPlayerHigh,
-                          fontWeight: FontWeight.w300,
+                        const SizedBox(height: 3),
+                        Text(
+                          widget.enabled
+                              ? widget.subtitle
+                              : (widget.disabledReason ?? widget.subtitle),
+                          style: GoogleFonts.outfit(
+                            fontSize: 12,
+                            color: c.onPlayerHigh,
+                            fontWeight: FontWeight.w300,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  color: c.onPlayerHigh,
-                  size: 16,
-                ),
-              ],
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: c.onPlayerHigh,
+                    size: 16,
+                  ),
+                ],
+              ),
             ),
           ),
         ),

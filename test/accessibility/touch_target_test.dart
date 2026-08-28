@@ -127,6 +127,7 @@ void main() {
           body: Center(
             child: PrimaryIconButton(
               icon: Icons.folder_open_rounded,
+              semanticLabel: 'Chọn thư mục lưu',
               onPressed: () {},
             ),
           ),

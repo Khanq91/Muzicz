@@ -49,6 +49,7 @@ class ArtistDetailScreen extends StatelessWidget {
             pinned: true,
             backgroundColor: c.background,
             leading: IconButton(
+              tooltip: AppStrings.back,
               icon: Icon(
                 Icons.arrow_back_ios_new_rounded,
                 size: 20,
@@ -176,18 +177,22 @@ class ArtistDetailScreen extends StatelessWidget {
                     child: Builder(
                       builder: (context) {
                         final c = context.appColors;
-                        return Container(
-                          width: 40,
-                          height: 46,
-                          decoration: BoxDecoration(
-                            color: c.surfaceElevated,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: c.border, width: 0.5),
-                          ),
-                          child: Icon(
-                            Icons.info_outline_rounded,
-                            color: c.textTertiary,
-                            size: 20,
+                        return Semantics(
+                          button: true,
+                          label: AppStrings.shuffleLoopInfo,
+                          child: Container(
+                            width: 40,
+                            height: 46,
+                            decoration: BoxDecoration(
+                              color: c.surfaceElevated,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: c.border, width: 0.5),
+                            ),
+                            child: Icon(
+                              Icons.info_outline_rounded,
+                              color: c.textTertiary,
+                              size: 20,
+                            ),
                           ),
                         );
                       },
