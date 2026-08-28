@@ -7,6 +7,7 @@ _Sinh từ .auditz/findings.json (89 findings: 2 HIGH / 30 MEDIUM / 57 LOW)._
 - `dart analyze` phải sạch trước mỗi commit. Chi tiết từng finding (why + fix mẫu): `.auditz/report.md`.
 - Xong phase: tick checklist trong file này, báo tóm tắt đã sửa gì, cho t checklist check thủ công trên app thật (nếu có).
 - Sau Phase 4 và sau khi xong tất cả: chạy lại auditz scan rồi `python auditz.py baseline`.
+- Mỗi phase khi tạo các commit thì cho dấu hiệu phase đã bắt đầu/kết thúc từ commit nào
 
 ## Phase 1 — HIGH + race cùng họ
 **Effort: S — 1 session ngắn**
@@ -62,9 +63,9 @@ Xóa bản copy AppColors/AppTheme trong downloader, trỏ mọi file downloader
 ```
 
 **Checklist:**
-- [ ] `duplicate_logic` — `lib/features/downloader/core/theme/app_colors.dart:7` (medium) — Hai class cùng tên `AppColors` với cùng bộ hằng hex (primary/secondary/surface/text/glass…) tồn tại ở `lib/theme/app_colors.dart` …
-- [ ] `duplicate_logic` — `lib/features/downloader/models/playlist_entry.dart:61` (low) — Định dạng Duration/giây → chuỗi được viết lại 6 lần với 4 kiểu output khác nhau: `PlaylistEntry.formattedDuration` và `VideoInfo.f…
-- [ ] `duplicate_logic` — `lib/features/downloader/widgets/glass_card.dart:33` (low) — `GlassCard` (downloader) và `GlassContainer` (lib/widgets) là cùng một widget: ClipRRect → BackdropFilter(blur 12) → Container(gla…
+- [x] `duplicate_logic` — `lib/features/downloader/core/theme/app_colors.dart:7` (medium) — Hai class cùng tên `AppColors` với cùng bộ hằng hex (primary/secondary/surface/text/glass…) tồn tại ở `lib/theme/app_colors.dart` …
+- [x] `duplicate_logic` — `lib/features/downloader/models/playlist_entry.dart:61` (low) — Định dạng Duration/giây → chuỗi được viết lại 6 lần với 4 kiểu output khác nhau: `PlaylistEntry.formattedDuration` và `VideoInfo.f…
+- [x] `duplicate_logic` — `lib/features/downloader/widgets/glass_card.dart:33` (low) — `GlassCard` (downloader) và `GlassContainer` (lib/widgets) là cùng một widget: ClipRRect → BackdropFilter(blur 12) → Container(gla…
 
 ## Phase 4 — Split god files
 **Effort: L — MỖI FILE MỘT SESSION RIÊNG**
@@ -189,3 +190,11 @@ hardcoded_ui_strings + hardcoded_style thực chất là 2 việc: (1) tạo lib
 - (Phase 2, 2026-08-28) `lyrics_service.clearCache/clearAllCache` đã log lỗi nhưng UI vẫn báo "thành công" kể cả khi xoá thất bại (report gợi ý rethrow để UI hiển thị) — phần UX feedback để Phase 7 xử lý cùng error_state.
 - (Phase 2, 2026-08-28) `add_to_playlist_sheet._doCreate` gọi `_showFeedback(dialogCtx, ...)` SAU khi `Navigator.pop(dialogCtx)` — dùng context của route vừa pop, có sẵn từ trước Phase 2. Nên đổi sang context của sheet khi refactor.
 - (Phase 2, 2026-08-28) `audio_handler._init()` chỉ log lỗi; gợi ý sâu hơn trong report (lưu `Future _ready` để loadSongs await trước khi addAll) là thay đổi hành vi khởi tạo, ngoài phạm vi fix cơ học — cân nhắc khi làm Phase 5/6.
+- (Phase 3, 2026-08-28) `downloader_gateway_screen.dart` (10 chỗ) vẫn dùng `AppColors` tĩnh của `lib/theme/app_colors.dart` (không phải bản copy đã xoá) nên màn gateway chưa đổi theo theme light — thuộc finding `hardcoded_style` Phase 7, chuyển sang `context.appColors` khi làm phase đó.
+- (Phase 3, 2026-08-28) `PrimaryButton`/`PrimaryIconButton` gradient disabled ghi cứng `0xFF444444/0xFF333333`, `PlatformChip` màu brand từng platform ghi cứng — `hardcoded_style`, Phase 7.
+- (Phase 3, 2026-08-28) `_formatRemaining` (sleep timer, 'X phút'/'Ys') trong now_playing không gom vào `DurationFormat` vì ngữ nghĩa khác 3 kiểu còn lại; nếu muốn có thể thêm getter `remainingVi` sau.
+- (Phase 3, 2026-08-28) Thay `GlassCard` bằng `GlassContainer` có lệch nhẹ: nền glass alpha 0.12 (cũ 0x1A≈0.10), viền 0.5 (cũ 0.8). Chấp nhận theo report; nếu thấy card downloader mờ hơn thì chỉnh `opacity`/thêm `borderWidth` ở GlassContainer.
+- (Phase 3, 2026-08-28) 10 file downloader ở HEAD không qua `dart format` chuẩn (format --set-exit-if-changed báo khác) nên phase này không format lại để tránh diff nhiễu; cân nhắc một commit `dart format lib/` riêng sau Phase 4.
+- (Phase 3, 2026-08-28) Đã soi trên emulator Pixel_9_Pro cả dark lẫn light: Analyze/Result/Format/Download/Summary đổi theme đúng; riêng màn Gateway vẫn tối ở theme Light (xác nhận ghi chú trên, Phase 7).
+- (Phase 3, 2026-08-28) Download screen: khi có task hoàn thành, nút "Xóa xong" ở góc phải bị `NetworkStatusBadge` ("Online") đè lên một phần — lỗi layout có sẵn, không do đổi theme; xử lý cùng Phase 7 (badge/tap_target).
+- (Phase 3, 2026-08-28) Build env: Chaquopy trong `android/app/build.gradle.kts` bắt buộc `buildPython` đúng 3.13, máy chỉ có Python 3.12 → `flutter build apk` fail. Session này dùng bản python-build-standalone 3.13 tải vào scratchpad + sửa gradle tạm (đã revert). Nên cài Python 3.13 hoặc khai báo `buildPython(...)` cố định trong gradle để các phase sau chạy app được.
