@@ -1656,7 +1656,10 @@ class _TopBar extends StatelessWidget {
               ],
             ),
           ),
-    );
+    ).whenComplete(() {
+      titleCtrl.dispose();
+      artistCtrl.dispose();
+    });
   }
 
   Widget _metaField(

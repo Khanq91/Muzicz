@@ -320,7 +320,7 @@ class _AddToPlaylistSheetState extends State<AddToPlaylistSheet> {
               ),
             ],
           ),
-    );
+    ).whenComplete(ctrl.dispose);
   }
 
   Future<void> _doCreate(

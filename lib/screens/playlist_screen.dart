@@ -392,7 +392,7 @@ class _CreatePlaylistFab extends StatelessWidget {
               ),
             ],
           ),
-    );
+    ).whenComplete(ctrl.dispose);
   }
 }
 
@@ -803,7 +803,7 @@ class PlaylistDetailScreen extends StatelessWidget {
               ),
             ],
           ),
-    );
+    ).whenComplete(ctrl.dispose);
   }
 
   void _showAddSongsSheet(

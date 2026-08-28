@@ -38,6 +38,12 @@ class _PlaylistPickerScreenState extends ConsumerState<PlaylistPickerScreen> {
     _loadEntries();
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   List<PlaylistEntry> get _filteredEntries {
     if (_searchQuery.isEmpty) return _entries;
 
