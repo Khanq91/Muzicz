@@ -216,6 +216,11 @@ class _PlaylistCover extends StatelessWidget {
     final c = context.appColors;
     // Custom image
     if (playlist.coverPath != null) {
+      // Camera photos can be 12MP; decode at the cell's physical size
+      // (x2 so a landscape photo still fills the square after the cover
+      // crop) instead of the original resolution.
+      final cacheWidth =
+          (size * MediaQuery.devicePixelRatioOf(context) * 2).round();
       return ClipRRect(
         borderRadius: BorderRadius.circular(10),
         child: Image.file(
@@ -223,6 +228,7 @@ class _PlaylistCover extends StatelessWidget {
           width: size,
           height: size,
           fit: BoxFit.cover,
+          cacheWidth: cacheWidth,
         ),
       );
     }

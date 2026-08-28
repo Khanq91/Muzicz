@@ -349,6 +349,10 @@ class _TaskThumbnail extends StatelessWidget {
                     imageUrl: task.thumbnail!,
                     width: 64,
                     height: 42,
+                    // Decode to a bounded width (aspect kept) instead of the
+                    // full 1280x720 frame for a 64x42 cell; 256px still covers
+                    // the cell at dpr 3.5 without upscaling.
+                    memCacheWidth: 256,
                     fit: BoxFit.cover,
                     errorWidget: (_, __, ___) => _placeholder(c),
                   )

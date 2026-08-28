@@ -383,6 +383,10 @@ class _EntryTile extends StatelessWidget {
                         imageUrl: entry.thumbnail!,
                         width: 72,
                         height: 46,
+                        // Bounded decode (aspect kept) for a 72x46 cell so a
+                        // 200+ item playlist does not fill the raster cache
+                        // with full-res 1280x720 thumbnails.
+                        memCacheWidth: 256,
                         fit: BoxFit.cover,
                         errorWidget:
                             (_, __, ___) => _ThumbnailPlaceholder(index: index),
