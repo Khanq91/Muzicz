@@ -68,7 +68,7 @@ dependencies:
   cached_network_image: ^3.3.1    # Thumbnail video
   uuid: ^4.4.0                    # Task ID generation
   liquid_glass_widgets: ^0.22.1
-  package_info_plus: ^9.0.1
+  package_info_plus: ^8.3.1
 
 
 
