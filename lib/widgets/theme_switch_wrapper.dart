@@ -15,6 +15,7 @@ class _ThemeSwitchWrapperState extends State<ThemeSwitchWrapper>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   late final Animation<double> _opacity;
+  late final Animation<double> _barrierOpacity;
   int? _lastVisualRevision;
 
   @override
@@ -25,6 +26,7 @@ class _ThemeSwitchWrapperState extends State<ThemeSwitchWrapper>
       duration: const Duration(milliseconds: 280),
     );
     _opacity = CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut);
+    _barrierOpacity = Tween<double>(begin: 0, end: 0.45).animate(_opacity);
   }
 
   @override
@@ -60,17 +62,21 @@ class _ThemeSwitchWrapperState extends State<ThemeSwitchWrapper>
     return Stack(
       children: [
         widget.child,
-        // Overlay đen mờ fade-in/out khi switch theme
+        // Overlay đen mờ fade-in/out khi switch theme.
+        // FadeTransition animates an OpacityLayer on the compositor instead of
+        // rebuilding an Opacity widget (full-screen saveLayer) every tick while
+        // the whole tree is already rebuilding for the theme change. The
+        // AnimatedBuilder only toggles hit-testing so the barrier is present
+        // exactly while the flash is visible, as before.
         AnimatedBuilder(
-          animation: _opacity,
+          animation: _ctrl,
+          child: FadeTransition(
+            opacity: _barrierOpacity,
+            child: const ModalBarrier(color: Colors.black),
+          ),
           builder:
-              (_, __) =>
-                  _opacity.value > 0
-                      ? Opacity(
-                        opacity: _opacity.value * 0.45,
-                        child: const ModalBarrier(color: Colors.black),
-                      )
-                      : const SizedBox.shrink(),
+              (_, child) =>
+                  IgnorePointer(ignoring: _ctrl.value == 0, child: child),
         ),
       ],
     );

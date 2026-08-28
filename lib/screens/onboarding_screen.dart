@@ -166,11 +166,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               // Pulse icon
               ScaleTransition(
                 scale: _pulseScale,
-                child: AnimatedBuilder(
-                  animation: _pulseOpacity,
-                  builder:
-                      (_, child) =>
-                          Opacity(opacity: _pulseOpacity.value, child: child),
+                // FadeTransition drives an OpacityLayer on the compositor;
+                // Opacity inside AnimatedBuilder rebuilt and saveLayer'd on
+                // every tick of the repeating pulse.
+                child: FadeTransition(
+                  opacity: _pulseOpacity,
                   child: Container(
                     width: 100,
                     height: 100,
