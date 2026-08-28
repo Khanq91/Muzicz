@@ -61,7 +61,8 @@ class DownloaderStorageService {
         debugPrint('[StorageService] downloadPath: $_downloadPath');
         return;
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[StorageService] getDownloadDir channel failed: $e');
       // fallback bên dưới
     }
 
@@ -90,7 +91,9 @@ class DownloaderStorageService {
         final idx = path.lastIndexOf('/');
         if (idx > 0) return path.substring(0, idx);
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[StorageService] getExternalBasePath failed: $e');
+    }
     return '/storage/emulated/0';
   }
 
@@ -100,7 +103,10 @@ class DownloaderStorageService {
     if (!dir.existsSync()) {
       try {
         await dir.create(recursive: true);
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[StorageService] cannot create $path: $e');
+        return; // giữ path cũ, không lưu thư mục không tạo được
+      }
     }
     _downloadPath = path;
     await _savePath(path);
@@ -137,7 +143,8 @@ class DownloaderStorageService {
         } else {
           return (await Permission.storage.request()).isGranted;
         }
-      } catch (_) {
+      } catch (e) {
+        debugPrint('[StorageService] getSdkVersion failed: $e');
         return (await Permission.manageExternalStorage.request()).isGranted;
       }
     }

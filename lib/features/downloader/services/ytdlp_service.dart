@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../models/playlist_entry.dart';
@@ -252,7 +253,8 @@ class YtdlpService
           .whereType<Map<String, dynamic>>()
           .map((item) => _taskFromNative(item))
           .toList();
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('[YtdlpService] restoreDownloads failed: $e\n$st');
       return const [];
     }
   }
@@ -279,7 +281,8 @@ class YtdlpService
         speed: progress['speed'] as String? ?? '',
         eta: progress['eta'] as String? ?? '',
       );
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[YtdlpService] getProgress(${task.id}) failed: $e');
       return task;
     }
   }
@@ -329,7 +332,8 @@ class YtdlpService
 
       final data = json.decode(jsonStr) as Map<String, dynamic>;
       return data['accepted'] == true && data['stopped'] == true;
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('[YtdlpService] cancelDownload($taskId) failed: $e\n$st');
       return false;
     }
   }

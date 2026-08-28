@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:just_audio/just_audio.dart';
 import 'package:rxdart/rxdart.dart';
 import '../models/song_item.dart';
@@ -38,7 +39,9 @@ class MuzicAudioHandler implements PlayerAudioGateway {
   Future<void> _init() async {
     try {
       await _player.setAudioSource(_playlist);
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('[AudioHandler] setAudioSource failed: $e\n$st');
+    }
   }
 
   @override

@@ -136,7 +136,9 @@ class LyricsService {
     try {
       final file = await _cacheFile(title, artist);
       if (await file.exists()) await file.delete();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('⚠️ [Lyrics] clearCache error: $e');
+    }
   }
 
   /// Xóa toàn bộ lyrics cache.
@@ -145,7 +147,9 @@ class LyricsService {
       final dir = await _getCacheDir();
       if (await dir.exists()) await dir.delete(recursive: true);
       _cacheDir = null;
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('⚠️ [Lyrics] clearAllCache error: $e');
+    }
   }
 
   // ── LRCLIB API ─────────────────────────────────────────────────────────────
