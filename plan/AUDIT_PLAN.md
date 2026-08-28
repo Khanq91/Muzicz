@@ -78,7 +78,7 @@ CHỈ DI CHUYỂN CODE, cấm đổi behavior, cấm 'tiện tay cải thiện'.
 ```
 
 **Checklist:**
-- [ ] `god_file` — `lib/screens/now_playing_screen.dart:1195` (medium) — `now_playing_screen.dart` dài 2318 dòng (~10% toàn repo, gấp 1.6 lần file lớn thứ hai) chứa 20 class: màn hình chính, lyrics view,…
+- [x] `god_file` — `lib/screens/now_playing_screen.dart:1195` (medium) — `now_playing_screen.dart` dài 2318 dòng (~10% toàn repo, gấp 1.6 lần file lớn thứ hai) chứa 20 class: màn hình chính, lyrics view,…
 
 ## Phase 5 — Performance pass
 **Effort: M — 1 session, sau khi split**
@@ -198,3 +198,9 @@ hardcoded_ui_strings + hardcoded_style thực chất là 2 việc: (1) tạo lib
 - (Phase 3, 2026-08-28) Đã soi trên emulator Pixel_9_Pro cả dark lẫn light: Analyze/Result/Format/Download/Summary đổi theme đúng; riêng màn Gateway vẫn tối ở theme Light (xác nhận ghi chú trên, Phase 7).
 - (Phase 3, 2026-08-28) Download screen: khi có task hoàn thành, nút "Xóa xong" ở góc phải bị `NetworkStatusBadge` ("Online") đè lên một phần — lỗi layout có sẵn, không do đổi theme; xử lý cùng Phase 7 (badge/tap_target).
 - (Phase 3, 2026-08-28) Build env: Chaquopy trong `android/app/build.gradle.kts` bắt buộc `buildPython` đúng 3.13, máy chỉ có Python 3.12 → `flutter build apk` fail. Session này dùng bản python-build-standalone 3.13 tải vào scratchpad + sửa gradle tạm (đã revert). Nên cài Python 3.13 hoặc khai báo `buildPython(...)` cố định trong gradle để các phase sau chạy app được.
+- (Phase 4a, 2026-08-28) Đã tách `now_playing_screen.dart` (2316 → 304 dòng) thành 10 file trong `lib/widgets/now_playing/` đúng seam của report; ngoài 7 file report liệt kê, 3 class còn lại (`_ExpandablePillBar`, `_SongInfo`, `_SwipeHint`) cũng tách riêng theo nguyên tắc "mỗi class private → file riêng". Thay đổi ngoài move: bỏ `_` (public), thêm `super.key` cho constructor widget public (lint `use_key_in_widget_constructors`), và bỏ 2 dòng comment cũ vô nghĩa ("Các widget không thay đổi so với original", "Deleted _SpeedAndTimerRow").
+- (Phase 4a, 2026-08-28) `top_bar.dart` vẫn 562 dòng: report gợi ý "tách tiếp menu/actions" (popup menu, sheet album, sheet info, dialog sửa/ẩn) nhưng đó là đổi method → widget riêng, không phải move thuần; để session sau nếu muốn (có thể ghép với các finding của now_playing ở Phase 5/7).
+- (Phase 4a, 2026-08-28) Tên public trong `lib/widgets/now_playing/` là tên chung (`TopBar`, `SongInfo`, `IconBtn`, `PlayButton`…), chỉ được import bởi `now_playing_screen.dart`; nếu sau này có widget trùng tên ở nơi khác thì thêm tiền tố `NowPlaying`.
+- (Phase 4a, 2026-08-28) Sub-phase 4b (`format_screen.dart`) và 4c (`library_screen.dart`) chưa làm — mỗi cái một session riêng theo quy tắc. Chưa chạy lại auditz scan/baseline vì fingerprint còn đổi tiếp khi làm 4b/4c; chạy sau session cuối của Phase 4.
+- (Phase 4a, 2026-08-28) Đã chạy app trên emulator Pixel_9_Pro (theme Light): Now Playing, flip lyrics, pill bar, sheet tốc độ / hẹn giờ / hàng chờ (có blur), menu top bar, sheet thông tin bài, sheet album đều hiển thị đúng, logcat không có exception. Không soi lại theme Dark vì phase này không đụng màu.
+- (Phase 4a, 2026-08-28) Build vẫn phải dùng python-build-standalone 3.13 tải tạm + `buildPython(...)` trong gradle (đã revert trước commit) — xem ghi chú Phase 3 về Chaquopy.
