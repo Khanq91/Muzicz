@@ -4,6 +4,7 @@ import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
+import 'package:muziczz/utils/duration_format.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
 import '../features/music_visual/widgets/reactive_cover_art_transform.dart';
@@ -1910,14 +1911,14 @@ class _ProgressSectionState extends State<_ProgressSection> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      _fmt(displayPos),
+                      displayPos.mmss,
                       style: GoogleFonts.outfit(
                         fontSize: 12,
                         color: c.onPlayerLow,
                       ),
                     ),
                     Text(
-                      _fmt(data.duration),
+                      data.duration.mmss,
                       style: GoogleFonts.outfit(
                         fontSize: 12,
                         color: c.onPlayerLow,
@@ -1931,12 +1932,6 @@ class _ProgressSectionState extends State<_ProgressSection> {
         );
       },
     );
-  }
-
-  String _fmt(Duration d) {
-    final m = d.inMinutes.toString().padLeft(2, '0');
-    final s = (d.inSeconds % 60).toString().padLeft(2, '0');
-    return '$m:$s';
   }
 }
 

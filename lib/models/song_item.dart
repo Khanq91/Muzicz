@@ -1,4 +1,5 @@
 import 'package:on_audio_query/on_audio_query.dart';
+import 'package:muziczz/utils/duration_format.dart';
 
 class SongItem {
   final int id;
@@ -77,12 +78,7 @@ class SongItem {
   );
 
   // ── Helpers ───────────────────────────────────────────────────────────────
-  String get durationFormatted {
-    final ms = duration;
-    final m = (ms ~/ 60000).toString().padLeft(2, '0');
-    final s = ((ms % 60000) ~/ 1000).toString().padLeft(2, '0');
-    return '$m:$s';
-  }
+  String get durationFormatted => Duration(milliseconds: duration).mmss;
 
   @override
   bool operator ==(Object other) => other is SongItem && other.id == id;

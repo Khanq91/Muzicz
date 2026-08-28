@@ -1,5 +1,6 @@
 // lib/models/video_info.dart
 
+import 'package:muziczz/utils/duration_format.dart';
 import 'format_option.dart';
 
 enum VideoType { video, playlist }
@@ -126,16 +127,8 @@ class VideoInfo {
 
   // ── Helpers ────────────────────────────────────────────
 
-  String get formattedDuration {
-    if (duration == null) return '';
-    final h = duration! ~/ 3600;
-    final m = (duration! % 3600) ~/ 60;
-    final s = duration! % 60;
-    if (h > 0) {
-      return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
-    }
-    return '$m:${s.toString().padLeft(2, '0')}';
-  }
+  String get formattedDuration =>
+      duration == null ? '' : Duration(seconds: duration!).clock;
 
   /// Formats chỉ audio (m4a, mp3, opus...)
   List<FormatOption> get audioFormats =>

@@ -1,5 +1,7 @@
 // lib/models/playlist_entry.dart
 
+import 'package:muziczz/utils/duration_format.dart';
+
 class PlaylistEntry {
   final String id;
   final String title;
@@ -56,16 +58,8 @@ class PlaylistEntry {
     return true;
   }
 
-  String get formattedDuration {
-    if (duration == null) return '';
-    final h = duration! ~/ 3600;
-    final m = (duration! % 3600) ~/ 60;
-    final s = duration! % 60;
-    if (h > 0) {
-      return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
-    }
-    return '$m:${s.toString().padLeft(2, '0')}';
-  }
+  String get formattedDuration =>
+      duration == null ? '' : Duration(seconds: duration!).clock;
 
   @override
   bool operator ==(Object other) =>

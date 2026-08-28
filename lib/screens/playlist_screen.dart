@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
+import 'package:muziczz/utils/duration_format.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
 import '../models/playlist_item.dart';
@@ -165,7 +166,7 @@ class _PlaylistTile extends StatelessWidget {
         ),
       ),
       subtitle: Text(
-        '${playlist.songCount} bài · ${_fmtDuration(playlist.totalDuration)}',
+        '${playlist.songCount} bài · ${playlist.totalDuration.compact}',
         style: GoogleFonts.outfit(fontSize: 12, color: c.textTertiary),
       ),
       trailing: PopupMenuButton<String>(
@@ -200,11 +201,6 @@ class _PlaylistTile extends StatelessWidget {
       ),
       onTap: onTap,
     );
-  }
-
-  String _fmtDuration(Duration d) {
-    if (d.inHours > 0) return '${d.inHours}h ${d.inMinutes.remainder(60)}m';
-    return '${d.inMinutes}m';
   }
 }
 
