@@ -22,14 +22,18 @@ class ArtistDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final player = context.watch<PlayerProvider>();
-    final music = context.watch<MusicProvider>();
+    // Only callbacks need the providers; nothing rendered here depends on
+    // their state, so a notify (play/pause, onSongPlayed) must not regroup
+    // the albums. The active tile subscribes on its own below.
+    final player = context.read<PlayerProvider>();
+    final music = context.read<MusicProvider>();
     final c = context.appColors;
     // Group songs by album
     final albumMap = <String, List<SongItem>>{};
     for (final s in songs) {
       albumMap.putIfAbsent(s.album, () => []).add(s);
     }
+    final albums = albumMap.entries.toList();
 
     final artistId = songs.first.artistId;
 
@@ -213,9 +217,9 @@ class ArtistDetailScreen extends StatelessWidget {
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: albumMap.length,
+                  itemCount: albums.length,
                   itemBuilder: (_, i) {
-                    final entry = albumMap.entries.toList()[i];
+                    final entry = albums[i];
                     final albumId = entry.value.first.albumId;
                     return GestureDetector(
                       onTap: () {
@@ -296,14 +300,18 @@ class ArtistDetailScreen extends StatelessWidget {
           SliverList(
             delegate: SliverChildBuilderDelegate((_, i) {
               final song = songs[i];
-              return MusicListTile(
-                song: song,
-                isActive: player.currentSong?.id == song.id,
-                onTap: () {
-                  player.playSongs(songs, specificSong: song);
-                  music.onSongPlayed(song.id);
-                  Navigator.of(context).push(_playerRoute());
-                },
+              return Selector<PlayerProvider, int?>(
+                selector: (_, p) => p.currentSong?.id,
+                builder:
+                    (_, activeId, __) => MusicListTile(
+                      song: song,
+                      isActive: activeId == song.id,
+                      onTap: () {
+                        player.playSongs(songs, specificSong: song);
+                        music.onSongPlayed(song.id);
+                        Navigator.of(context).push(_playerRoute());
+                      },
+                    ),
               );
             }, childCount: songs.length),
           ),

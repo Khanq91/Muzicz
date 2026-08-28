@@ -161,14 +161,18 @@ class MuzicAudioHandler implements PlayerAudioGateway {
   @override
   Stream<ProcessingState>  get processingStateStream  => _player.processingStateStream;
 
+  /// One shared broadcast stream with a stable identity. A getter that built
+  /// a new combineLatest3 on every access made each StreamBuilder rebuild
+  /// unsubscribe/resubscribe three just_audio streams and flash an empty
+  /// snapshot for a frame.
   @override
-  Stream<PositionData> get positionDataStream =>
+  late final Stream<PositionData> positionDataStream =
       Rx.combineLatest3<Duration, Duration, Duration?, PositionData>(
         _player.positionStream,
         _player.bufferedPositionStream,
         _player.durationStream,
-            (pos, buf, dur) => PositionData(pos, buf, dur ?? Duration.zero),
-      );
+        (pos, buf, dur) => PositionData(pos, buf, dur ?? Duration.zero),
+      ).shareValue();
 
   bool           get playing            => _player.playing;
   LoopMode       get loopMode           => _player.loopMode;

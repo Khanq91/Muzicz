@@ -32,6 +32,13 @@ class _PlaylistPickerScreenState extends ConsumerState<PlaylistPickerScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
+  /// vnNormalize(title) của từng entry, cùng index với [_entries]; tính một
+  /// lần khi load thay vì mỗi build (vnNormalize ~134 replaceAll/chuỗi).
+  List<String> _normalizedTitles = const [];
+
+  /// Index (trong [_entries]) của các entry khớp [_searchQuery].
+  List<int> _filteredIndices = const [];
+
   @override
   void initState() {
     super.initState();
@@ -44,15 +51,26 @@ class _PlaylistPickerScreenState extends ConsumerState<PlaylistPickerScreen> {
     super.dispose();
   }
 
-  List<PlaylistEntry> get _filteredEntries {
-    if (_searchQuery.isEmpty) return _entries;
+  List<PlaylistEntry> get _filteredEntries =>
+      _searchQuery.isEmpty
+          ? _entries
+          : [for (final i in _filteredIndices) _entries[i]];
 
-    final query = vnNormalize(_searchQuery);
+  /// Index thật trong [_entries] của item thứ [filteredIndex] đang hiển thị.
+  int _realIndexOf(int filteredIndex) =>
+      _searchQuery.isEmpty ? filteredIndex : _filteredIndices[filteredIndex];
 
-    return _entries.where((e) {
-      final title = vnNormalize(e.title);
-      return title.contains(query);
-    }).toList();
+  void _setSearchQuery(String query) {
+    _searchQuery = query;
+    if (query.isEmpty) {
+      _filteredIndices = const [];
+      return;
+    }
+    final q = vnNormalize(query);
+    _filteredIndices = [
+      for (var i = 0; i < _entries.length; i++)
+        if (_normalizedTitles[i].contains(q)) i,
+    ];
   }
 
   Future<void> _loadEntries() async {
@@ -71,6 +89,8 @@ class _PlaylistPickerScreenState extends ConsumerState<PlaylistPickerScreen> {
       case PlaylistEntriesSuccess(:final entries):
         setState(() {
           _entries = entries;
+          _normalizedTitles = [for (final e in entries) vnNormalize(e.title)];
+          _setSearchQuery(_searchQuery);
           _isLoading = false;
         });
       case PlaylistEntriesFailure(:final message):
@@ -156,11 +176,7 @@ class _PlaylistPickerScreenState extends ConsumerState<PlaylistPickerScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                 child: TextField(
                   controller: _searchController,
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value;
-                    });
-                  },
+                  onChanged: (value) => setState(() => _setSearchQuery(value)),
                   style: TextStyle(color: c.textPrimary),
                   decoration: InputDecoration(
                     hintText: 'Tìm video...',
@@ -172,7 +188,7 @@ class _PlaylistPickerScreenState extends ConsumerState<PlaylistPickerScreen> {
                               icon: const Icon(Icons.close),
                               onPressed: () {
                                 _searchController.clear();
-                                setState(() => _searchQuery = '');
+                                setState(() => _setSearchQuery(''));
                               },
                             )
                             : null,
@@ -195,12 +211,7 @@ class _PlaylistPickerScreenState extends ConsumerState<PlaylistPickerScreen> {
                       ? _ErrorState(message: _error!, onRetry: _loadEntries)
                       : _EntryList(
                         entries: _filteredEntries,
-                        onToggle: (index) {
-                          final realIndex = _entries.indexOf(
-                            _filteredEntries[index],
-                          );
-                          _toggleEntry(realIndex);
-                        },
+                        onToggle: (index) => _toggleEntry(_realIndexOf(index)),
                       ),
             ),
 
