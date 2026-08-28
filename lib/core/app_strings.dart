@@ -359,7 +359,8 @@ abstract final class AppStrings {
       'File tải về được lưu vào thư mục Downloads (Có thể tùy chỉnh) trên thiết bị.';
   static const gatewayNoteAudio =
       'Hỗ trợ tách audio M4A từ video — không mất chất lượng.';
-  static const gatewayNoteInternet = 'Tải nhạc từ URL yêu cầu kết nối Internet.';
+  static const gatewayNoteInternet =
+      'Tải nhạc từ URL yêu cầu kết nối Internet.';
   static const gatewayNoteRescan =
       'Quét lại thư viện không cần mạng — chỉ đọc từ bộ nhớ máy.';
 

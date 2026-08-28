@@ -16,6 +16,7 @@ import '../../widgets/gradient_background.dart';
 import '../../widgets/platform_chip.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/primary_icon_button.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 class AnalyzeScreen extends ConsumerStatefulWidget {
   const AnalyzeScreen({super.key});
@@ -112,6 +113,10 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
     final analyzeState = ref.watch(analyzeProvider);
     final outputDir = ref.watch(downloadOutputDirectoryProvider);
     final serviceReady = outputDir.hasValue;
+    // Initial load (or a reload after "Thử lại") — the only time the button
+    // should spin. A failed init must not leave it stuck on "Đang khởi động".
+    final initializing = outputDir.isLoading;
+    final initFailed = outputDir.hasError && !initializing;
 
     return GradientBackground(
       child: AppShell(
@@ -169,9 +174,9 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
 
                 // ── Analyze Button ───────────────────────────
                 PrimaryButton(
-                  label: serviceReady ? 'Phân tích' : 'Đang khởi động...',
+                  label: initializing ? 'Đang khởi động...' : 'Phân tích',
                   icon: Icons.search_rounded,
-                  isLoading: analyzeState.isLoading || !serviceReady,
+                  isLoading: analyzeState.isLoading || initializing,
                   onPressed:
                       serviceReady &&
                               analyzeState.currentUrl.isNotEmpty &&
@@ -179,11 +184,13 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
                           ? _analyze
                           : null,
                 ),
-                if (outputDir.hasError)
+                if (initFailed)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: _ErrorCard(
-                      message: 'Khởi động thất bại: ${outputDir.error}',
+                      message: AppStrings.initFailed,
+                      onRetry:
+                          () => ref.invalidate(downloadOutputDirectoryProvider),
                     ),
                   ),
 
@@ -838,8 +845,9 @@ class _MetaBadge extends StatelessWidget {
 
 class _ErrorCard extends StatelessWidget {
   final String message;
+  final VoidCallback? onRetry;
 
-  const _ErrorCard({required this.message});
+  const _ErrorCard({required this.message, this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -872,6 +880,21 @@ class _ErrorCard extends StatelessWidget {
               ),
             ),
           ),
+          if (onRetry != null) ...[
+            const SizedBox(width: 6),
+            TextButton(
+              onPressed: onRetry,
+              style: TextButton.styleFrom(
+                foregroundColor: c.error,
+                minimumSize: const Size(48, 44),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+              ),
+              child: const Text(
+                AppStrings.retry,
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
         ],
       ),
     );
