@@ -121,9 +121,9 @@ class _ExpandablePillBarState extends State<ExpandablePillBar> {
                         onTap: () => setState(() => _isExpanded = true),
                         child: Container(
                           alignment: Alignment.center,
-                          child: const Icon(
+                          child: Icon(
                             Icons.more_horiz_rounded,
-                            color: Colors.white,
+                            color: c.onPlayer,
                             size: 28,
                           ),
                         ),
@@ -180,14 +180,14 @@ class _ExpandablePillBarState extends State<ExpandablePillBar> {
                             onTap: () => setState(() => _isExpanded = false),
                             child: Container(
                               padding: const EdgeInsets.all(6),
-                              decoration: const BoxDecoration(
+                              decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: Colors.white12,
+                                color: c.onPlayerGhost,
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.close_rounded,
                                 size: 16,
-                                color: Colors.white70,
+                                color: c.onPlayerHigh,
                               ),
                             ),
                           ),
@@ -232,7 +232,7 @@ class _ExpandablePillBarState extends State<ExpandablePillBar> {
             child: Icon(
               icon,
               size: 20,
-              color: isActive ? c.primary : Colors.white70,
+              color: isActive ? c.primary : c.onPlayerHigh,
             ),
           ),
         ),

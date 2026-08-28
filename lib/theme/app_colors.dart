@@ -92,6 +92,15 @@ class AppColors {
   static const Color scrimMedium = Color(0x80000000);
   static const Color scrimLight = Color(0x73000000);
   static const Color scrimSubtle = Color(0x4D000000);
+  static const Color scrimStrong = Color(0xBF000000);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // 8b. SEMANTIC (trạng thái)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  static const Color success = Color(0xFF34C759);
+  static const Color warning = Color(0xFFFF9F0A);
+  static const Color error = Color(0xFFFF3B30);
 
   // ─────────────────────────────────────────────────────────────────────────
   // 9. GRADIENTS
@@ -133,6 +142,14 @@ class AppColors {
 
   static const LinearGradient avatarButton = LinearGradient(
     colors: [primary, tertiary],
+  );
+
+  static const LinearGradient successGradient = LinearGradient(
+    colors: [success, Color(0xFF30D158)],
+  );
+
+  static const LinearGradient disabledGradient = LinearGradient(
+    colors: [Color(0xFF444444), Color(0xFF333333)],
   );
 
   // ─────────────────────────────────────────────────────────────────────────

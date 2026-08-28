@@ -58,7 +58,7 @@ class TopBar extends StatelessWidget {
                             fontWeight: FontWeight.w500,
                             color: c.onPlayerHigh,
                             decoration: TextDecoration.underline,
-                            decorationColor: Colors.white38,
+                            decorationColor: c.onPlayerSubtle,
                           ),
                         ),
                         const SizedBox(width: 3),

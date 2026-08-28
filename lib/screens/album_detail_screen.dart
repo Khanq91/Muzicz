@@ -39,10 +39,10 @@ class AlbumDetailScreen extends StatelessWidget {
             pinned: true,
             backgroundColor: c.background,
             leading: IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.arrow_back_ios_new_rounded,
                 size: 20,
-                color: Colors.white,
+                color: c.onPlayer,
               ),
               onPressed: () => Navigator.pop(context),
             ),
@@ -272,7 +272,7 @@ class _AlbumHeader extends StatelessWidget {
           ),
         ),
         // Dark overlay
-        Container(color: Colors.black.withValues(alpha: 0.50)),
+        Container(color: c.scrimMedium),
         // Center album art (sharp)
         Positioned(
           top: 52,
@@ -302,9 +302,9 @@ class _AlbumHeader extends StatelessWidget {
                   keepOldArtwork: true,
                   nullArtworkWidget: Container(
                     decoration: BoxDecoration(gradient: c.primaryGradient),
-                    child: const Icon(
+                    child: Icon(
                       Icons.album_rounded,
-                      color: Colors.white54,
+                      color: c.onPlayerLow,
                       size: 48,
                     ),
                   ),
@@ -329,7 +329,7 @@ class _AlbumHeader extends StatelessWidget {
                 style: GoogleFonts.outfit(
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
-                  color: Colors.white,
+                  color: c.onPlayer,
                   letterSpacing: -0.3,
                 ),
               ),
@@ -339,7 +339,7 @@ class _AlbumHeader extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: GoogleFonts.outfit(
                   fontSize: 13,
-                  color: Colors.white70,
+                  color: c.onPlayerHigh,
                   fontWeight: FontWeight.w300,
                 ),
               ),
@@ -384,7 +384,7 @@ class _ActionButton extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: primary ? Colors.white : c.textSecondary,
+              color: primary ? c.onPlayer : c.textSecondary,
               size: 20,
             ),
             const SizedBox(width: 6),
@@ -393,7 +393,7 @@ class _ActionButton extends StatelessWidget {
               style: GoogleFonts.outfit(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: primary ? Colors.white : c.textSecondary,
+                color: primary ? c.onPlayer : c.textSecondary,
               ),
             ),
           ],

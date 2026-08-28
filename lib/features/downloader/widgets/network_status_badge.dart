@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/network_provider.dart';
 import '../services/network_service.dart';
+import 'package:muziczz/theme/app_colors_data.dart';
 
 /// Badge hiển thị trạng thái mạng — luôn nằm góc phải trên cùng.
 /// Dùng trong AppShell qua Positioned widget.
@@ -71,10 +72,8 @@ class _BadgePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        isOnline
-            ? const Color(0xFF34C759) // xanh lá hệ thống iOS
-            : const Color(0xFFFF3B30); // đỏ
+    final c = context.appColors;
+    final color = isOnline ? c.success : c.error;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
@@ -112,8 +111,7 @@ class _BadgePill extends StatelessWidget {
             child: Text(
               isOnline ? 'Online' : 'Offline',
               key: ValueKey(isOnline),
-              style: TextStyle(
-                fontSize: 11,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 fontWeight: FontWeight.w500,
                 color: color,
                 letterSpacing: 0.2,

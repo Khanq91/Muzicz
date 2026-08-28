@@ -287,6 +287,7 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     final savedPath = ref.watch(
       downloadOutputDirectoryProvider.select((dir) => dir.value),
     );
@@ -315,24 +316,24 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF9500).withValues(alpha: 0.1),
+                    color: c.warning.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: const Color(0xFFFF9500).withValues(alpha: 0.3),
+                      color: c.warning.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.warning_amber_rounded,
                         size: 15,
-                        color: Color(0xFFFF9500),
+                        color: c.warning,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         '${widget.videoInfo.skippedCount} video không khả dụng sẽ bị bỏ qua',
-                        style: const TextStyle(
-                          color: Color(0xFFFF9500),
+                        style: TextStyle(
+                          color: c.warning,
                           fontSize: 12,
                         ),
                       ),
@@ -509,14 +510,14 @@ class _FormatFolderSheet extends StatelessWidget {
         icon: Icons.download_rounded,
         label: 'MuziczModule',
         sublabel: 'Download/MuziczModule/',
-        color: const Color(0xFF34C759),
+        color: c.success,
         path: '$basePath/Download/MuziczModule',
       ),
       _FolderOption(
         icon: Icons.video_library_rounded,
         label: 'Videos',
         sublabel: 'Movies/',
-        color: const Color(0xFFFF9F0A),
+        color: c.warning,
         path: '$basePath/Movies',
       ),
     ];
@@ -804,9 +805,9 @@ class _MuxedOptionTile extends StatelessWidget {
               ),
               child:
                   isSelected
-                      ? const Icon(
+                      ? Icon(
                         Icons.check_rounded,
-                        color: Colors.white,
+                        color: c.onPlayer,
                         size: 13,
                       )
                       : null,
@@ -1004,9 +1005,9 @@ class _PresetTile extends StatelessWidget {
               ),
               child:
                   isSelected
-                      ? const Icon(
+                      ? Icon(
                         Icons.check_rounded,
-                        color: Colors.white,
+                        color: c.onPlayer,
                         size: 13,
                       )
                       : null,
@@ -1266,7 +1267,7 @@ class _FormatTabBar extends StatelessWidget {
         ),
         indicatorSize: TabBarIndicatorSize.tab,
         dividerColor: Colors.transparent,
-        labelColor: Colors.white,
+        labelColor: c.onPlayer,
         unselectedLabelColor: c.textTertiary,
         labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         unselectedLabelStyle: const TextStyle(
@@ -1351,9 +1352,9 @@ class _FormatTile extends StatelessWidget {
               ),
               child:
                   isSelected
-                      ? const Icon(
+                      ? Icon(
                         Icons.check_rounded,
-                        color: Colors.white,
+                        color: c.onPlayer,
                         size: 13,
                       )
                       : null,

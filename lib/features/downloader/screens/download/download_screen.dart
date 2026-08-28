@@ -135,20 +135,20 @@ class _StatsHeader extends StatelessWidget {
           _StatChip(
             label: 'Xếp hàng',
             count: state.queuedTasks.length,
-            color: const Color(0xFFFF9F0A),
+            color: c.warning,
           ),
           const SizedBox(width: 8),
           _StatChip(
             label: 'Xong',
             count: state.successCount,
-            color: const Color(0xFF34C759),
+            color: c.success,
           ),
           if (state.errorCount > 0) ...[
             const SizedBox(width: 8),
             _StatChip(
               label: 'Lỗi',
               count: state.errorCount,
-              color: const Color(0xFFFF3B30),
+              color: c.error,
             ),
           ],
         ],
@@ -270,8 +270,8 @@ class _DownloadTaskCard extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: (task.status == DownloadStatus.error
-                        ? const Color(0xFFFF3B30)
-                        : const Color(0xFFFF9F0A))
+                        ? c.error
+                        : c.warning)
                     .withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -280,8 +280,8 @@ class _DownloadTaskCard extends ConsumerWidget {
                 style: TextStyle(
                   color:
                       task.status == DownloadStatus.error
-                          ? const Color(0xFFFF3B30)
-                          : const Color(0xFFFF9F0A),
+                          ? c.error
+                          : c.warning,
                   fontSize: 12,
                 ),
               ),
@@ -397,10 +397,10 @@ class _StatusIcon extends StatelessWidget {
     switch (status) {
       case DownloadStatus.queued:
         icon = Icons.schedule_rounded;
-        color = const Color(0xFFFF9F0A);
+        color = c.warning;
       case DownloadStatus.waitingToRetry:
         icon = Icons.wifi_off_rounded;
-        color = const Color(0xFFFF9F0A);
+        color = c.warning;
       case DownloadStatus.preparing:
       case DownloadStatus.downloading:
         return SizedBox(
@@ -413,10 +413,10 @@ class _StatusIcon extends StatelessWidget {
         );
       case DownloadStatus.done:
         icon = Icons.check_circle_rounded;
-        color = const Color(0xFF34C759);
+        color = c.success;
       case DownloadStatus.error:
         icon = Icons.error_rounded;
-        color = const Color(0xFFFF3B30);
+        color = c.error;
       case DownloadStatus.cancelled:
         icon = Icons.cancel_rounded;
         color = c.textTertiary;
@@ -510,14 +510,14 @@ class _StatusBadge extends StatelessWidget {
     switch (status) {
       case DownloadStatus.queued:
       case DownloadStatus.waitingToRetry:
-        color = const Color(0xFFFF9F0A);
+        color = c.warning;
       case DownloadStatus.preparing:
       case DownloadStatus.downloading:
         color = c.primary;
       case DownloadStatus.done:
-        color = const Color(0xFF34C759);
+        color = c.success;
       case DownloadStatus.error:
-        color = const Color(0xFFFF3B30);
+        color = c.error;
       case DownloadStatus.cancelled:
         color = c.textTertiary;
     }
@@ -554,7 +554,7 @@ class _ActionButtons extends StatelessWidget {
           _TinyButton(
             label: 'Hủy',
             icon: Icons.close_rounded,
-            color: const Color(0xFFFF3B30),
+            color: c.error,
             onTap: onCancel,
           ),
         if (task.canRetry) ...[

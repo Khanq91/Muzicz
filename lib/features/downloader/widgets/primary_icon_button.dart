@@ -34,9 +34,7 @@ class PrimaryIconButton extends StatelessWidget {
             gradient:
                 enabled
                     ? c.primaryGradient
-                    : const LinearGradient(
-                      colors: [Color(0xFF444444), Color(0xFF333333)],
-                    ),
+                    : c.disabledGradient,
             borderRadius: BorderRadius.circular(12),
             boxShadow:
                 enabled
@@ -54,19 +52,19 @@ class PrimaryIconButton extends StatelessWidget {
             child: InkWell(
               onTap: enabled ? onPressed : null,
               borderRadius: BorderRadius.circular(12),
-              splashColor: Colors.white.withValues(alpha: 0.1),
+              splashColor: c.onPlayer.withValues(alpha: 0.1),
               child: Center(
                 child:
                     isLoading
-                        ? const SizedBox(
+                        ? SizedBox(
                           width: 18,
                           height: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: c.onPlayer,
                           ),
                         )
-                        : Icon(icon, color: Colors.white, size: 20),
+                        : Icon(icon, color: c.onPlayer, size: 20),
               ),
             ),
           ),

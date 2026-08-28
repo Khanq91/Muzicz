@@ -67,9 +67,9 @@ class AlbumArtSection extends StatelessWidget {
                   keepOldArtwork: true,
                   nullArtworkWidget: Container(
                     decoration: BoxDecoration(gradient: c.primaryGradient),
-                    child: const Icon(
+                    child: Icon(
                       Icons.music_note_rounded,
-                      color: Colors.white54,
+                      color: c.onPlayerLow,
                       size: 80,
                     ),
                   ),

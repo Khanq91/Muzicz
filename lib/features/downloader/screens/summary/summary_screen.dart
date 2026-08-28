@@ -193,14 +193,12 @@ class _SummaryHeader extends StatelessWidget {
             shape: BoxShape.circle,
             gradient:
                 allSuccess
-                    ? const LinearGradient(
-                      colors: [Color(0xFF34C759), Color(0xFF30D158)],
-                    )
+                    ? c.successGradient
                     : c.primaryGradient,
           ),
           child: Icon(
             allSuccess ? Icons.check_rounded : Icons.download_done_rounded,
-            color: Colors.white,
+            color: c.onPlayer,
             size: 36,
           ),
         ),
@@ -253,7 +251,7 @@ class _StatsGrid extends StatelessWidget {
             label: 'Thành công',
             value: '${state.successCount}',
             icon: Icons.check_circle_rounded,
-            color: const Color(0xFF34C759),
+            color: c.success,
           ),
         ),
         if (state.errorCount > 0) ...[
@@ -263,7 +261,7 @@ class _StatsGrid extends StatelessWidget {
               label: 'Thất bại',
               value: '${state.errorCount}',
               icon: Icons.error_rounded,
-              color: const Color(0xFFFF3B30),
+              color: c.error,
             ),
           ),
         ],
@@ -384,10 +382,10 @@ class _FailedList extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.error_outline_rounded,
                         size: 14,
-                        color: Color(0xFFFF3B30),
+                        color: c.error,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -410,8 +408,8 @@ class _FailedList extends StatelessWidget {
                         t.errorMessage!,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFFFF3B30),
+                        style: TextStyle(
+                          color: c.error,
                           fontSize: 11,
                         ),
                       ),

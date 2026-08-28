@@ -98,7 +98,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                         style: GoogleFonts.outfit(
                           fontSize: 28,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                          color: c.textPrimary,
                           letterSpacing: -0.8,
                         ),
                       ),
@@ -228,7 +228,7 @@ class _GradientButtonState extends State<_GradientButton>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (widget.icon != null) ...[
-                Icon(widget.icon, color: Colors.white, size: 20),
+                Icon(widget.icon, color: c.onPlayer, size: 20),
                 const SizedBox(width: 8),
               ],
               Text(
@@ -236,7 +236,7 @@ class _GradientButtonState extends State<_GradientButton>
                 style: GoogleFonts.outfit(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: c.onPlayer,
                 ),
               ),
             ],

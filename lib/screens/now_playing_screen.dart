@@ -215,7 +215,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
           children: [
             Positioned.fill(child: BlurredBackground(albumId: song.albumId)),
             Positioned.fill(
-              child: Container(color: Colors.black.withValues(alpha: 0.55)),
+              child: Container(color: c.scrimDark),
             ),
             SafeArea(
               child: FadeTransition(

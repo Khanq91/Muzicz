@@ -48,7 +48,7 @@ class _LyricsViewState extends State<LyricsView> {
           borderRadius: BorderRadius.circular(size / 2),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.75),
+              color: c.scrimStrong,
               shape: BoxShape.circle,
             ),
             child: _buildContent(context, lp, c, size),
@@ -81,7 +81,7 @@ class _LyricsViewState extends State<LyricsView> {
             const SizedBox(height: 12),
             Text(
               'Đang tải lời bài hát…',
-              style: GoogleFonts.outfit(fontSize: 12, color: Colors.white54),
+              style: GoogleFonts.outfit(fontSize: 12, color: c.onPlayerLow),
             ),
           ],
         ),
@@ -100,7 +100,7 @@ class _LyricsViewState extends State<LyricsView> {
               lp.status == LyricsStatus.error
                   ? Icons.wifi_off_rounded
                   : Icons.lyrics_rounded,
-              color: Colors.white30,
+              color: c.onPlayerSubtle,
               size: 32,
             ),
             const SizedBox(height: 8),
@@ -109,7 +109,7 @@ class _LyricsViewState extends State<LyricsView> {
                   ? 'Không thể tải lời bài hát'
                   : 'Không có lời bài hát',
               textAlign: TextAlign.center,
-              style: GoogleFonts.outfit(fontSize: 12, color: Colors.white38),
+              style: GoogleFonts.outfit(fontSize: 12, color: c.onPlayerSubtle),
             ),
           ],
         ),
@@ -207,7 +207,7 @@ class LyricsListView extends StatelessWidget {
                             margin: const EdgeInsets.symmetric(horizontal: 2),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: isActive ? c.primary : Colors.white24,
+                              color: isActive ? c.primary : c.onPlayerMinimal,
                             ),
                           ),
                         ),
@@ -225,10 +225,10 @@ class LyricsListView extends StatelessWidget {
             fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
             color:
                 isActive
-                    ? Colors.white
+                    ? c.onPlayer
                     : isPast
-                    ? Colors.white38
-                    : Colors.white60,
+                    ? c.onPlayerSubtle
+                    : c.onPlayerMedium,
             height: 1.5,
           ),
           child: Padding(

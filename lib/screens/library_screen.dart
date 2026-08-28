@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 import '../models/song_item.dart';
 import '../providers/music_provider.dart';
 import '../providers/player_provider.dart';
-import '../theme/app_colors.dart';
 import '../widgets/mini_player.dart';
 import '../widgets/music_list_tile.dart';
 import 'album_detail_screen.dart';
@@ -369,12 +368,13 @@ class _LibraryScreenState extends State<LibraryScreen>
   }
 
   PopupMenuItem<SortType> _menuItem(SortType t, String label) {
+    final c = context.appColors;
     return PopupMenuItem(
       value: t,
       child: Text(
         label,
         style: GoogleFonts.outfit(
-          color: _sortType == t ? AppColors.primary : AppColors.textPrimary,
+          color: _sortType == t ? c.primary : c.textPrimary,
           fontSize: 14,
         ),
       ),
@@ -747,9 +747,9 @@ class _BulkPlaylistSheet extends StatelessWidget {
                             colors: [c.primary, c.secondary],
                           ),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.playlist_play_rounded,
-                          color: Colors.white,
+                          color: c.onPlayer,
                           size: 22,
                         ),
                       ),
@@ -1293,7 +1293,7 @@ class _EmptyState extends StatelessWidget {
               ),
               style: FilledButton.styleFrom(
                 backgroundColor: c.primary,
-                foregroundColor: Colors.white,
+                foregroundColor: c.onPlayer,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
                   vertical: 12,

@@ -62,6 +62,12 @@ class AppColorsData extends ThemeExtension<AppColorsData> {
     required this.scrimMedium,
     required this.scrimLight,
     required this.scrimSubtle,
+    required this.scrimStrong,
+
+    // ── Semantic (trạng thái) ─────────────────────────────────────────────
+    required this.success,
+    required this.warning,
+    required this.error,
 
     // ── Gradients ─────────────────────────────────────────────────────────
     required this.primaryGradient,
@@ -72,6 +78,8 @@ class AppColorsData extends ThemeExtension<AppColorsData> {
     required this.favoritesGradient,
     required this.randomMixGradient,
     required this.avatarButton,
+    required this.successGradient,
+    required this.disabledGradient,
 
     // ── Meta ──────────────────────────────────────────────────────────────
     required this.brightness,
@@ -127,6 +135,12 @@ class AppColorsData extends ThemeExtension<AppColorsData> {
   final Color scrimMedium;
   final Color scrimLight;
   final Color scrimSubtle;
+  final Color scrimStrong;
+
+  // ── Semantic ──────────────────────────────────────────────────────────────
+  final Color success;
+  final Color warning;
+  final Color error;
 
   // ── Gradients ─────────────────────────────────────────────────────────────
   final LinearGradient primaryGradient;
@@ -137,6 +151,8 @@ class AppColorsData extends ThemeExtension<AppColorsData> {
   final LinearGradient favoritesGradient;
   final LinearGradient randomMixGradient;
   final LinearGradient avatarButton;
+  final LinearGradient successGradient;
+  final LinearGradient disabledGradient;
 
   // ── Meta ─────────────────────────────────────────────────────────────────
   final Brightness brightness;
@@ -183,6 +199,10 @@ class AppColorsData extends ThemeExtension<AppColorsData> {
     Color? scrimMedium,
     Color? scrimLight,
     Color? scrimSubtle,
+    Color? scrimStrong,
+    Color? success,
+    Color? warning,
+    Color? error,
     LinearGradient? primaryGradient,
     LinearGradient? tertiaryGradient,
     LinearGradient? backgroundGradient,
@@ -191,6 +211,8 @@ class AppColorsData extends ThemeExtension<AppColorsData> {
     LinearGradient? favoritesGradient,
     LinearGradient? randomMixGradient,
     LinearGradient? avatarButton,
+    LinearGradient? successGradient,
+    LinearGradient? disabledGradient,
     Brightness? brightness,
   }) {
     return AppColorsData(
@@ -229,6 +251,10 @@ class AppColorsData extends ThemeExtension<AppColorsData> {
       scrimMedium: scrimMedium ?? this.scrimMedium,
       scrimLight: scrimLight ?? this.scrimLight,
       scrimSubtle: scrimSubtle ?? this.scrimSubtle,
+      scrimStrong: scrimStrong ?? this.scrimStrong,
+      success: success ?? this.success,
+      warning: warning ?? this.warning,
+      error: error ?? this.error,
       primaryGradient: primaryGradient ?? this.primaryGradient,
       tertiaryGradient: tertiaryGradient ?? this.tertiaryGradient,
       backgroundGradient: backgroundGradient ?? this.backgroundGradient,
@@ -238,6 +264,8 @@ class AppColorsData extends ThemeExtension<AppColorsData> {
       favoritesGradient: favoritesGradient ?? this.favoritesGradient,
       randomMixGradient: randomMixGradient ?? this.randomMixGradient,
       avatarButton: avatarButton ?? this.avatarButton,
+      successGradient: successGradient ?? this.successGradient,
+      disabledGradient: disabledGradient ?? this.disabledGradient,
       brightness: brightness ?? this.brightness,
     );
   }
@@ -281,6 +309,10 @@ class AppColorsData extends ThemeExtension<AppColorsData> {
       scrimMedium: Color.lerp(scrimMedium, other.scrimMedium, t)!,
       scrimLight: Color.lerp(scrimLight, other.scrimLight, t)!,
       scrimSubtle: Color.lerp(scrimSubtle, other.scrimSubtle, t)!,
+      scrimStrong: Color.lerp(scrimStrong, other.scrimStrong, t)!,
+      success: Color.lerp(success, other.success, t)!,
+      warning: Color.lerp(warning, other.warning, t)!,
+      error: Color.lerp(error, other.error, t)!,
       primaryGradient:
       LinearGradient.lerp(primaryGradient, other.primaryGradient, t)!,
       tertiaryGradient:
@@ -297,6 +329,10 @@ class AppColorsData extends ThemeExtension<AppColorsData> {
           randomMixGradient, other.randomMixGradient, t)!,
       avatarButton: LinearGradient.lerp(
           avatarButton, other.avatarButton, t)!,
+      successGradient: LinearGradient.lerp(
+          successGradient, other.successGradient, t)!,
+      disabledGradient: LinearGradient.lerp(
+          disabledGradient, other.disabledGradient, t)!,
       brightness: t < 0.5 ? brightness : other.brightness,
     );
   }
@@ -372,6 +408,11 @@ abstract class AppColorPresets {
     scrimMedium: Color(0x80000000),
     scrimLight: Color(0x73000000),
     scrimSubtle: Color(0x4D000000),
+    scrimStrong: Color(0xBF000000),
+
+    success: Color(0xFF34C759),
+    warning: Color(0xFFFF9F0A),
+    error: Color(0xFFFF3B30),
 
     primaryGradient: LinearGradient(
       begin: Alignment.topLeft,
@@ -402,6 +443,12 @@ abstract class AppColorPresets {
     ),
     avatarButton: LinearGradient(
       colors: [Color(0xFF9D50FF), Color(0xFFC25169)],
+    ),
+    successGradient: LinearGradient(
+      colors: [Color(0xFF34C759), Color(0xFF30D158)],
+    ),
+    disabledGradient: LinearGradient(
+      colors: [Color(0xFF444444), Color(0xFF333333)],
     ),
   );
 
@@ -453,6 +500,11 @@ abstract class AppColorPresets {
     scrimMedium: Color(0x8C000000),
     scrimLight: Color(0x80000000),
     scrimSubtle: Color(0x59000000),
+    scrimStrong: Color(0xBF000000),
+
+    success: Color(0xFF34C759),
+    warning: Color(0xFFFF9F0A),
+    error: Color(0xFFFF3B30),
 
     primaryGradient: LinearGradient(
       begin: Alignment.topLeft,
@@ -483,6 +535,12 @@ abstract class AppColorPresets {
     ),
     avatarButton: LinearGradient(
       colors: [Color(0xFF9D50FF), Color(0xFFC25169)],
+    ),
+    successGradient: LinearGradient(
+      colors: [Color(0xFF34C759), Color(0xFF30D158)],
+    ),
+    disabledGradient: LinearGradient(
+      colors: [Color(0xFF3A3A3A), Color(0xFF2A2A2A)],
     ),
   );
 
@@ -537,6 +595,12 @@ abstract class AppColorPresets {
     scrimMedium: Color(0x60000000),
     scrimLight: Color(0x50000000),
     scrimSubtle: Color(0x30000000),
+    // Lớp phủ đậm cho lời bài hát trên album art — giữ tối ở mọi theme
+    scrimStrong: Color(0xBF000000),
+
+    success: Color(0xFF34C759),
+    warning: Color(0xFFFF9500),     // cam iOS light, tương phản hơn trên nền sáng
+    error: Color(0xFFFF3B30),
 
     primaryGradient: LinearGradient(
       begin: Alignment.topLeft,
@@ -567,6 +631,12 @@ abstract class AppColorPresets {
     ),
     avatarButton: LinearGradient(
       colors: [Color(0xFF9D50FF), Color(0xFFC25169)],
+    ),
+    successGradient: LinearGradient(
+      colors: [Color(0xFF34C759), Color(0xFF30D158)],
+    ),
+    disabledGradient: LinearGradient(
+      colors: [Color(0xFFC4BDD6), Color(0xFFB0A8C8)],
     ),
   );
 }

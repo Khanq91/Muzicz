@@ -236,14 +236,14 @@ class _FolderPickerSheet extends StatelessWidget {
         icon: Icons.download_rounded,
         label: 'MuziczModule',
         sublabel: 'Download/MuziczModule/',
-        color: const Color(0xFF34C759),
+        color: c.success,
         path: '$basePath/Download/MuziczModule',
       ),
       _FolderOption(
         icon: Icons.video_library_rounded,
         label: 'Videos',
         sublabel: 'Movies/',
-        color: const Color(0xFFFF9F0A),
+        color: c.warning,
         path: '$basePath/Movies',
       ),
     ];
@@ -843,29 +843,30 @@ class _ErrorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFF3B30).withValues(alpha: 0.08),
+        color: c.error.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFFFF3B30).withValues(alpha: 0.25),
+          color: c.error.withValues(alpha: 0.25),
           width: 0.8,
         ),
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.error_outline_rounded,
-            color: Color(0xFFFF3B30),
+            color: c.error,
             size: 18,
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(
-                color: Color(0xFFFF3B30),
+              style: TextStyle(
+                color: c.error,
                 fontSize: 13,
                 fontWeight: FontWeight.w400,
               ),

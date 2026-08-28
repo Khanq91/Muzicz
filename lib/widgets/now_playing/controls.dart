@@ -39,7 +39,7 @@ class ControlsSection extends StatelessWidget {
           IconBtn(
             icon: Icons.skip_previous_rounded,
             label: 'Bài trước',
-            color: Colors.white,
+            color: c.onPlayer,
             size: 36,
             onTap: () {
               player.skipToPrevious();
@@ -50,7 +50,7 @@ class ControlsSection extends StatelessWidget {
           IconBtn(
             icon: Icons.skip_next_rounded,
             label: 'Bài tiếp theo',
-            color: Colors.white,
+            color: c.onPlayer,
             size: 36,
             onTap: () {
               player.skipToNext();
@@ -130,11 +130,11 @@ class _PlayButtonState extends State<PlayButton>
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: c.onPlayer,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.white.withValues(alpha: 0.25),
+                  color: c.onPlayer.withValues(alpha: 0.25),
                   blurRadius: 20,
                   offset: const Offset(0, 4),
                 ),
@@ -269,10 +269,10 @@ class _ProgressSectionState extends State<ProgressSection> {
             children: [
               SliderTheme(
                 data: SliderThemeData(
-                  activeTrackColor: Colors.white,
-                  inactiveTrackColor: Colors.white24,
-                  thumbColor: Colors.white,
-                  overlayColor: Colors.white24,
+                  activeTrackColor: c.onPlayer,
+                  inactiveTrackColor: c.onPlayerMinimal,
+                  thumbColor: c.onPlayer,
+                  overlayColor: c.onPlayerMinimal,
                   trackHeight: 3,
                   thumbShape: const RoundSliderThumbShape(
                     enabledThumbRadius: 6,

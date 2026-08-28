@@ -36,9 +36,7 @@ class PrimaryButton extends StatelessWidget {
             gradient:
                 enabled
                     ? c.primaryGradient
-                    : const LinearGradient(
-                      colors: [Color(0xFF444444), Color(0xFF333333)],
-                    ),
+                    : c.disabledGradient,
             borderRadius: BorderRadius.circular(14),
             boxShadow:
                 enabled
@@ -56,29 +54,29 @@ class PrimaryButton extends StatelessWidget {
             child: InkWell(
               onTap: enabled ? onPressed : null,
               borderRadius: BorderRadius.circular(14),
-              splashColor: Colors.white.withValues(alpha: 0.1),
+              splashColor: c.onPlayer.withValues(alpha: 0.1),
               child: Center(
                 child:
                     isLoading
-                        ? const SizedBox(
+                        ? SizedBox(
                           width: 22,
                           height: 22,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: c.onPlayer,
                           ),
                         )
                         : Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             if (icon != null) ...[
-                              Icon(icon, color: Colors.white, size: 18),
+                              Icon(icon, color: c.onPlayer, size: 18),
                               const SizedBox(width: 8),
                             ],
                             Text(
                               label,
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: c.onPlayer,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                                 letterSpacing: 0.2,

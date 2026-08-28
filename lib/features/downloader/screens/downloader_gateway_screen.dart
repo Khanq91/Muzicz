@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../screens/onboarding_screen.dart';
-import '../../../theme/app_colors.dart';
+import 'package:muziczz/theme/app_colors_data.dart';
 import '../core/app_router.dart';
 
 class DownloaderGatewayScreen extends StatefulWidget {
@@ -69,8 +69,9 @@ class _DownloaderGatewayScreenState extends State<DownloaderGatewayScreen>
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: c.background,
       body: FadeTransition(
         opacity: _fadeAnim,
         child: SafeArea(
@@ -82,10 +83,10 @@ class _DownloaderGatewayScreenState extends State<DownloaderGatewayScreen>
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.arrow_back_ios_new_rounded,
                         size: 20,
-                        color: AppColors.textPrimary,
+                        color: c.textPrimary,
                       ),
                       onPressed: () => Navigator.pop(context),
                     ),
@@ -94,7 +95,7 @@ class _DownloaderGatewayScreenState extends State<DownloaderGatewayScreen>
                       style: GoogleFonts.outfit(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: c.textPrimary,
                       ),
                     ),
                   ],
@@ -120,7 +121,7 @@ class _DownloaderGatewayScreenState extends State<DownloaderGatewayScreen>
                         icon: Icons.link_rounded,
                         label: 'Tải nhạc từ URL',
                         subtitle: 'YouTube · TikTok · Instagram và hơn thế nữa',
-                        gradient: AppColors.primaryGradient,
+                        gradient: c.primaryGradient,
                         enabled: _isOnline,
                         disabledReason: 'Cần kết nối mạng để tải nhạc',
                         onTap: _goToDownloader,
@@ -132,9 +133,7 @@ class _DownloaderGatewayScreenState extends State<DownloaderGatewayScreen>
                         icon: Icons.refresh_rounded,
                         label: 'Quét lại thư viện',
                         subtitle: 'Cập nhật nhạc từ bộ nhớ thiết bị',
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF5C6BC0), Color(0xFF9B5CBF)],
-                        ),
+                        gradient: c.randomMixGradient,
                         enabled: true,
                         onTap: _goToRescan,
                       ),
@@ -158,7 +157,8 @@ class _NetworkStatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isOnline ? const Color(0xFF34C759) : const Color(0xFFFF3B30);
+    final c = context.appColors;
+    final color = isOnline ? c.success : c.error;
     final label = isOnline ? 'Đang kết nối mạng' : 'Không có mạng';
     final icon = isOnline ? Icons.wifi_rounded : Icons.wifi_off_rounded;
 
@@ -239,22 +239,23 @@ class _InfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
+        color: c.surfaceElevated,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        border: Border.all(color: c.border, width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.info_outline_rounded,
                 size: 16,
-                color: AppColors.primary,
+                color: c.primary,
               ),
               const SizedBox(width: 8),
               Text(
@@ -262,7 +263,7 @@ class _InfoCard extends StatelessWidget {
                 style: GoogleFonts.outfit(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
+                  color: c.primary,
                 ),
               ),
             ],
@@ -307,7 +308,8 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = highlight ? const Color(0xFFFF9500) : AppColors.textTertiary;
+    final c = context.appColors;
+    final color = highlight ? c.warning : c.textTertiary;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -381,6 +383,7 @@ class _GatewayButtonState extends State<_GatewayButton>
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 300),
       opacity: widget.enabled ? 1.0 : 0.45,
@@ -402,15 +405,13 @@ class _GatewayButtonState extends State<_GatewayButton>
               gradient:
                   widget.enabled
                       ? widget.gradient
-                      : const LinearGradient(
-                        colors: [Color(0xFF2A2A2A), Color(0xFF222222)],
-                      ),
+                      : c.disabledGradient,
               borderRadius: BorderRadius.circular(16),
               boxShadow:
                   widget.enabled
                       ? [
                         BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.25),
+                          color: c.primary.withValues(alpha: 0.25),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),
@@ -423,10 +424,10 @@ class _GatewayButtonState extends State<_GatewayButton>
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.18),
+                    color: c.onPlayer.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(widget.icon, color: Colors.white, size: 24),
+                  child: Icon(widget.icon, color: c.onPlayer, size: 24),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -438,7 +439,7 @@ class _GatewayButtonState extends State<_GatewayButton>
                         style: GoogleFonts.outfit(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                          color: c.onPlayer,
                         ),
                       ),
                       const SizedBox(height: 3),
@@ -448,16 +449,16 @@ class _GatewayButtonState extends State<_GatewayButton>
                             : (widget.disabledReason ?? widget.subtitle),
                         style: GoogleFonts.outfit(
                           fontSize: 12,
-                          color: Colors.white.withValues(alpha: 0.75),
+                          color: c.onPlayerHigh,
                           fontWeight: FontWeight.w300,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const Icon(
+                Icon(
                   Icons.arrow_forward_ios_rounded,
-                  color: Colors.white70,
+                  color: c.onPlayerHigh,
                   size: 16,
                 ),
               ],
