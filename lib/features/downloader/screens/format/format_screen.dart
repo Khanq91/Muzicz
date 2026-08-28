@@ -1,11 +1,8 @@
 // lib/screens/format/format_screen.dart
 
-import 'dart:io';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/app_router.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
@@ -54,6 +51,13 @@ class _PlaylistPreset {
     required this.isAudioOnly,
     required this.icon,
   });
+
+  FormatOption toFormatOption() => FormatOption(
+    formatId: formatId,
+    ext: ext,
+    quality: label,
+    isAudioOnly: isAudioOnly,
+  );
 }
 
 const _videoPresets = [
@@ -247,70 +251,30 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
   }
 
   Future<void> _doStartDownload() async {
-    // Lưu path vào SharedPreferences đúng lúc user confirm download
-    if (_pendingOutputPath != null) {
-      await ref
-          .read(downloadOutputDirectoryProvider.notifier)
-          .setPath(_pendingOutputPath!);
-    }
-    if (!mounted) return;
+    final format =
+        _isPlaylist ? _selectedPreset?.toFormatOption() : _selectedFormat;
+    if (format == null) return;
 
-    if (Platform.isAndroid) {
-      final notificationStatus = await Permission.notification.request();
-      if (!notificationStatus.isGranted && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Tải nền vẫn tiếp tục, nhưng tiến trình có thể không hiện trong thông báo.',
-            ),
-          ),
+    // Pending folder is saved here, at confirm time, not when it was picked.
+    final outcome = await ref
+        .read(downloadProvider.notifier)
+        .startFromFormat(
+          info: widget.videoInfo,
+          format: format,
+          selectedEntries: widget.selectedEntries,
+          outputPath: _pendingOutputPath,
         );
-      }
-    }
     if (!mounted) return;
 
-    final notifier = ref.read(downloadProvider.notifier);
-
-    if (_isPlaylist) {
-      if (_selectedPreset == null) return;
-      final format = FormatOption(
-        formatId: _selectedPreset!.formatId,
-        ext: _selectedPreset!.ext,
-        quality: _selectedPreset!.label,
-        isAudioOnly: _selectedPreset!.isAudioOnly,
+    if (outcome == DownloadStartOutcome.startedWithoutNotification) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Tải nền vẫn tiếp tục, nhưng tiến trình có thể không hiện trong thông báo.',
+          ),
+        ),
       );
-
-      final entries = widget.selectedEntries;
-      if (entries != null && entries.isNotEmpty) {
-        await notifier.enqueueBatch(
-          infos: entries.map(
-            (entry) => VideoInfo(
-              id: entry.id,
-              title: entry.title,
-              thumbnail: entry.thumbnail,
-              duration: entry.duration,
-              platform: widget.videoInfo.platform,
-              type: VideoType.video,
-              formats: [],
-              url: entry.url,
-              uploader: entry.uploader,
-              skippedCount: null,
-            ),
-          ),
-          format: format,
-        );
-      } else {
-        await notifier.enqueuePlaylist(
-          playlistInfo: widget.videoInfo,
-          format: format,
-        );
-      }
-    } else {
-      if (_selectedFormat == null) return;
-      await notifier.enqueue(info: widget.videoInfo, format: _selectedFormat!);
     }
-
-    if (!mounted) return;
     Navigator.pushNamedAndRemoveUntil(
       context,
       AppRoutes.download,

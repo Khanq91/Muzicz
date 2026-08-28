@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:muziczz/features/downloader/models/download_task.dart';
 import 'package:muziczz/features/downloader/models/format_option.dart';
+import 'package:muziczz/features/downloader/models/playlist_entry.dart';
 import 'package:muziczz/features/downloader/models/video_info.dart';
 import 'package:muziczz/features/downloader/providers/download_provider.dart';
+import 'package:muziczz/features/downloader/services/download_permission_service.dart';
 import 'package:muziczz/features/downloader/services/downloader_storage_service.dart';
 import 'package:muziczz/features/downloader/services/ytdlp_service.dart';
 
@@ -166,6 +168,95 @@ void main() {
     expect(gateway.startedTaskIds, isEmpty);
   });
 
+  group('startFromFormat', () {
+    test('single video: saves the picked folder, asks permission, enqueues', () async {
+      final gateway = _RecordingDownloadGateway();
+      final permissions = _FakePermissions(granted: true);
+      final container = await _readyContainer(gateway, permissions: permissions);
+      addTearDown(gateway.dispose);
+
+      final outcome = await container
+          .read(downloadProvider.notifier)
+          .startFromFormat(
+            info: _video('one'),
+            format: _format,
+            outputPath: '/music',
+          );
+
+      expect(outcome, DownloadStartOutcome.started);
+      expect(permissions.requests, 1);
+      expect(container.read(downloadOutputDirectoryProvider).value, '/music');
+      expect(gateway.outputDirs, ['/music']);
+      expect(gateway.startedTaskIds, hasLength(1));
+      expect(
+        container.read(downloadProvider).tasks.single.url,
+        _video('one').url,
+      );
+    });
+
+    test('picked playlist entries become one task each', () async {
+      final gateway = _RecordingDownloadGateway();
+      final container = await _readyContainer(
+        gateway,
+        permissions: _FakePermissions(granted: true),
+        dispatchLimit: 8,
+      );
+      addTearDown(gateway.dispose);
+
+      await container
+          .read(downloadProvider.notifier)
+          .startFromFormat(
+            info: _playlist,
+            format: _format,
+            selectedEntries: [_entry('a'), _entry('b')],
+          );
+
+      final tasks = container.read(downloadProvider).tasks;
+      expect(tasks.map((t) => t.url), [
+        'https://example.com/a',
+        'https://example.com/b',
+      ]);
+      expect(tasks.map((t) => t.title), ['Entry a', 'Entry b']);
+      expect(gateway.startedTaskIds, hasLength(2));
+    });
+
+    test('playlist without picked entries is one playlist task', () async {
+      final gateway = _RecordingDownloadGateway();
+      final container = await _readyContainer(
+        gateway,
+        permissions: _FakePermissions(granted: true),
+      );
+      addTearDown(gateway.dispose);
+
+      await container
+          .read(downloadProvider.notifier)
+          .startFromFormat(info: _playlist, format: _format);
+
+      final task = container.read(downloadProvider).tasks.single;
+      expect(task.url, _playlist.url);
+      expect(task.title, 'My playlist (2 video)');
+      expect(gateway.startedTaskIds, [task.id]);
+    });
+
+    test('refused notification permission still enqueues', () async {
+      final gateway = _RecordingDownloadGateway();
+      final container = await _readyContainer(
+        gateway,
+        permissions: _FakePermissions(granted: false),
+      );
+      addTearDown(gateway.dispose);
+
+      final outcome = await container
+          .read(downloadProvider.notifier)
+          .startFromFormat(info: _video('one'), format: _format);
+
+      expect(outcome, DownloadStartOutcome.startedWithoutNotification);
+      expect(gateway.startedTaskIds, hasLength(1));
+      // No folder was picked, so the saved one is untouched.
+      expect(gateway.outputDirs, ['/downloads']);
+    });
+  });
+
   group('output directory', () {
     test('loads through the storage gateway and persists picks', () async {
       final storage = _FakeStorage(path: '/saved');
@@ -264,17 +355,50 @@ void main() {
 
 /// Container whose output directory has already resolved, so enqueue
 /// dispatches synchronously like it does once the analyze screen is ready.
-Future<ProviderContainer> _readyContainer(DownloadGateway gateway) async {
+Future<ProviderContainer> _readyContainer(
+  DownloadGateway gateway, {
+  DownloadPermissionGateway? permissions,
+  int dispatchLimit = 1,
+}) async {
   final container = ProviderContainer(
     overrides: [
       downloadGatewayProvider.overrideWithValue(gateway),
       downloadOutputDirectoryProvider.overrideWith(_FixedOutputDirectory.new),
-      downloadDispatchLimitProvider.overrideWithValue(1),
+      downloadDispatchLimitProvider.overrideWithValue(dispatchLimit),
+      if (permissions != null)
+        downloadPermissionGatewayProvider.overrideWithValue(permissions),
     ],
   );
   addTearDown(container.dispose);
   await container.read(downloadOutputDirectoryProvider.future);
   return container;
+}
+
+final _playlist = VideoInfo(
+  id: 'pl',
+  title: 'My playlist',
+  url: 'https://example.com/playlist',
+  platform: VideoPlatform.youtube,
+  type: VideoType.playlist,
+  playlistCount: 2,
+  skippedCount: null,
+  formats: const [],
+);
+
+PlaylistEntry _entry(String id) =>
+    PlaylistEntry(id: id, title: 'Entry $id', url: 'https://example.com/$id');
+
+class _FakePermissions implements DownloadPermissionGateway {
+  _FakePermissions({required this.granted});
+
+  final bool granted;
+  int requests = 0;
+
+  @override
+  Future<bool> requestNotificationPermission() async {
+    requests++;
+    return granted;
+  }
 }
 
 class _FakeStorage implements DownloadStorageGateway {

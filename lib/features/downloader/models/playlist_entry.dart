@@ -2,6 +2,8 @@
 
 import 'package:muziczz/utils/duration_format.dart';
 
+import 'video_info.dart';
+
 class PlaylistEntry {
   final String id;
   final String title;
@@ -60,6 +62,21 @@ class PlaylistEntry {
 
   String get formattedDuration =>
       duration == null ? '' : Duration(seconds: duration!).clock;
+
+  /// Single-video [VideoInfo] so this entry can be enqueued on its own.
+  /// Formats stay empty: playlist downloads use presets, not per-video formats.
+  VideoInfo toVideoInfo({required VideoPlatform platform}) => VideoInfo(
+    id: id,
+    title: title,
+    thumbnail: thumbnail,
+    duration: duration,
+    platform: platform,
+    type: VideoType.video,
+    skippedCount: null,
+    formats: const [],
+    url: url,
+    uploader: uploader,
+  );
 
   @override
   bool operator ==(Object other) =>

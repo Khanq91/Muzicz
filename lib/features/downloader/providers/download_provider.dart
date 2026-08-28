@@ -6,7 +6,9 @@ import 'package:uuid/uuid.dart';
 
 import '../models/download_task.dart';
 import '../models/format_option.dart';
+import '../models/playlist_entry.dart';
 import '../models/video_info.dart';
+import '../services/download_permission_service.dart';
 import '../services/downloader_storage_service.dart';
 import '../services/ytdlp_service.dart';
 
@@ -16,6 +18,10 @@ final downloadGatewayProvider = Provider<DownloadGateway>(
 
 final downloadStorageGatewayProvider = Provider<DownloadStorageGateway>(
   (ref) => DownloaderStorageService.instance,
+);
+
+final downloadPermissionGatewayProvider = Provider<DownloadPermissionGateway>(
+  (ref) => DownloadPermissionService.instance,
 );
 
 final downloadOutputDirectoryProvider =
@@ -79,6 +85,16 @@ class OutputDirectoryNotifier extends AsyncNotifier<String> {
 /// Dart dispatches the visible queue to the Android foreground service.
 /// The service owns the actual concurrency limit (currently one task).
 final downloadDispatchLimitProvider = Provider<int>((ref) => 64);
+
+/// What [DownloadNotifier.startFromFormat] did; the download is queued in
+/// both cases, the screen only decides whether to warn about notifications.
+enum DownloadStartOutcome {
+  started,
+
+  /// Notification permission was refused: progress will not show in the
+  /// system notification, the foreground download still runs.
+  startedWithoutNotification,
+}
 
 // ── State ──────────────────────────────────────────────────
 
@@ -152,6 +168,44 @@ class DownloadNotifier extends Notifier<DownloadState> {
   }
 
   // ── Public API ─────────────────────────────────────────
+
+  /// Everything the format screen's "Bắt đầu tải" does: persist the folder
+  /// the user picked (if any), ask for the progress-notification permission,
+  /// then enqueue the picked playlist entries, the whole playlist, or the
+  /// single video. Lives here so the summary screen (or a test) can start the
+  /// same download without rebuilding the widget.
+  Future<DownloadStartOutcome> startFromFormat({
+    required VideoInfo info,
+    required FormatOption format,
+    List<PlaylistEntry>? selectedEntries,
+    String? outputPath,
+  }) async {
+    if (outputPath != null) {
+      await ref.read(downloadOutputDirectoryProvider.notifier).setPath(outputPath);
+    }
+    final notificationGranted =
+        await ref
+            .read(downloadPermissionGatewayProvider)
+            .requestNotificationPermission();
+
+    if (selectedEntries != null && selectedEntries.isNotEmpty) {
+      await enqueueBatch(
+        infos: [
+          for (final entry in selectedEntries)
+            entry.toVideoInfo(platform: info.platform),
+        ],
+        format: format,
+      );
+    } else if (info.type == VideoType.playlist) {
+      await enqueuePlaylist(playlistInfo: info, format: format);
+    } else {
+      await enqueue(info: info, format: format);
+    }
+
+    return notificationGranted
+        ? DownloadStartOutcome.started
+        : DownloadStartOutcome.startedWithoutNotification;
+  }
 
   /// Thêm một video đơn vào hàng đợi
   Future<void> enqueue({
