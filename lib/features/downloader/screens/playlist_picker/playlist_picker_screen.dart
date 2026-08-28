@@ -16,6 +16,7 @@ import '../../../../utils/vietnamese_normalize.dart';
 import '../../widgets/app_shell.dart';
 import '../../widgets/gradient_background.dart';
 import '../../widgets/primary_button.dart';
+import 'package:muziczz/core/app_strings.dart';
 
 class PlaylistPickerScreen extends ConsumerStatefulWidget {
   final VideoInfo playlistInfo;
@@ -302,6 +303,9 @@ class _EntryList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Playlist without any usable video, or a search with no match — an empty
+    // ListView looks like a hang, so say so explicitly.
+    if (entries.isEmpty) return const _EmptyState();
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
       itemCount: entries.length,
@@ -312,6 +316,32 @@ class _EntryList extends StatelessWidget {
           onTap: () => onToggle(index),
         );
       },
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.appColors;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(32, 0, 32, 100),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.video_library_outlined, size: 40, color: c.textDisabled),
+            const SizedBox(height: 12),
+            Text(
+              AppStrings.noVideosFound,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: c.textTertiary, fontSize: 14),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
