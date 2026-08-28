@@ -7,12 +7,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../core/app_router.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
+import 'package:muziczz/widgets/glass_container.dart';
 import '../../models/video_info.dart';
 import '../../providers/analyze_provider.dart';
 import '../../providers/download_provider.dart';
 import '../../services/downloader_storage_service.dart';
 import '../../widgets/app_shell.dart';
-import '../../widgets/glass_card.dart';
 import '../../widgets/gradient_background.dart';
 import '../../widgets/platform_chip.dart';
 import '../../widgets/primary_button.dart';
@@ -608,7 +608,7 @@ class _UrlInputCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
-    return GlassCard(
+    return GlassContainer(
       padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -713,7 +713,8 @@ class _ResultCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
-    return GlassCard(
+    return GlassContainer(
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

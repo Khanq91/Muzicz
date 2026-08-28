@@ -6,12 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/app_router.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
+import 'package:muziczz/widgets/glass_container.dart';
 import '../../models/playlist_entry.dart';
 import '../../models/video_info.dart';
 import '../../services/ytdlp_service.dart';
 import '../../../../utils/vietnamese_normalize.dart';
 import '../../widgets/app_shell.dart';
-import '../../widgets/glass_card.dart';
 import '../../widgets/gradient_background.dart';
 import '../../widgets/primary_button.dart';
 
@@ -525,7 +525,7 @@ class _ErrorState extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            GlassCard(
+            GlassContainer(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               child: GestureDetector(
                 onTap: onRetry,

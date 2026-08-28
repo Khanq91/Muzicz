@@ -10,13 +10,13 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/app_router.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
+import 'package:muziczz/widgets/glass_container.dart';
 import '../../models/format_option.dart';
 import '../../models/playlist_entry.dart';
 import '../../models/video_info.dart';
 import '../../providers/download_provider.dart';
 import '../../services/downloader_storage_service.dart';
 import '../../widgets/app_shell.dart';
-import '../../widgets/glass_card.dart';
 import '../../widgets/gradient_background.dart';
 import '../../widgets/primary_button.dart';
 
@@ -1214,7 +1214,7 @@ class _VideoPreviewCard extends StatelessWidget {
     final c = context.appColors;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-      child: GlassCard(
+      child: GlassContainer(
         padding: const EdgeInsets.all(12),
         child: Row(
           children: [
