@@ -126,6 +126,7 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
   FormatOption? _selectedFormat;
   _PlaylistPreset? _selectedPreset;
   bool _isAudioTab = true;
+  bool _submitting = false;
 
   String? _pendingOutputPath;
 
@@ -236,6 +237,16 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
   }
 
   Future<void> _startDownload() async {
+    if (_submitting) return;
+    setState(() => _submitting = true);
+    try {
+      await _doStartDownload();
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  Future<void> _doStartDownload() async {
     // Lưu path vào SharedPreferences đúng lúc user confirm download
     if (_pendingOutputPath != null) {
       await ref
@@ -470,7 +481,9 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
               playlistCount: widget.videoInfo.playlistCount,
               currentPath: _currentPath,
               onPickFolder: _showPathPickerSheet,
-              onDownload: _canDownload ? _startDownload : null,
+              isSubmitting: _submitting,
+              onDownload:
+                  _canDownload && !_submitting ? _startDownload : null,
             ),
           ],
         ),
@@ -1041,6 +1054,7 @@ class _BottomDownloadBar extends StatelessWidget {
   final int? playlistCount;
   final String currentPath;
   final VoidCallback onPickFolder;
+  final bool isSubmitting;
   final VoidCallback? onDownload;
 
   const _BottomDownloadBar({
@@ -1050,6 +1064,7 @@ class _BottomDownloadBar extends StatelessWidget {
     required this.playlistCount,
     required this.currentPath,
     required this.onPickFolder,
+    required this.isSubmitting,
     required this.onDownload,
   });
 
@@ -1155,6 +1170,7 @@ class _BottomDownloadBar extends StatelessWidget {
           PrimaryButton(
             label: isPlaylist ? 'Tải playlist' : 'Bắt đầu tải',
             icon: Icons.download_rounded,
+            isLoading: isSubmitting,
             onPressed: onDownload,
           ),
         ],

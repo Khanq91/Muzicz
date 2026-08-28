@@ -59,13 +59,81 @@ class PlaylistsTab extends StatelessWidget {
                               (_) => PlaylistDetailScreen(playlistId: pl.id),
                         ),
                       ),
-                  onDelete: () => music.deletePlaylist(pl.id),
+                  onDelete: () => _confirmDelete(context, music, pl),
                 );
               },
             ),
         // FAB: create new playlist
         Positioned(bottom: 16, right: 16, child: _CreatePlaylistFab()),
       ],
+    );
+  }
+
+  Future<void> _confirmDelete(
+    BuildContext context,
+    MusicProvider music,
+    PlaylistItem pl,
+  ) async {
+    final c = context.appColors;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder:
+          (_) => AlertDialog(
+            backgroundColor: c.card,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Text(
+              'Xóa "${pl.name}"?',
+              style: GoogleFonts.outfit(
+                color: c.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            content: Text(
+              'Danh sách phát sẽ bị xóa. Các bài hát trong máy không bị ảnh hưởng.',
+              style: GoogleFonts.outfit(
+                color: c.textSecondary,
+                fontSize: 14,
+                height: 1.6,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(
+                  'Hủy',
+                  style: GoogleFonts.outfit(color: c.textTertiary),
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(
+                  'Xóa',
+                  style: GoogleFonts.outfit(
+                    color: c.tertiary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+    );
+    if (ok != true) return;
+    await music.deletePlaylist(pl.id);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Đã xóa "${pl.name}"',
+          style: GoogleFonts.outfit(fontSize: 13),
+        ),
+        duration: const Duration(seconds: 2),
+        backgroundColor: context.appColors.surfaceElevated,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
     );
   }
 }
