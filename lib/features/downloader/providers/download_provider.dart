@@ -129,6 +129,13 @@ class DownloadState {
 
   int get totalCount => tasks.length;
 
+  DownloadTask? taskById(String id) {
+    for (final task in tasks) {
+      if (task.id == id) return task;
+    }
+    return null;
+  }
+
   /// True khi không còn task nào active/queued
   bool get allFinished =>
       tasks.isNotEmpty && tasks.every((t) => t.status.isFinished);
@@ -584,13 +591,7 @@ class DownloadNotifier extends Notifier<DownloadState> {
     state = state.copyWith(tasks: tasks);
   }
 
-  DownloadTask? _findTask(String id) {
-    try {
-      return state.tasks.firstWhere((t) => t.id == id);
-    } catch (_) {
-      return null;
-    }
-  }
+  DownloadTask? _findTask(String id) => state.taskById(id);
 }
 
 // ── Providers ──────────────────────────────────────────────
@@ -599,14 +600,27 @@ final downloadProvider = NotifierProvider<DownloadNotifier, DownloadState>(
   DownloadNotifier.new,
 );
 
-/// Shorthand: lấy 1 task theo id (dùng trong item widget)
-final downloadTaskProvider = Provider.family<DownloadTask?, String>((ref, id) {
-  return ref
-      .watch(downloadProvider)
-      .tasks
-      .cast<DownloadTask?>()
-      .firstWhere((t) => t?.id == id, orElse: () => null);
-});
+/// Shorthand: lấy 1 task theo id (dùng trong item widget).
+///
+/// autoDispose: an id nobody watches any more (task removed, list cleared,
+/// screen closed) must not keep an element alive for the whole app session.
+///
+/// A Notifier rather than `Provider` + `select` on purpose: `DownloadTask.==`
+/// compares ids only, and both `Provider` and `select` compare with `!=`, so a
+/// progress update (same id, new instance) would never reach listeners.
+/// Notifier compares with `identical`, and `_updateTask`/`_replaceTask` keep
+/// the identity of every task they did not touch, so only this task's
+/// changes notify.
+final downloadTaskProvider = NotifierProvider.autoDispose
+    .family<DownloadTaskNotifier, DownloadTask?, String>(
+      DownloadTaskNotifier.new,
+    );
+
+class DownloadTaskNotifier
+    extends AutoDisposeFamilyNotifier<DownloadTask?, String> {
+  @override
+  DownloadTask? build(String arg) => ref.watch(downloadProvider).taskById(arg);
+}
 
 /// Đếm task đang active (dùng cho badge trên Download tab)
 final activeDownloadCountProvider = Provider<int>((ref) {

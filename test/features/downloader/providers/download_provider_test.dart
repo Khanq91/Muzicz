@@ -257,6 +257,52 @@ void main() {
     });
   });
 
+  group('downloadTaskProvider', () {
+    test('follows its own task only and is released when unwatched', () async {
+      final gateway = _RecordingDownloadGateway();
+      final container = await _readyContainer(gateway, dispatchLimit: 8);
+      addTearDown(gateway.dispose);
+
+      final notifier = container.read(downloadProvider.notifier);
+      await notifier.enqueueBatch(
+        infos: [_video('one'), _video('two')],
+        format: _format,
+      );
+      final [first, second] = container.read(downloadProvider).tasks;
+
+      var notifications = 0;
+      final sub = container.listen(
+        downloadTaskProvider(first.id),
+        (_, __) => notifications++,
+      );
+      expect(sub.read(), first);
+
+      // Another task's progress must not wake this one.
+      gateway.progress(second.id, 0.5);
+      await container.pump();
+      expect(notifications, 0);
+
+      // Same id, new instance (DownloadTask.== is id-based) must notify.
+      gateway.progress(first.id, 0.5);
+      await container.pump();
+      expect(notifications, 1);
+      expect(sub.read()!.progress, 0.5);
+
+      await gateway.complete(first.id);
+      await container.pump();
+      notifier.remove(first.id);
+      await container.pump();
+      expect(sub.read(), isNull);
+
+      sub.close();
+      await container.pump();
+      expect(
+        container.getAllProviderElements().map((e) => e.provider),
+        isNot(contains(downloadTaskProvider(first.id))),
+      );
+    });
+  });
+
   group('output directory', () {
     test('loads through the storage gateway and persists picks', () async {
       final storage = _FakeStorage(path: '/saved');
@@ -523,6 +569,13 @@ class _RecordingDownloadGateway implements DownloadGateway {
     final controller = _controllersByTask[taskId]!;
     controller.add(task.copyWith(status: DownloadStatus.done, progress: 1));
     await controller.close();
+  }
+
+  void progress(String taskId, double value) {
+    final task = _tasks[taskId]!;
+    _controllersByTask[taskId]!.add(
+      task.copyWith(status: DownloadStatus.downloading, progress: value),
+    );
   }
 
   void dispose() {
