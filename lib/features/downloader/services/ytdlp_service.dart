@@ -80,9 +80,14 @@ abstract interface class AnalyzeGateway {
   Future<AnalyzeResult> analyze(String url);
 }
 
+abstract interface class PlaylistGateway {
+  Future<PlaylistEntriesResult> getPlaylistEntries(String url);
+}
+
 class YtdlpService
     implements
         AnalyzeGateway,
+        PlaylistGateway,
         DownloadGateway,
         RestorableDownloadGateway,
         PersistentDownloadHistoryGateway {
@@ -124,6 +129,7 @@ class YtdlpService
 
   // ── Playlist entries ──────────────────────────────────────
 
+  @override
   Future<PlaylistEntriesResult> getPlaylistEntries(String url) async {
     try {
       final jsonStr = await _channel

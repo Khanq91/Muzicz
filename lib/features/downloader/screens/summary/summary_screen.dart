@@ -8,7 +8,6 @@ import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:muziczz/widgets/glass_container.dart';
 import '../../models/download_task.dart';
 import '../../providers/download_provider.dart';
-import '../../services/downloader_storage_service.dart';
 import '../../widgets/app_shell.dart';
 import '../../widgets/gradient_background.dart';
 import '../../widgets/primary_button.dart';
@@ -102,8 +101,9 @@ class SummaryScreen extends ConsumerWidget {
                   icon: Icons.folder_open_rounded,
                   onPressed: () async {
                     try {
-                      await DownloaderStorageService.instance
-                          .openDownloadFolder();
+                      await ref
+                          .read(downloadOutputDirectoryProvider.notifier)
+                          .openFolder();
                     } catch (e) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(

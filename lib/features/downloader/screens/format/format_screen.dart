@@ -3,7 +3,6 @@
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -15,7 +14,6 @@ import '../../models/format_option.dart';
 import '../../models/playlist_entry.dart';
 import '../../models/video_info.dart';
 import '../../providers/download_provider.dart';
-import '../../services/downloader_storage_service.dart';
 import '../../widgets/app_shell.dart';
 import '../../widgets/gradient_background.dart';
 import '../../widgets/primary_button.dart';
@@ -132,8 +130,12 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
 
   bool get _isPlaylist => widget.videoInfo.type == VideoType.playlist;
 
+  /// Folder shown in the bottom bar: the pending pick, else the saved one.
+  /// For callbacks; [build] watches the provider so the bar stays in sync.
   String get _currentPath =>
-      _pendingOutputPath ?? DownloaderStorageService.instance.downloadPath;
+      _pendingOutputPath ??
+      ref.read(downloadOutputDirectoryProvider).value ??
+      '';
 
   @override
   void initState() {
@@ -205,7 +207,7 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
   bool get _isMuxedOnly => _audioFormats.isEmpty && _videoFormats.isNotEmpty;
 
   Future<void> _showPathPickerSheet() async {
-    final base = await DownloaderStorageService.instance.getExternalBasePath();
+    final base = await ref.read(downloadExternalBasePathProvider.future);
     if (!mounted) return;
 
     showModalBottomSheet(
@@ -222,12 +224,10 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
               setState(() => _pendingOutputPath = path);
             },
             onCustomPick: () async {
-              await DownloaderStorageService.instance
-                  .requestStoragePermission();
-              final picked = await FilePicker.platform.getDirectoryPath(
-                dialogTitle: 'Chọn thư mục lưu',
-                initialDirectory: _currentPath,
-              );
+              // Not saved yet: the folder is persisted when the download starts.
+              final picked = await ref
+                  .read(downloadOutputDirectoryProvider.notifier)
+                  .pickDirectory(save: false, initialDirectory: _currentPath);
               if (picked != null && mounted) {
                 setState(() => _pendingOutputPath = picked);
               }
@@ -323,6 +323,11 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
 
   @override
   Widget build(BuildContext context) {
+    final savedPath = ref.watch(
+      downloadOutputDirectoryProvider.select((dir) => dir.value),
+    );
+    final currentPath = _pendingOutputPath ?? savedPath ?? '';
+
     return GradientBackground(
       child: AppShell(
         appBar: AppBar(
@@ -479,7 +484,7 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
               selectedPreset: _selectedPreset,
               isPlaylist: _isPlaylist,
               playlistCount: widget.videoInfo.playlistCount,
-              currentPath: _currentPath,
+              currentPath: currentPath,
               onPickFolder: _showPathPickerSheet,
               isSubmitting: _submitting,
               onDownload:

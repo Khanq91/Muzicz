@@ -8,6 +8,10 @@ final analyzeGatewayProvider = Provider<AnalyzeGateway>(
   (ref) => YtdlpService.instance,
 );
 
+final playlistGatewayProvider = Provider<PlaylistGateway>(
+  (ref) => YtdlpService.instance,
+);
+
 // ── State ──────────────────────────────────────────────────
 
 enum AnalyzeStatus { idle, loading, success, error }

@@ -11,7 +11,6 @@ import 'package:muziczz/widgets/glass_container.dart';
 import '../../models/video_info.dart';
 import '../../providers/analyze_provider.dart';
 import '../../providers/download_provider.dart';
-import '../../services/downloader_storage_service.dart';
 import '../../widgets/app_shell.dart';
 import '../../widgets/gradient_background.dart';
 import '../../widgets/platform_chip.dart';
@@ -28,32 +27,12 @@ class AnalyzeScreen extends ConsumerStatefulWidget {
 class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
-  bool _serviceReady = false;
-  String? _initError;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initServices();
-    });
-  }
 
   @override
   void dispose() {
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
-  }
-
-  Future<void> _initServices() async {
-    try {
-      await DownloaderStorageService.instance.init();
-      await DownloaderStorageService.instance.requestStoragePermission();
-      if (mounted) setState(() => _serviceReady = true);
-    } catch (e) {
-      if (mounted) setState(() => _initError = 'Khởi động thất bại: $e');
-    }
   }
 
   Future<void> _paste() async {
@@ -95,10 +74,10 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
 
   /// Hiển thị bottom sheet chọn thư mục lưu nhanh
   Future<void> _showFolderPickerSheet() async {
-    final base = await DownloaderStorageService.instance.getExternalBasePath();
-
+    final base = await ref.read(downloadExternalBasePathProvider.future);
     if (!mounted) return;
 
+    final outputDir = ref.read(downloadOutputDirectoryProvider.notifier);
     showModalBottomSheet(
       context: context,
       backgroundColor: context.appColors.card,
@@ -108,25 +87,20 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
       builder:
           (ctx) => _FolderPickerSheet(
             basePath: base,
-            currentPath: DownloaderStorageService.instance.downloadPath,
+            currentPath: ref.read(downloadOutputDirectoryProvider).value ?? '',
             onSelect: (path) async {
-              await ref
-                  .read(downloadOutputDirectoryProvider.notifier)
-                  .setPath(path);
+              await outputDir.setPath(path);
               if (mounted) {
-                setState(() {});
-                _showSnack('Đã chọn: $path');
+                // Show the folder the service actually kept (setPath keeps the
+                // previous one when the chosen folder cannot be created).
+                _showSnack(
+                  'Đã chọn: ${ref.read(downloadOutputDirectoryProvider).value}',
+                );
               }
             },
             onCustomPick: () async {
-              final path =
-                  await ref
-                      .read(downloadOutputDirectoryProvider.notifier)
-                      .pickDirectory();
-              if (path != null && mounted) {
-                setState(() {});
-                _showSnack('Đã chọn: $path');
-              }
+              final path = await outputDir.pickDirectory();
+              if (path != null && mounted) _showSnack('Đã chọn: $path');
             },
           ),
     );
@@ -136,6 +110,8 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
   Widget build(BuildContext context) {
     final c = context.appColors;
     final analyzeState = ref.watch(analyzeProvider);
+    final outputDir = ref.watch(downloadOutputDirectoryProvider);
+    final serviceReady = outputDir.hasValue;
 
     return GradientBackground(
       child: AppShell(
@@ -172,8 +148,8 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
 
                 // ── Header ──────────────────────────────────
                 _Header(
-                  serviceReady: _serviceReady,
-                  onPickFolder: _showFolderPickerSheet,
+                  outputPath: outputDir.value,
+                  onPickFolder: serviceReady ? _showFolderPickerSheet : null,
                 ),
                 const SizedBox(height: 28),
 
@@ -193,20 +169,22 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
 
                 // ── Analyze Button ───────────────────────────
                 PrimaryButton(
-                  label: _serviceReady ? 'Phân tích' : 'Đang khởi động...',
+                  label: serviceReady ? 'Phân tích' : 'Đang khởi động...',
                   icon: Icons.search_rounded,
-                  isLoading: analyzeState.isLoading || !_serviceReady,
+                  isLoading: analyzeState.isLoading || !serviceReady,
                   onPressed:
-                      _serviceReady &&
+                      serviceReady &&
                               analyzeState.currentUrl.isNotEmpty &&
                               !analyzeState.isLoading
                           ? _analyze
                           : null,
                 ),
-                if (_initError != null)
+                if (outputDir.hasError)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
-                    child: _ErrorCard(message: _initError!),
+                    child: _ErrorCard(
+                      message: 'Khởi động thất bại: ${outputDir.error}',
+                    ),
                   ),
 
                 // ── Result Area ──────────────────────────────
@@ -476,10 +454,11 @@ class _FolderOption {
 // ── Header ─────────────────────────────────────────────────
 
 class _Header extends StatelessWidget {
-  final bool serviceReady;
-  final VoidCallback onPickFolder;
+  /// Null while the output directory is still loading.
+  final String? outputPath;
+  final VoidCallback? onPickFolder;
 
-  const _Header({required this.serviceReady, required this.onPickFolder});
+  const _Header({required this.outputPath, required this.onPickFolder});
 
   @override
   Widget build(BuildContext context) {
@@ -532,13 +511,16 @@ class _Header extends StatelessWidget {
 
             Expanded(
               child: GestureDetector(
-                onTap: serviceReady ? () => _showFullPath(context) : null,
+                onTap:
+                    outputPath != null
+                        ? () => _showFullPath(context, outputPath!)
+                        : null,
                 child: Row(
                   children: [
                     Expanded(
                       child: Text(
-                        serviceReady
-                            ? 'Lưu: ${DownloaderStorageService.instance.downloadPath}'
+                        outputPath != null
+                            ? 'Lưu: $outputPath'
                             : 'Đang tải thư mục...',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -565,9 +547,7 @@ class _Header extends StatelessWidget {
   }
 }
 
-void _showFullPath(BuildContext context) {
-  final path = DownloaderStorageService.instance.downloadPath;
-
+void _showFullPath(BuildContext context, String path) {
   showDialog(
     context: context,
     builder:

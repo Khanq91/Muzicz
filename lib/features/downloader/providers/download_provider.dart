@@ -14,31 +14,66 @@ final downloadGatewayProvider = Provider<DownloadGateway>(
   (ref) => YtdlpService.instance,
 );
 
+final downloadStorageGatewayProvider = Provider<DownloadStorageGateway>(
+  (ref) => DownloaderStorageService.instance,
+);
+
 final downloadOutputDirectoryProvider =
-    NotifierProvider<OutputDirectoryNotifier, String>(
+    AsyncNotifierProvider<OutputDirectoryNotifier, String>(
       OutputDirectoryNotifier.new,
     );
+
+/// Root of external storage (`/storage/emulated/0`) the quick-pick folder
+/// sheets build their `Music/`, `Download/…`, `Movies/` options from.
+final downloadExternalBasePathProvider = FutureProvider<String>(
+  (ref) => ref.watch(downloadStorageGatewayProvider).getExternalBasePath(),
+);
 
 /// Owns the download output directory as Riverpod state, so every
 /// `ref.read`/`ref.watch` sees the folder the user picked most recently
 /// instead of the value cached on first read from the storage singleton.
-class OutputDirectoryNotifier extends Notifier<String> {
+///
+/// Loading the saved folder and asking for storage access happen in [build],
+/// so nothing can read a path before the storage service is initialised: the
+/// analyze screen shows "Đang khởi động…" while this is [AsyncLoading] and the
+/// init error when it is [AsyncError].
+class OutputDirectoryNotifier extends AsyncNotifier<String> {
+  DownloadStorageGateway get _storage =>
+      ref.read(downloadStorageGatewayProvider);
+
   @override
-  String build() => DownloaderStorageService.instance.downloadPath;
+  Future<String> build() async {
+    final storage = ref.watch(downloadStorageGatewayProvider);
+    await storage.init();
+    await storage.requestStoragePermission();
+    return storage.downloadPath;
+  }
 
   /// Persists [path] through the storage service and publishes it.
   Future<void> setPath(String path) async {
-    await DownloaderStorageService.instance.setAndSavePath(path);
-    state = path;
+    await _storage.setAndSavePath(path);
+    // setAndSavePath keeps the previous folder when [path] cannot be created,
+    // so publish what the service actually holds rather than [path].
+    state = AsyncData(_storage.downloadPath);
   }
 
-  /// Opens the system directory picker and publishes the chosen folder.
-  Future<String?> pickDirectory() async {
-    final picked =
-        await DownloaderStorageService.instance.pickDownloadDirectory();
-    if (picked != null) state = picked;
+  /// Opens the system directory picker. With [save] the chosen folder is
+  /// persisted and published right away; without it the caller keeps the
+  /// path pending (format screen saves only when the download starts).
+  /// Returns null when the user cancels.
+  Future<String?> pickDirectory({
+    bool save = true,
+    String? initialDirectory,
+  }) async {
+    final picked = await _storage.pickDirectory(
+      initialDirectory: initialDirectory ?? state.value,
+    );
+    if (picked != null && save) await setPath(picked);
     return picked;
   }
+
+  /// Opens the current output directory in the system file manager.
+  Future<void> openFolder() => _storage.openDownloadFolder();
 }
 
 /// Dart dispatches the visible queue to the Android foreground service.
@@ -101,6 +136,11 @@ class DownloadNotifier extends Notifier<DownloadState> {
   DownloadState build() {
     _disposed = false;
     scheduleMicrotask(_restoreDownloads);
+    // Tasks enqueued or restored before the output directory finished loading
+    // stay queued; dispatch them as soon as the folder is known.
+    ref.listen<AsyncValue<String>>(downloadOutputDirectoryProvider, (_, next) {
+      if (next.hasValue) _processQueue();
+    });
     ref.onDispose(() {
       _disposed = true;
       for (final sub in _subs.values) {
@@ -250,6 +290,10 @@ class DownloadNotifier extends Notifier<DownloadState> {
   }
 
   void _processQueue() {
+    final outputDir = ref.read(downloadOutputDirectoryProvider);
+    // Folder still resolving: the listener in build() re-runs this once it is.
+    if (outputDir.isLoading) return;
+
     final available = ref.read(downloadDispatchLimitProvider) - _subs.length;
     if (available <= 0) return;
 
@@ -259,11 +303,11 @@ class DownloadNotifier extends Notifier<DownloadState> {
             .take(available)
             .toList();
     for (final task in queued) {
-      _startDownload(task);
+      _startDownload(task, outputDir);
     }
   }
 
-  void _startDownload(DownloadTask task) {
+  void _startDownload(DownloadTask task, AsyncValue<String> outputDir) {
     if (_subs.containsKey(task.id)) return;
 
     final currentTask = _findTask(task.id);
@@ -291,9 +335,11 @@ class DownloadNotifier extends Notifier<DownloadState> {
 
     late final Stream<DownloadTask> stream;
     try {
+      // requireValue rethrows the storage init error, which then lands on the
+      // task as "Không thể bắt đầu tải" instead of silently using a fallback.
       stream = ref
           .read(downloadGatewayProvider)
-          .download(task, outputDir: ref.read(downloadOutputDirectoryProvider));
+          .download(task, outputDir: outputDir.requireValue);
     } catch (error) {
       _updateTask(
         task.id,

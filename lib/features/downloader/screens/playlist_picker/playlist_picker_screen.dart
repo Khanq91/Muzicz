@@ -9,7 +9,9 @@ import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:muziczz/widgets/glass_container.dart';
 import '../../models/playlist_entry.dart';
 import '../../models/video_info.dart';
-import '../../services/ytdlp_service.dart';
+import '../../providers/analyze_provider.dart';
+import '../../services/ytdlp_service.dart'
+    show PlaylistEntriesFailure, PlaylistEntriesSuccess;
 import '../../../../utils/vietnamese_normalize.dart';
 import '../../widgets/app_shell.dart';
 import '../../widgets/gradient_background.dart';
@@ -79,9 +81,9 @@ class _PlaylistPickerScreenState extends ConsumerState<PlaylistPickerScreen> {
       _error = null;
     });
 
-    final result = await YtdlpService.instance.getPlaylistEntries(
-      widget.playlistInfo.url,
-    );
+    final result = await ref
+        .read(playlistGatewayProvider)
+        .getPlaylistEntries(widget.playlistInfo.url);
 
     if (!mounted) return;
 

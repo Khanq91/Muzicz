@@ -9,7 +9,33 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/constants/app_constants.dart';
 
-class DownloaderStorageService {
+/// Storage boundary the downloader providers depend on, so neither widgets
+/// nor notifiers reach [DownloaderStorageService.instance] directly and tests
+/// can substitute a fake.
+abstract interface class DownloadStorageGateway {
+  /// Loads the saved output directory or creates the default one.
+  Future<void> init();
+
+  /// Current output directory. Only valid after [init] completed.
+  String get downloadPath;
+
+  Future<bool> requestStoragePermission();
+
+  /// Root of external storage, e.g. `/storage/emulated/0`.
+  Future<String> getExternalBasePath();
+
+  /// Creates [path] if needed, then persists it as the output directory.
+  /// Keeps the previous directory when [path] cannot be created.
+  Future<void> setAndSavePath(String path);
+
+  /// Opens the system directory picker without persisting the choice.
+  /// Returns null when the user cancels.
+  Future<String?> pickDirectory({String? initialDirectory});
+
+  Future<void> openDownloadFolder();
+}
+
+class DownloaderStorageService implements DownloadStorageGateway {
   DownloaderStorageService._();
   static final DownloaderStorageService instance = DownloaderStorageService._();
 
@@ -17,6 +43,7 @@ class DownloaderStorageService {
 
   String? _downloadPath;
 
+  @override
   String get downloadPath {
     assert(_downloadPath != null, 'Gọi init() trước');
     return _downloadPath!;
@@ -47,6 +74,7 @@ class DownloaderStorageService {
     await _initDownloadPath();
   }
 
+  @override
   Future<void> init() async {
     await _loadSavedOrInitDownloadPath();
   }
@@ -84,6 +112,7 @@ class DownloaderStorageService {
   // ── Quick path helpers ─────────────────────────────────────────────────────
 
   /// Trả về đường dẫn gốc bộ nhớ ngoài, ví dụ: /storage/emulated/0
+  @override
   Future<String> getExternalBasePath() async {
     try {
       final path = await _channel.invokeMethod<String>('getDownloadDir');
@@ -98,6 +127,7 @@ class DownloaderStorageService {
   }
 
   /// Đặt đường dẫn lưu file trực tiếp (không qua file picker system)
+  @override
   Future<void> setAndSavePath(String path) async {
     final dir = Directory(path);
     if (!dir.existsSync()) {
@@ -114,25 +144,19 @@ class DownloaderStorageService {
   }
 
   // ── Pickers ────────────────────────────────────────────────────────────────
-  Future<String?> pickDownloadDirectory() async {
-    final status = await Permission.storage.request();
-    if (!status.isGranted) {
-      final manageStatus = await Permission.manageExternalStorage.request();
-      if (!manageStatus.isGranted) return null;
-    }
 
-    final result = await FilePicker.platform.getDirectoryPath(
+  /// Chỉ mở picker; caller quyết định có lưu hay không (analyze lưu ngay,
+  /// format giữ pending tới lúc bấm tải). Trả null khi user huỷ.
+  @override
+  Future<String?> pickDirectory({String? initialDirectory}) async {
+    await requestStoragePermission();
+    return FilePicker.platform.getDirectoryPath(
       dialogTitle: 'Chọn thư mục lưu file',
-      initialDirectory: _downloadPath,
+      initialDirectory: initialDirectory ?? _downloadPath,
     );
-
-    if (result != null) {
-      _downloadPath = result;
-      await _savePath(result);
-    }
-    return _downloadPath;
   }
 
+  @override
   Future<bool> requestStoragePermission() async {
     if (Platform.isAndroid) {
       // Dùng channel thay vì gọi shell — an toàn hơn
@@ -151,6 +175,7 @@ class DownloaderStorageService {
     return true;
   }
 
+  @override
   Future<void> openDownloadFolder() async {
     try {
       await _channel.invokeMethod('openFolder', {'path': downloadPath});
