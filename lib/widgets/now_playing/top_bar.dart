@@ -32,49 +32,58 @@ class TopBar extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
           ),
           Expanded(
-            child: Column(
-              children: [
-                Text(
-                  AppStrings.nowPlaying,
-                  style: GoogleFonts.outfit(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w300,
-                    color: c.onPlayerLow,
-                    letterSpacing: 2.5,
-                  ),
-                ),
-                Semantics(
-                  button: true,
-                  child: GestureDetector(
-                    onTap: () => showAlbumSongsSheet(context, music, song),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          song.album.isNotEmpty
-                              ? song.album
-                              : AppStrings.fromLibrary,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.outfit(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: c.onPlayerHigh,
-                            decoration: TextDecoration.underline,
-                            decorationColor: c.onPlayerSubtle,
+            // The whole "ĐANG PHÁT / album" block is the tap target (48dp,
+            // level with the neighbouring IconButtons) instead of the ~18dp
+            // album link alone.
+            child: Semantics(
+              button: true,
+              hint: AppStrings.albumSongsHint,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => showAlbumSongsSheet(context, music, song),
+                child: SizedBox(
+                  height: 48,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        AppStrings.nowPlaying,
+                        style: GoogleFonts.outfit(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w300,
+                          color: c.onPlayerLow,
+                          letterSpacing: 2.5,
+                        ),
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            song.album.isNotEmpty
+                                ? song.album
+                                : AppStrings.fromLibrary,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.outfit(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: c.onPlayerHigh,
+                              decoration: TextDecoration.underline,
+                              decorationColor: c.onPlayerSubtle,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 3),
-                        Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          size: 9,
-                          color: c.onPlayerSubtle,
-                        ),
-                      ],
-                    ),
+                          const SizedBox(width: 3),
+                          Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 9,
+                            color: c.onPlayerSubtle,
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
           ),
           PopupMenuButton<String>(

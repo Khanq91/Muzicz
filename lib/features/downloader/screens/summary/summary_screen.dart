@@ -338,37 +338,23 @@ class _FailedList extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              GestureDetector(
-                onTap: onRetryAll,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: c.primary.withValues(alpha: 0.12),
+              TextButton.icon(
+                onPressed: onRetryAll,
+                style: TextButton.styleFrom(
+                  foregroundColor: c.primary,
+                  backgroundColor: c.primary.withValues(alpha: 0.12),
+                  minimumSize: const Size(44, 44),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.refresh_rounded,
-                        size: 13,
-                        color: c.primary,
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        'Thử lại tất cả',
-                        style: TextStyle(
-                          color: c.primary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+                  textStyle: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
+                icon: const Icon(Icons.refresh_rounded, size: 13),
+                label: const Text('Thử lại tất cả'),
               ),
             ],
           ),

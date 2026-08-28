@@ -428,14 +428,15 @@ class _LibrarySearchBar extends StatelessWidget {
                   ),
                   suffixIcon:
                       hasSearchText
-                          ? GestureDetector(
-                            onTap: () {
+                          ? IconButton(
+                            tooltip: AppStrings.clearSearch,
+                            onPressed: () {
                               controller.clear();
                               context
                                   .read<MusicProvider>()
                                   .setLibrarySearchQuery('');
                             },
-                            child: Icon(
+                            icon: Icon(
                               Icons.close_rounded,
                               color: c.textTertiary,
                               size: 18,

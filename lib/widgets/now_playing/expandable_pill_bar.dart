@@ -178,17 +178,25 @@ class _ExpandablePillBarState extends State<ExpandablePillBar> {
                           button: true,
                           label: AppStrings.collapseOptions,
                           child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
                             onTap: () => setState(() => _isExpanded = false),
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: c.onPlayerGhost,
-                              ),
-                              child: Icon(
-                                Icons.close_rounded,
-                                size: 16,
-                                color: c.onPlayerHigh,
+                            // 28dp visual, 48dp hit area.
+                            child: SizedBox(
+                              width: 48,
+                              height: 48,
+                              child: Center(
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: c.onPlayerGhost,
+                                  ),
+                                  child: Icon(
+                                    Icons.close_rounded,
+                                    size: 16,
+                                    color: c.onPlayerHigh,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -222,7 +230,8 @@ class _ExpandablePillBarState extends State<ExpandablePillBar> {
           onTap: onTap,
           customBorder: const CircleBorder(),
           child: Container(
-            padding: const EdgeInsets.all(10),
+            // 20dp icon + 14dp padding = 48dp target.
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color:

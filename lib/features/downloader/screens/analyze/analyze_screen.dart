@@ -680,18 +680,30 @@ class _ActionIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
+    // 36dp visual centred in a 48dp hit area.
     return Tooltip(
       message: tooltip,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: c.surfaceElevated,
-            borderRadius: BorderRadius.circular(10),
+      child: Semantics(
+        button: true,
+        label: tooltip,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: SizedBox(
+            width: 48,
+            height: 48,
+            child: Center(
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: c.surfaceElevated,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: c.textSecondary, size: 18),
+              ),
+            ),
           ),
-          child: Icon(icon, color: c.textSecondary, size: 18),
         ),
       ),
     );

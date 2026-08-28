@@ -648,7 +648,7 @@ class PlaylistDetailScreen extends StatelessWidget {
           // Song list with reorder
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -659,22 +659,20 @@ class PlaylistDetailScreen extends StatelessWidget {
                       fontSize: 13,
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () => _showAddSongsSheet(context, music, playlist),
-                    child: Row(
-                      children: [
-                        Icon(Icons.add_rounded, color: c.primary, size: 18),
-                        const SizedBox(width: 4),
-                        Text(
-                          AppStrings.addSongs,
-                          style: GoogleFonts.outfit(
-                            color: c.primary,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
+                  TextButton.icon(
+                    onPressed:
+                        () => _showAddSongsSheet(context, music, playlist),
+                    style: TextButton.styleFrom(
+                      foregroundColor: c.primary,
+                      minimumSize: const Size(44, 44),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      textStyle: GoogleFonts.outfit(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
+                    icon: const Icon(Icons.add_rounded, size: 18),
+                    label: const Text(AppStrings.addSongs),
                   ),
                 ],
               ),

@@ -253,7 +253,7 @@ class _SelectionToolbar extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.appColors;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(color: c.divider, width: 0.5),
@@ -269,23 +269,22 @@ class _SelectionToolbar extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          GestureDetector(
-            onTap: allSelected ? onDeselectAll : onSelectAll,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: c.primary.withValues(alpha: 0.12),
+          TextButton(
+            onPressed: allSelected ? onDeselectAll : onSelectAll,
+            style: TextButton.styleFrom(
+              foregroundColor: c.primary,
+              backgroundColor: c.primary.withValues(alpha: 0.12),
+              minimumSize: const Size(44, 44),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Text(
-                allSelected ? 'Bỏ chọn tất cả' : 'Chọn tất cả',
-                style: TextStyle(
-                  color: c.primary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
+              textStyle: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
               ),
             ),
+            child: Text(allSelected ? 'Bỏ chọn tất cả' : 'Chọn tất cả'),
           ),
         ],
       ),

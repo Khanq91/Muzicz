@@ -148,12 +148,13 @@ class _AddToPlaylistSheetState extends State<AddToPlaylistSheet> {
                   ),
                   suffixIcon:
                       _query.isNotEmpty
-                          ? GestureDetector(
-                            onTap: () {
+                          ? IconButton(
+                            tooltip: AppStrings.clearSearch,
+                            onPressed: () {
                               _searchCtrl.clear();
                               setState(() => _query = '');
                             },
-                            child: Icon(
+                            icon: Icon(
                               Icons.close_rounded,
                               color: c.textTertiary,
                               size: 18,
