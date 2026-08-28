@@ -172,8 +172,8 @@ class _LibraryScreenState extends State<LibraryScreen>
 
     if (confirm != true) return;
     await music.hideSongsFromLibrary(songs);
-    _exitSelecting();
     if (!mounted) return;
+    _exitSelecting();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
