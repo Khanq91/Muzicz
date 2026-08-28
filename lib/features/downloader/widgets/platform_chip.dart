@@ -1,7 +1,7 @@
 // lib/widgets/platform_chip.dart
 
 import 'package:flutter/material.dart';
-import '../core/theme/app_colors.dart';
+import 'package:muziczz/theme/app_colors_data.dart';
 
 /// Chip nhỏ hiển thị tên platform (YouTube, TikTok, v.v.)
 /// Xuất hiện dưới TextField ngay khi detect được URL.
@@ -14,7 +14,8 @@ class PlatformChip extends StatelessWidget {
   Widget build(BuildContext context) {
     if (platform.isEmpty) return const SizedBox.shrink();
 
-    final color = _colorForPlatform(platform);
+    final c = context.appColors;
+    final color = _colorForPlatform(platform, c);
 
     return AnimatedSize(
       duration: const Duration(milliseconds: 200),
@@ -44,7 +45,7 @@ class PlatformChip extends StatelessWidget {
     );
   }
 
-  Color _colorForPlatform(String platform) {
+  Color _colorForPlatform(String platform, AppColorsData c) {
     switch (platform.toLowerCase()) {
       case 'youtube':
         return const Color(0xFFFF3B30);
@@ -59,7 +60,7 @@ class PlatformChip extends StatelessWidget {
       case 'vimeo':
         return const Color(0xFF1AB7EA);
       default:
-        return AppColors.primary;
+        return c.primary;
     }
   }
 

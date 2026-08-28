@@ -1,7 +1,7 @@
 // lib/widgets/primary_button.dart
 
 import 'package:flutter/material.dart';
-import '../core/theme/app_colors.dart';
+import 'package:muziczz/theme/app_colors_data.dart';
 
 /// Nút chính với gradient tím, bo tròn, hỗ trợ loading state.
 class PrimaryButton extends StatelessWidget {
@@ -22,6 +22,7 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     final enabled = onPressed != null && !isLoading;
 
     return AnimatedOpacity(
@@ -34,7 +35,7 @@ class PrimaryButton extends StatelessWidget {
           decoration: BoxDecoration(
             gradient:
                 enabled
-                    ? AppColors.primaryGradient
+                    ? c.primaryGradient
                     : const LinearGradient(
                       colors: [Color(0xFF444444), Color(0xFF333333)],
                     ),
@@ -43,7 +44,7 @@ class PrimaryButton extends StatelessWidget {
                 enabled
                     ? [
                       BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.35),
+                        color: c.primary.withValues(alpha: 0.35),
                         blurRadius: 16,
                         offset: const Offset(0, 6),
                       ),

@@ -1,9 +1,9 @@
 // lib/widgets/gradient_background.dart
 
 import 'package:flutter/material.dart';
-import '../core/theme/app_colors.dart';
+import 'package:muziczz/theme/app_colors_data.dart';
 
-/// Nền gradient toàn màn hình theo AppColors.backgroundGradient
+/// Nền gradient toàn màn hình theo backgroundGradient của theme hiện tại
 class GradientBackground extends StatelessWidget {
   final Widget child;
 
@@ -11,9 +11,10 @@ class GradientBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Container(
-      decoration: const BoxDecoration(
-        gradient: AppColors.backgroundGradient,
+      decoration: BoxDecoration(
+        gradient: c.backgroundGradient,
       ),
       child: child,
     );

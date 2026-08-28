@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/app_router.dart';
-import '../../core/theme/app_colors.dart';
+import 'package:muziczz/theme/app_colors_data.dart';
 import '../../models/playlist_entry.dart';
 import '../../models/video_info.dart';
 import '../../services/ytdlp_service.dart';
@@ -125,6 +125,7 @@ class _PlaylistPickerScreenState extends ConsumerState<PlaylistPickerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return GradientBackground(
       child: AppShell(
         appBar: AppBar(
@@ -160,10 +161,10 @@ class _PlaylistPickerScreenState extends ConsumerState<PlaylistPickerScreen> {
                       _searchQuery = value;
                     });
                   },
-                  style: const TextStyle(color: AppColors.textPrimary),
+                  style: TextStyle(color: c.textPrimary),
                   decoration: InputDecoration(
                     hintText: 'Tìm video...',
-                    hintStyle: const TextStyle(color: AppColors.textTertiary),
+                    hintStyle: TextStyle(color: c.textTertiary),
                     prefixIcon: const Icon(Icons.search, size: 20),
                     suffixIcon:
                         _searchQuery.isNotEmpty
@@ -176,7 +177,7 @@ class _PlaylistPickerScreenState extends ConsumerState<PlaylistPickerScreen> {
                             )
                             : null,
                     filled: true,
-                    fillColor: AppColors.surface,
+                    fillColor: c.surface,
                     contentPadding: const EdgeInsets.symmetric(vertical: 10),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -236,19 +237,20 @@ class _SelectionToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: AppColors.divider, width: 0.5),
+          bottom: BorderSide(color: c.divider, width: 0.5),
         ),
       ),
       child: Row(
         children: [
           Text(
             'Đã chọn $selectedCount / $total Video hợp lệ',
-            style: const TextStyle(
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              color: c.textSecondary,
               fontSize: 13,
             ),
           ),
@@ -258,13 +260,13 @@ class _SelectionToolbar extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.12),
+                color: c.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 allSelected ? 'Bỏ chọn tất cả' : 'Chọn tất cả',
-                style: const TextStyle(
-                  color: AppColors.primary,
+                style: TextStyle(
+                  color: c.primary,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
@@ -314,6 +316,7 @@ class _EntryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -323,14 +326,14 @@ class _EntryTile extends StatelessWidget {
         decoration: BoxDecoration(
           color:
               entry.selected
-                  ? AppColors.primary.withValues(alpha: 0.08)
-                  : AppColors.surface,
+                  ? c.primary.withValues(alpha: 0.08)
+                  : c.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color:
                 entry.selected
-                    ? AppColors.primary.withValues(alpha: 0.4)
-                    : AppColors.border,
+                    ? c.primary.withValues(alpha: 0.4)
+                    : c.border,
             width: entry.selected ? 1.2 : 0.8,
           ),
         ),
@@ -343,11 +346,11 @@ class _EntryTile extends StatelessWidget {
               height: 22,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: entry.selected ? AppColors.primaryGradient : null,
+                gradient: entry.selected ? c.primaryGradient : null,
                 border:
                     entry.selected
                         ? null
-                        : Border.all(color: AppColors.textTertiary, width: 1.5),
+                        : Border.all(color: c.textTertiary, width: 1.5),
               ),
               child:
                   entry.selected
@@ -389,8 +392,8 @@ class _EntryTile extends StatelessWidget {
                     style: TextStyle(
                       color:
                           entry.selected
-                              ? AppColors.textPrimary
-                              : AppColors.textSecondary,
+                              ? c.textPrimary
+                              : c.textSecondary,
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                       height: 1.3,
@@ -404,17 +407,17 @@ class _EntryTile extends StatelessWidget {
                         if (entry.formattedDuration.isNotEmpty)
                           Text(
                             entry.formattedDuration,
-                            style: const TextStyle(
-                              color: AppColors.textTertiary,
+                            style: TextStyle(
+                              color: c.textTertiary,
                               fontSize: 11,
                             ),
                           ),
                         if (entry.formattedDuration.isNotEmpty &&
                             entry.uploader?.isNotEmpty == true)
-                          const Text(
+                          Text(
                             ' · ',
                             style: TextStyle(
-                              color: AppColors.textTertiary,
+                              color: c.textTertiary,
                               fontSize: 11,
                             ),
                           ),
@@ -424,8 +427,8 @@ class _EntryTile extends StatelessWidget {
                               entry.uploader!,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: AppColors.textTertiary,
+                              style: TextStyle(
+                                color: c.textTertiary,
                                 fontSize: 11,
                               ),
                             ),
@@ -449,15 +452,16 @@ class _ThumbnailPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Container(
       width: 72,
       height: 46,
-      color: AppColors.surfaceElevated,
+      color: c.surfaceElevated,
       child: Center(
         child: Text(
           '$index',
-          style: const TextStyle(
-            color: AppColors.textTertiary,
+          style: TextStyle(
+            color: c.textTertiary,
             fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
@@ -474,15 +478,16 @@ class _LoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    final c = context.appColors;
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
+          CircularProgressIndicator(color: c.primary, strokeWidth: 2),
           SizedBox(height: 16),
           Text(
             'Đang tải danh sách video...',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+            style: TextStyle(color: c.textSecondary, fontSize: 14),
           ),
         ],
       ),
@@ -498,6 +503,7 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -513,8 +519,8 @@ class _ErrorState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
+              style: TextStyle(
+                color: c.textSecondary,
                 fontSize: 14,
               ),
             ),
@@ -523,19 +529,19 @@ class _ErrorState extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               child: GestureDetector(
                 onTap: onRetry,
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       Icons.refresh_rounded,
-                      color: AppColors.primary,
+                      color: c.primary,
                       size: 18,
                     ),
                     SizedBox(width: 8),
                     Text(
                       'Thử lại',
                       style: TextStyle(
-                        color: AppColors.primary,
+                        color: c.primary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -565,6 +571,7 @@ class _BottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Container(
       padding: EdgeInsets.fromLTRB(
         20,
@@ -573,9 +580,9 @@ class _BottomBar extends StatelessWidget {
         MediaQuery.of(context).padding.bottom + 16,
       ),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.95),
-        border: const Border(
-          top: BorderSide(color: AppColors.divider, width: 0.5),
+        color: c.surface.withValues(alpha: 0.95),
+        border: Border(
+          top: BorderSide(color: c.divider, width: 0.5),
         ),
       ),
       child: Column(
@@ -587,16 +594,16 @@ class _BottomBar extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.info_outline_rounded,
                     size: 13,
-                    color: AppColors.textTertiary,
+                    color: c.textTertiary,
                   ),
                   const SizedBox(width: 5),
                   Text(
                     '${total - selectedCount} video bị bỏ qua',
-                    style: const TextStyle(
-                      color: AppColors.textTertiary,
+                    style: TextStyle(
+                      color: c.textTertiary,
                       fontSize: 12,
                     ),
                   ),

@@ -9,7 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/app_router.dart';
-import '../../core/theme/app_colors.dart';
+import 'package:muziczz/theme/app_colors_data.dart';
 import '../../models/format_option.dart';
 import '../../models/playlist_entry.dart';
 import '../../models/video_info.dart';
@@ -210,7 +210,7 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.card,
+      backgroundColor: context.appColors.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -527,12 +527,13 @@ class _FormatFolderSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     final options = [
       _FolderOption(
         icon: Icons.music_note_rounded,
         label: 'Music',
         sublabel: 'Music/',
-        color: AppColors.primary,
+        color: c.primary,
         path: '$basePath/Music',
       ),
       _FolderOption(
@@ -565,25 +566,25 @@ class _FormatFolderSheet extends StatelessWidget {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.divider,
+                  color: c.divider,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
             const SizedBox(height: 16),
 
-            const Text(
+            Text(
               'Lưu vào thư mục',
               style: TextStyle(
-                color: AppColors.textPrimary,
+                color: c.textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Chọn nơi lưu file sau khi tải',
-              style: TextStyle(color: AppColors.textTertiary, fontSize: 12),
+              style: TextStyle(color: c.textTertiary, fontSize: 12),
             ),
             const SizedBox(height: 16),
 
@@ -606,13 +607,13 @@ class _FormatFolderSheet extends StatelessWidget {
                     color:
                         isSelected
                             ? opt.color.withValues(alpha: 0.1)
-                            : AppColors.surfaceElevated,
+                            : c.surfaceElevated,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color:
                           isSelected
                               ? opt.color.withValues(alpha: 0.4)
-                              : AppColors.border,
+                              : c.border,
                       width: isSelected ? 1.2 : 0.8,
                     ),
                   ),
@@ -637,16 +638,16 @@ class _FormatFolderSheet extends StatelessWidget {
                               style: TextStyle(
                                 color:
                                     isSelected
-                                        ? AppColors.textPrimary
-                                        : AppColors.textSecondary,
+                                        ? c.textPrimary
+                                        : c.textSecondary,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                             Text(
                               opt.sublabel,
-                              style: const TextStyle(
-                                color: AppColors.textTertiary,
+                              style: TextStyle(
+                                color: c.textTertiary,
                                 fontSize: 11,
                               ),
                             ),
@@ -654,9 +655,9 @@ class _FormatFolderSheet extends StatelessWidget {
                         ),
                       ),
                       if (isSelected)
-                        const Icon(
+                        Icon(
                           Icons.check_circle_rounded,
-                          color: AppColors.primary,
+                          color: c.primary,
                           size: 18,
                         ),
                     ],
@@ -677,9 +678,9 @@ class _FormatFolderSheet extends StatelessWidget {
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceElevated,
+                  color: c.surfaceElevated,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border, width: 0.8),
+                  border: Border.all(color: c.border, width: 0.8),
                 ),
                 child: Row(
                   children: [
@@ -687,24 +688,24 @@ class _FormatFolderSheet extends StatelessWidget {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: AppColors.textTertiary.withValues(alpha: 0.1),
+                        color: c.textTertiary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.folder_open_rounded,
-                        color: AppColors.textSecondary,
+                        color: c.textSecondary,
                         size: 18,
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'Chọn đường dẫn',
                             style: TextStyle(
-                              color: AppColors.textSecondary,
+                              color: c.textSecondary,
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
@@ -712,16 +713,16 @@ class _FormatFolderSheet extends StatelessWidget {
                           Text(
                             'Duyệt thư mục tùy chỉnh',
                             style: TextStyle(
-                              color: AppColors.textTertiary,
+                              color: c.textTertiary,
                               fontSize: 11,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const Icon(
+                    Icon(
                       Icons.chevron_right_rounded,
-                      color: AppColors.textTertiary,
+                      color: c.textTertiary,
                       size: 18,
                     ),
                   ],
@@ -754,6 +755,7 @@ class _MuxedOptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -762,14 +764,14 @@ class _MuxedOptionTile extends StatelessWidget {
         decoration: BoxDecoration(
           color:
               isSelected
-                  ? AppColors.primary.withValues(alpha: 0.12)
-                  : AppColors.surface,
+                  ? c.primary.withValues(alpha: 0.12)
+                  : c.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color:
                 isSelected
-                    ? AppColors.primary.withValues(alpha: 0.5)
-                    : AppColors.border,
+                    ? c.primary.withValues(alpha: 0.5)
+                    : c.border,
             width: isSelected ? 1.2 : 0.8,
           ),
         ),
@@ -781,14 +783,14 @@ class _MuxedOptionTile extends StatelessWidget {
               decoration: BoxDecoration(
                 color:
                     isSelected
-                        ? AppColors.primary.withValues(alpha: 0.2)
-                        : AppColors.surfaceElevated,
+                        ? c.primary.withValues(alpha: 0.2)
+                        : c.surfaceElevated,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 icon,
                 size: 20,
-                color: isSelected ? AppColors.primary : AppColors.textTertiary,
+                color: isSelected ? c.primary : c.textTertiary,
               ),
             ),
             const SizedBox(width: 12),
@@ -801,8 +803,8 @@ class _MuxedOptionTile extends StatelessWidget {
                     style: TextStyle(
                       color:
                           isSelected
-                              ? AppColors.textPrimary
-                              : AppColors.textSecondary,
+                              ? c.textPrimary
+                              : c.textSecondary,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -810,8 +812,8 @@ class _MuxedOptionTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                      color: AppColors.textTertiary,
+                    style: TextStyle(
+                      color: c.textTertiary,
                       fontSize: 12,
                     ),
                   ),
@@ -826,10 +828,10 @@ class _MuxedOptionTile extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(
                   color:
-                      isSelected ? AppColors.primary : AppColors.textTertiary,
+                      isSelected ? c.primary : c.textTertiary,
                   width: isSelected ? 0 : 1.5,
                 ),
-                gradient: isSelected ? AppColors.primaryGradient : null,
+                gradient: isSelected ? c.primaryGradient : null,
               ),
               child:
                   isSelected
@@ -860,6 +862,7 @@ class _ExtractAudioTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -867,10 +870,10 @@ class _ExtractAudioTile extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.06),
+            color: c.primary.withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: AppColors.primary.withValues(alpha: 0.2),
+              color: c.primary.withValues(alpha: 0.2),
               width: 0.8,
             ),
           ),
@@ -879,14 +882,14 @@ class _ExtractAudioTile extends StatelessWidget {
               Icon(
                 Icons.info_outline_rounded,
                 size: 14,
-                color: AppColors.primary.withValues(alpha: 0.8),
+                color: c.primary.withValues(alpha: 0.8),
               ),
               const SizedBox(width: 8),
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Video này chỉ có định dạng muxed (video+audio). Chọn định dạng bạn muốn lưu.',
                   style: TextStyle(
-                    color: AppColors.textSecondary,
+                    color: c.textSecondary,
                     fontSize: 12,
                     height: 1.4,
                   ),
@@ -951,6 +954,7 @@ class _PresetTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -960,14 +964,14 @@ class _PresetTile extends StatelessWidget {
         decoration: BoxDecoration(
           color:
               isSelected
-                  ? AppColors.primary.withValues(alpha: 0.12)
-                  : AppColors.surface,
+                  ? c.primary.withValues(alpha: 0.12)
+                  : c.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color:
                 isSelected
-                    ? AppColors.primary.withValues(alpha: 0.5)
-                    : AppColors.border,
+                    ? c.primary.withValues(alpha: 0.5)
+                    : c.border,
             width: isSelected ? 1.2 : 0.8,
           ),
         ),
@@ -979,14 +983,14 @@ class _PresetTile extends StatelessWidget {
               decoration: BoxDecoration(
                 color:
                     isSelected
-                        ? AppColors.primary.withValues(alpha: 0.2)
-                        : AppColors.surfaceElevated,
+                        ? c.primary.withValues(alpha: 0.2)
+                        : c.surfaceElevated,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 preset.icon,
                 size: 20,
-                color: isSelected ? AppColors.primary : AppColors.textTertiary,
+                color: isSelected ? c.primary : c.textTertiary,
               ),
             ),
             const SizedBox(width: 12),
@@ -999,8 +1003,8 @@ class _PresetTile extends StatelessWidget {
                     style: TextStyle(
                       color:
                           isSelected
-                              ? AppColors.textPrimary
-                              : AppColors.textSecondary,
+                              ? c.textPrimary
+                              : c.textSecondary,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1008,8 +1012,8 @@ class _PresetTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     preset.description,
-                    style: const TextStyle(
-                      color: AppColors.textTertiary,
+                    style: TextStyle(
+                      color: c.textTertiary,
                       fontSize: 12,
                     ),
                   ),
@@ -1024,10 +1028,10 @@ class _PresetTile extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(
                   color:
-                      isSelected ? AppColors.primary : AppColors.textTertiary,
+                      isSelected ? c.primary : c.textTertiary,
                   width: isSelected ? 0 : 1.5,
                 ),
-                gradient: isSelected ? AppColors.primaryGradient : null,
+                gradient: isSelected ? c.primaryGradient : null,
               ),
               child:
                   isSelected
@@ -1086,6 +1090,7 @@ class _BottomDownloadBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Container(
       padding: EdgeInsets.fromLTRB(
         20,
@@ -1094,9 +1099,9 @@ class _BottomDownloadBar extends StatelessWidget {
         MediaQuery.of(context).padding.bottom + 16,
       ),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.95),
-        border: const Border(
-          top: BorderSide(color: AppColors.divider, width: 0.5),
+        color: c.surface.withValues(alpha: 0.95),
+        border: Border(
+          top: BorderSide(color: c.divider, width: 0.5),
         ),
       ),
       child: Column(
@@ -1108,33 +1113,33 @@ class _BottomDownloadBar extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: AppColors.surfaceElevated,
+                color: c.surfaceElevated,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.border, width: 0.6),
+                border: Border.all(color: c.border, width: 0.6),
               ),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.folder_rounded,
                     size: 14,
-                    color: AppColors.primary,
+                    color: c.primary,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       currentPath,
-                      style: const TextStyle(
-                        color: AppColors.textTertiary,
+                      style: TextStyle(
+                        color: c.textTertiary,
                         fontSize: 11,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const Icon(
+                  Icon(
                     Icons.edit_rounded,
                     size: 13,
-                    color: AppColors.textTertiary,
+                    color: c.textTertiary,
                   ),
                 ],
               ),
@@ -1146,17 +1151,17 @@ class _BottomDownloadBar extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
+                Icon(
                   Icons.info_outline_rounded,
                   size: 13,
-                  color: AppColors.textTertiary,
+                  color: c.textTertiary,
                 ),
                 const SizedBox(width: 5),
                 Flexible(
                   child: Text(
                     _infoText,
-                    style: const TextStyle(
-                      color: AppColors.textTertiary,
+                    style: TextStyle(
+                      color: c.textTertiary,
                       fontSize: 12,
                     ),
                     textAlign: TextAlign.center,
@@ -1187,12 +1192,13 @@ class _EmptyLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 32),
       child: Center(
         child: Text(
           label,
-          style: const TextStyle(color: AppColors.textTertiary, fontSize: 14),
+          style: TextStyle(color: c.textTertiary, fontSize: 14),
         ),
       ),
     );
@@ -1205,6 +1211,7 @@ class _VideoPreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
       child: GlassCard(
@@ -1223,10 +1230,10 @@ class _VideoPreviewCard extends StatelessWidget {
                       (_, __, ___) => Container(
                         width: 80,
                         height: 52,
-                        color: AppColors.surfaceElevated,
-                        child: const Icon(
+                        color: c.surfaceElevated,
+                        child: Icon(
                           Icons.broken_image_rounded,
-                          color: AppColors.textTertiary,
+                          color: c.textTertiary,
                           size: 20,
                         ),
                       ),
@@ -1241,8 +1248,8 @@ class _VideoPreviewCard extends StatelessWidget {
                     info.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
+                    style: TextStyle(
+                      color: c.textPrimary,
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                       height: 1.4,
@@ -1253,8 +1260,8 @@ class _VideoPreviewCard extends StatelessWidget {
                     info.type == VideoType.playlist
                         ? '${info.playlistCount ?? "?"} video'
                         : info.platform.displayName,
-                    style: const TextStyle(
-                      color: AppColors.textTertiary,
+                    style: TextStyle(
+                      color: c.textTertiary,
                       fontSize: 12,
                     ),
                   ),
@@ -1274,23 +1281,24 @@ class _FormatTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Container(
       height: 44,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: c.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: c.border),
       ),
       child: TabBar(
         controller: controller,
         indicator: BoxDecoration(
-          gradient: AppColors.primaryGradient,
+          gradient: c.primaryGradient,
           borderRadius: BorderRadius.circular(10),
         ),
         indicatorSize: TabBarIndicatorSize.tab,
         dividerColor: Colors.transparent,
         labelColor: Colors.white,
-        unselectedLabelColor: AppColors.textTertiary,
+        unselectedLabelColor: c.textTertiary,
         labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         unselectedLabelStyle: const TextStyle(
           fontSize: 14,
@@ -1336,6 +1344,7 @@ class _FormatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -1345,14 +1354,14 @@ class _FormatTile extends StatelessWidget {
         decoration: BoxDecoration(
           color:
               isSelected
-                  ? AppColors.primary.withValues(alpha: 0.12)
-                  : AppColors.surface,
+                  ? c.primary.withValues(alpha: 0.12)
+                  : c.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color:
                 isSelected
-                    ? AppColors.primary.withValues(alpha: 0.5)
-                    : AppColors.border,
+                    ? c.primary.withValues(alpha: 0.5)
+                    : c.border,
             width: isSelected ? 1.2 : 0.8,
           ),
         ),
@@ -1366,10 +1375,10 @@ class _FormatTile extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(
                   color:
-                      isSelected ? AppColors.primary : AppColors.textTertiary,
+                      isSelected ? c.primary : c.textTertiary,
                   width: isSelected ? 0 : 1.5,
                 ),
-                gradient: isSelected ? AppColors.primaryGradient : null,
+                gradient: isSelected ? c.primaryGradient : null,
               ),
               child:
                   isSelected
@@ -1390,8 +1399,8 @@ class _FormatTile extends StatelessWidget {
                     style: TextStyle(
                       color:
                           isSelected
-                              ? AppColors.textPrimary
-                              : AppColors.textSecondary,
+                              ? c.textPrimary
+                              : c.textSecondary,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
@@ -1400,8 +1409,8 @@ class _FormatTile extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       format.formattedFilesize,
-                      style: const TextStyle(
-                        color: AppColors.textTertiary,
+                      style: TextStyle(
+                        color: c.textTertiary,
                         fontSize: 12,
                       ),
                     ),
@@ -1414,8 +1423,8 @@ class _FormatTile extends StatelessWidget {
               decoration: BoxDecoration(
                 color:
                     isSelected
-                        ? AppColors.primary.withValues(alpha: 0.2)
-                        : AppColors.surfaceElevated,
+                        ? c.primary.withValues(alpha: 0.2)
+                        : c.surfaceElevated,
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -1423,8 +1432,8 @@ class _FormatTile extends StatelessWidget {
                 style: TextStyle(
                   color:
                       isSelected
-                          ? AppColors.primaryLight
-                          : AppColors.textTertiary,
+                          ? c.primaryLight
+                          : c.textTertiary,
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.5,

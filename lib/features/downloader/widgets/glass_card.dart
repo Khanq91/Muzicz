@@ -2,7 +2,7 @@
 
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../core/theme/app_colors.dart';
+import 'package:muziczz/theme/app_colors_data.dart';
 
 /// Card nền kính mờ (glassmorphism nhẹ) dùng cho các panel UI.
 class GlassCard extends StatelessWidget {
@@ -25,6 +25,7 @@ class GlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return GestureDetector(
       onTap: onTap,
       child: ClipRRect(
@@ -35,10 +36,10 @@ class GlassCard extends StatelessWidget {
             width: width,
             padding: padding,
             decoration: BoxDecoration(
-              color: AppColors.glassBg,
+              color: c.glassBg,
               borderRadius: BorderRadius.circular(borderRadius),
               border: Border.all(
-                color: borderColor ?? AppColors.glassBorder,
+                color: borderColor ?? c.glassBorder,
                 width: 0.8,
               ),
             ),

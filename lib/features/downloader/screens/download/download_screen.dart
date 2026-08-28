@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/app_router.dart';
-import '../../core/theme/app_colors.dart';
+import 'package:muziczz/theme/app_colors_data.dart';
 import '../../models/download_task.dart';
 import '../../providers/download_provider.dart';
 import '../../widgets/app_shell.dart';
@@ -47,6 +47,7 @@ class _DownloadScreenState extends ConsumerState<DownloadScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     final dlState = ref.watch(downloadProvider);
 
     // Khi tất cả xong → chuyển sang Summary
@@ -73,9 +74,9 @@ class _DownloadScreenState extends ConsumerState<DownloadScreen> {
               TextButton(
                 onPressed:
                     () => ref.read(downloadProvider.notifier).clearFinished(),
-                child: const Text(
+                child: Text(
                   'Xóa xong',
-                  style: TextStyle(color: AppColors.textTertiary, fontSize: 13),
+                  style: TextStyle(color: c.textTertiary, fontSize: 13),
                 ),
               ),
           ],
@@ -115,11 +116,12 @@ class _StatsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: AppColors.divider, width: 0.5),
+          bottom: BorderSide(color: c.divider, width: 0.5),
         ),
       ),
       child: Row(
@@ -127,7 +129,7 @@ class _StatsHeader extends StatelessWidget {
           _StatChip(
             label: 'Đang tải',
             count: state.activeTasks.length,
-            color: AppColors.primary,
+            color: c.primary,
           ),
           const SizedBox(width: 8),
           _StatChip(
@@ -206,13 +208,14 @@ class _DownloadTaskCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final c = context.appColors;
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: c.card,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border, width: 0.6),
+        border: Border.all(color: c.border, width: 0.6),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -234,8 +237,8 @@ class _DownloadTaskCard extends ConsumerWidget {
                       task.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
+                      style: TextStyle(
+                        color: c.textPrimary,
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                         height: 1.4,
@@ -291,17 +294,17 @@ class _DownloadTaskCard extends ConsumerWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.folder_rounded,
                   size: 13,
-                  color: AppColors.textTertiary,
+                  color: c.textTertiary,
                 ),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
                     task.outputPath!,
-                    style: const TextStyle(
-                      color: AppColors.textTertiary,
+                    style: TextStyle(
+                      color: c.textTertiary,
                       fontSize: 11,
                     ),
                     maxLines: 1,
@@ -335,6 +338,7 @@ class _TaskThumbnail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Stack(
       children: [
         ClipRRect(
@@ -346,9 +350,9 @@ class _TaskThumbnail extends StatelessWidget {
                     width: 64,
                     height: 42,
                     fit: BoxFit.cover,
-                    errorWidget: (_, __, ___) => _placeholder(),
+                    errorWidget: (_, __, ___) => _placeholder(c),
                   )
-                  : _placeholder(),
+                  : _placeholder(c),
         ),
         // Status overlay icon
         Positioned(
@@ -360,16 +364,16 @@ class _TaskThumbnail extends StatelessWidget {
     );
   }
 
-  Widget _placeholder() => Container(
+  Widget _placeholder(AppColorsData c) => Container(
     width: 64,
     height: 42,
     decoration: BoxDecoration(
-      color: AppColors.surfaceElevated,
+      color: c.surfaceElevated,
       borderRadius: BorderRadius.circular(8),
     ),
-    child: const Icon(
+    child: Icon(
       Icons.movie_rounded,
-      color: AppColors.textTertiary,
+      color: c.textTertiary,
       size: 20,
     ),
   );
@@ -382,6 +386,7 @@ class _StatusIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     IconData icon;
     Color color;
 
@@ -394,12 +399,12 @@ class _StatusIcon extends StatelessWidget {
         color = const Color(0xFFFF9F0A);
       case DownloadStatus.preparing:
       case DownloadStatus.downloading:
-        return const SizedBox(
+        return SizedBox(
           width: 16,
           height: 16,
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            color: AppColors.primary,
+            color: c.primary,
           ),
         );
       case DownloadStatus.done:
@@ -410,14 +415,14 @@ class _StatusIcon extends StatelessWidget {
         color = const Color(0xFFFF3B30);
       case DownloadStatus.cancelled:
         icon = Icons.cancel_rounded;
-        color = AppColors.textTertiary;
+        color = c.textTertiary;
     }
 
     return Container(
       width: 16,
       height: 16,
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: c.card,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Icon(icon, size: 14, color: color),
@@ -434,12 +439,13 @@ class _ProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return ClipRRect(
       borderRadius: BorderRadius.circular(4),
       child: LinearProgressIndicator(
         value: progress,
-        backgroundColor: AppColors.surfaceElevated,
-        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+        backgroundColor: c.surfaceElevated,
+        valueColor: AlwaysStoppedAnimation<Color>(c.primary),
         minHeight: 5,
       ),
     );
@@ -453,12 +459,13 @@ class _ProgressMeta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Row(
       children: [
         Text(
           task.progressPercent,
-          style: const TextStyle(
-            color: AppColors.primary,
+          style: TextStyle(
+            color: c.primary,
             fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
@@ -466,19 +473,19 @@ class _ProgressMeta extends StatelessWidget {
         if (task.speed.isNotEmpty) ...[
           Text(
             '  ·  ${task.speed}',
-            style: const TextStyle(color: AppColors.textTertiary, fontSize: 12),
+            style: TextStyle(color: c.textTertiary, fontSize: 12),
           ),
         ],
         if (task.eta.isNotEmpty) ...[
           Text(
             '  ·  ETA ${task.eta}',
-            style: const TextStyle(color: AppColors.textTertiary, fontSize: 12),
+            style: TextStyle(color: c.textTertiary, fontSize: 12),
           ),
         ],
         const Spacer(),
         Text(
           task.status.displayText,
-          style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
+          style: TextStyle(color: c.textTertiary, fontSize: 11),
         ),
       ],
     );
@@ -494,6 +501,7 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     Color color;
     switch (status) {
       case DownloadStatus.queued:
@@ -501,13 +509,13 @@ class _StatusBadge extends StatelessWidget {
         color = const Color(0xFFFF9F0A);
       case DownloadStatus.preparing:
       case DownloadStatus.downloading:
-        color = AppColors.primary;
+        color = c.primary;
       case DownloadStatus.done:
         color = const Color(0xFF34C759);
       case DownloadStatus.error:
         color = const Color(0xFFFF3B30);
       case DownloadStatus.cancelled:
-        color = AppColors.textTertiary;
+        color = c.textTertiary;
     }
 
     return Text(
@@ -534,6 +542,7 @@ class _ActionButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -548,14 +557,14 @@ class _ActionButtons extends StatelessWidget {
           _TinyButton(
             label: 'Thử lại',
             icon: Icons.refresh_rounded,
-            color: AppColors.primary,
+            color: c.primary,
             onTap: onRetry,
           ),
           const SizedBox(width: 6),
           _TinyButton(
             label: 'Xóa',
             icon: Icons.delete_outline_rounded,
-            color: AppColors.textTertiary,
+            color: c.textTertiary,
             onTap: onRemove,
           ),
         ],
@@ -563,14 +572,14 @@ class _ActionButtons extends StatelessWidget {
           _TinyButton(
             label: 'Xóa',
             icon: Icons.delete_outline_rounded,
-            color: AppColors.textTertiary,
+            color: c.textTertiary,
             onTap: onRemove,
           ),
         if (task.status == DownloadStatus.cancelled)
           _TinyButton(
             label: 'Xóa',
             icon: Icons.delete_outline_rounded,
-            color: AppColors.textTertiary,
+            color: c.textTertiary,
             onTap: onRemove,
           ),
       ],
@@ -629,6 +638,7 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -636,17 +646,17 @@ class _EmptyState extends StatelessWidget {
           Icon(
             Icons.download_rounded,
             size: 56,
-            color: AppColors.textTertiary.withValues(alpha: 0.4),
+            color: c.textTertiary.withValues(alpha: 0.4),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Chưa có download nào',
-            style: TextStyle(color: AppColors.textTertiary, fontSize: 16),
+            style: TextStyle(color: c.textTertiary, fontSize: 16),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Phân tích một link để bắt đầu',
-            style: TextStyle(color: AppColors.textTertiary, fontSize: 13),
+            style: TextStyle(color: c.textTertiary, fontSize: 13),
           ),
         ],
       ),

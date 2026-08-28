@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/app_router.dart';
-import '../../core/theme/app_colors.dart';
+import 'package:muziczz/theme/app_colors_data.dart';
 import '../../models/download_task.dart';
 import '../../providers/download_provider.dart';
 import '../../services/downloader_storage_service.dart';
@@ -18,6 +18,7 @@ class SummaryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final c = context.appColors;
     final dlState = ref.watch(downloadProvider);
 
     return GradientBackground(
@@ -26,18 +27,18 @@ class SummaryScreen extends ConsumerWidget {
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios_new_rounded,
               size: 20,
-              color: AppColors.textPrimary,
+              color: c.textPrimary,
             ),
             onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
             tooltip: 'Về trang chủ',
           ),
-          title: const Text(
+          title: Text(
             'Kết quả tải',
             style: TextStyle(
-              color: AppColors.textPrimary,
+              color: c.textPrimary,
               fontSize: 18,
               fontWeight: FontWeight.w600,
             ),
@@ -110,7 +111,7 @@ class SummaryScreen extends ConsumerWidget {
                             content: const Text(
                               'Không thể mở thư mục, vui lòng mở Files thủ công',
                             ),
-                            backgroundColor: AppColors.surfaceElevated,
+                            backgroundColor: c.surfaceElevated,
                             behavior: SnackBarBehavior.floating,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -135,9 +136,9 @@ class SummaryScreen extends ConsumerWidget {
                   icon: const Icon(Icons.add_rounded, size: 18),
                   label: const Text('Tải thêm video'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    side: const BorderSide(
-                      color: AppColors.primary,
+                    foregroundColor: c.primary,
+                    side: BorderSide(
+                      color: c.primary,
                       width: 0.8,
                     ),
                     shape: RoundedRectangleBorder(
@@ -151,14 +152,14 @@ class SummaryScreen extends ConsumerWidget {
                 TextButton.icon(
                   onPressed:
                       () => Navigator.of(context, rootNavigator: true).pop(),
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.home_rounded,
                     size: 18,
-                    color: AppColors.textTertiary,
+                    color: c.textTertiary,
                   ),
-                  label: const Text(
+                  label: Text(
                     'Về trang chủ',
-                    style: TextStyle(color: AppColors.textTertiary),
+                    style: TextStyle(color: c.textTertiary),
                   ),
                 ),
               ],
@@ -180,6 +181,7 @@ class _SummaryHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     final allSuccess = errorCount == 0;
 
     return Column(
@@ -194,7 +196,7 @@ class _SummaryHeader extends StatelessWidget {
                     ? const LinearGradient(
                       colors: [Color(0xFF34C759), Color(0xFF30D158)],
                     )
-                    : AppColors.primaryGradient,
+                    : c.primaryGradient,
           ),
           child: Icon(
             allSuccess ? Icons.check_rounded : Icons.download_done_rounded,
@@ -206,8 +208,8 @@ class _SummaryHeader extends StatelessWidget {
 
         Text(
           allSuccess ? 'Tải thành công!' : 'Hoàn thành',
-          style: const TextStyle(
-            color: AppColors.textPrimary,
+          style: TextStyle(
+            color: c.textPrimary,
             fontSize: 26,
             fontWeight: FontWeight.w700,
             letterSpacing: -0.3,
@@ -218,7 +220,7 @@ class _SummaryHeader extends StatelessWidget {
           allSuccess
               ? 'Tất cả $successCount video đã được tải xuống'
               : '$successCount thành công · $errorCount thất bại',
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+          style: TextStyle(color: c.textSecondary, fontSize: 14),
         ),
       ],
     );
@@ -234,6 +236,7 @@ class _StatsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Row(
       children: [
         Expanded(
@@ -241,7 +244,7 @@ class _StatsGrid extends StatelessWidget {
             label: 'Tổng cộng',
             value: '${state.totalCount}',
             icon: Icons.download_rounded,
-            color: AppColors.primary,
+            color: c.primary,
           ),
         ),
         const SizedBox(width: 12),
@@ -284,6 +287,7 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return GlassCard(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -301,7 +305,7 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
-            style: const TextStyle(color: AppColors.textTertiary, fontSize: 12),
+            style: TextStyle(color: c.textTertiary, fontSize: 12),
           ),
         ],
       ),
@@ -319,6 +323,7 @@ class _FailedList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -326,10 +331,10 @@ class _FailedList extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Video thất bại',
                 style: TextStyle(
-                  color: AppColors.textPrimary,
+                  color: c.textPrimary,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
@@ -342,22 +347,22 @@ class _FailedList extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.12),
+                    color: c.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         Icons.refresh_rounded,
                         size: 13,
-                        color: AppColors.primary,
+                        color: c.primary,
                       ),
                       SizedBox(width: 4),
                       Text(
                         'Thử lại tất cả',
                         style: TextStyle(
-                          color: AppColors.primary,
+                          color: c.primary,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -369,7 +374,7 @@ class _FailedList extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          const Divider(height: 1, color: AppColors.divider),
+          Divider(height: 1, color: c.divider),
           ...tasks.take(5).map((t) {
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
@@ -389,8 +394,8 @@ class _FailedList extends StatelessWidget {
                           t.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
+                          style: TextStyle(
+                            color: c.textSecondary,
                             fontSize: 13,
                           ),
                         ),
@@ -418,8 +423,8 @@ class _FailedList extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               '...và ${tasks.length - 5} video khác',
-              style: const TextStyle(
-                color: AppColors.textTertiary,
+              style: TextStyle(
+                color: c.textTertiary,
                 fontSize: 12,
               ),
             ),

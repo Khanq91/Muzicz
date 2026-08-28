@@ -1,7 +1,7 @@
 // lib/widgets/primary_icon_button.dart
 
 import 'package:flutter/material.dart';
-import '../core/theme/app_colors.dart';
+import 'package:muziczz/theme/app_colors_data.dart';
 
 class PrimaryIconButton extends StatelessWidget {
   final IconData icon;
@@ -19,6 +19,7 @@ class PrimaryIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     final enabled = onPressed != null && !isLoading;
 
     return AnimatedOpacity(
@@ -32,7 +33,7 @@ class PrimaryIconButton extends StatelessWidget {
           decoration: BoxDecoration(
             gradient:
                 enabled
-                    ? AppColors.primaryGradient
+                    ? c.primaryGradient
                     : const LinearGradient(
                       colors: [Color(0xFF444444), Color(0xFF333333)],
                     ),
@@ -41,7 +42,7 @@ class PrimaryIconButton extends StatelessWidget {
                 enabled
                     ? [
                       BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.35),
+                        color: c.primary.withValues(alpha: 0.35),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),

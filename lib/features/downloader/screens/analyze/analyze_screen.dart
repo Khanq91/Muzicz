@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../core/app_router.dart';
-import '../../core/theme/app_colors.dart';
+import 'package:muziczz/theme/app_colors_data.dart';
 import '../../models/video_info.dart';
 import '../../providers/analyze_provider.dart';
 import '../../providers/download_provider.dart';
@@ -85,7 +85,7 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: AppColors.surfaceElevated,
+        backgroundColor: context.appColors.surfaceElevated,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
@@ -101,7 +101,7 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.card,
+      backgroundColor: context.appColors.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -134,6 +134,7 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     final analyzeState = ref.watch(analyzeProvider);
 
     return GradientBackground(
@@ -155,13 +156,13 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: AppColors.surfaceElevated,
+                          color: c.surfaceElevated,
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.arrow_back_ios_new_rounded,
                           size: 16,
-                          color: AppColors.textSecondary,
+                          color: c.textSecondary,
                         ),
                       ),
                     ),
@@ -244,12 +245,13 @@ class _FolderPickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     final options = [
       _FolderOption(
         icon: Icons.music_note_rounded,
         label: 'Music',
         sublabel: 'Music/',
-        color: AppColors.primary,
+        color: c.primary,
         path: '$basePath/Music',
       ),
       _FolderOption(
@@ -282,7 +284,7 @@ class _FolderPickerSheet extends StatelessWidget {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.divider,
+                  color: c.divider,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -290,18 +292,18 @@ class _FolderPickerSheet extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Title
-            const Text(
+            Text(
               'Chọn thư mục lưu',
               style: TextStyle(
-                color: AppColors.textPrimary,
+                color: c.textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'File tải về sẽ được lưu vào thư mục này',
-              style: TextStyle(color: AppColors.textTertiary, fontSize: 12),
+              style: TextStyle(color: c.textTertiary, fontSize: 12),
             ),
             const SizedBox(height: 16),
 
@@ -324,13 +326,13 @@ class _FolderPickerSheet extends StatelessWidget {
                     color:
                         isSelected
                             ? opt.color.withValues(alpha: 0.1)
-                            : AppColors.surfaceElevated,
+                            : c.surfaceElevated,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color:
                           isSelected
                               ? opt.color.withValues(alpha: 0.4)
-                              : AppColors.border,
+                              : c.border,
                       width: isSelected ? 1.2 : 0.8,
                     ),
                   ),
@@ -355,16 +357,16 @@ class _FolderPickerSheet extends StatelessWidget {
                               style: TextStyle(
                                 color:
                                     isSelected
-                                        ? AppColors.textPrimary
-                                        : AppColors.textSecondary,
+                                        ? c.textPrimary
+                                        : c.textSecondary,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                             Text(
                               opt.sublabel,
-                              style: const TextStyle(
-                                color: AppColors.textTertiary,
+                              style: TextStyle(
+                                color: c.textTertiary,
                                 fontSize: 11,
                               ),
                             ),
@@ -372,9 +374,9 @@ class _FolderPickerSheet extends StatelessWidget {
                         ),
                       ),
                       if (isSelected)
-                        const Icon(
+                        Icon(
                           Icons.check_circle_rounded,
-                          color: AppColors.primary,
+                          color: c.primary,
                           size: 18,
                         ),
                     ],
@@ -397,9 +399,9 @@ class _FolderPickerSheet extends StatelessWidget {
                   vertical: 13,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceElevated,
+                  color: c.surfaceElevated,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border, width: 0.8),
+                  border: Border.all(color: c.border, width: 0.8),
                 ),
                 child: Row(
                   children: [
@@ -407,24 +409,24 @@ class _FolderPickerSheet extends StatelessWidget {
                       width: 38,
                       height: 38,
                       decoration: BoxDecoration(
-                        color: AppColors.textTertiary.withValues(alpha: 0.1),
+                        color: c.textTertiary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.folder_open_rounded,
-                        color: AppColors.textSecondary,
+                        color: c.textSecondary,
                         size: 20,
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'Chọn đường dẫn',
                             style: TextStyle(
-                              color: AppColors.textSecondary,
+                              color: c.textSecondary,
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
@@ -432,16 +434,16 @@ class _FolderPickerSheet extends StatelessWidget {
                           Text(
                             'Duyệt và chọn thư mục tùy chỉnh',
                             style: TextStyle(
-                              color: AppColors.textTertiary,
+                              color: c.textTertiary,
                               fontSize: 11,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const Icon(
+                    Icon(
                       Icons.chevron_right_rounded,
-                      color: AppColors.textTertiary,
+                      color: c.textTertiary,
                       size: 18,
                     ),
                   ],
@@ -481,12 +483,13 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ShaderMask(
           shaderCallback:
-              (bounds) => AppColors.primaryGradient.createShader(bounds),
+              (bounds) => c.primaryGradient.createShader(bounds),
           child: Row(
             children: [
               const Text(
@@ -514,7 +517,7 @@ class _Header extends StatelessWidget {
 
         Text(
           'Dán link từ YouTube, TikTok, Instagram,... và hơn thế nữa',
-          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+          style: TextStyle(fontSize: 14, color: c.textSecondary),
         ),
 
         const SizedBox(height: 12),
@@ -539,17 +542,17 @@ class _Header extends StatelessWidget {
                             : 'Đang tải thư mục...',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.textTertiary,
+                          color: c.textTertiary,
                         ),
                       ),
                     ),
                     const SizedBox(width: 4),
-                    const Icon(
+                    Icon(
                       Icons.chevron_right,
                       size: 14,
-                      color: AppColors.textTertiary,
+                      color: c.textTertiary,
                     ),
                   ],
                 ),
@@ -604,6 +607,7 @@ class _UrlInputCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return GlassCard(
       padding: const EdgeInsets.all(14),
       child: Column(
@@ -616,15 +620,15 @@ class _UrlInputCard extends StatelessWidget {
                   controller: controller,
                   focusNode: focusNode,
                   onChanged: onChanged,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: c.textPrimary,
                     fontSize: 15,
                     fontWeight: FontWeight.w400,
                   ),
                   decoration: InputDecoration(
                     hintText: 'Dán link video vào đây...',
                     hintStyle: TextStyle(
-                      color: AppColors.textTertiary,
+                      color: c.textTertiary,
                       fontSize: 15,
                     ),
                     border: InputBorder.none,
@@ -655,7 +659,7 @@ class _UrlInputCard extends StatelessWidget {
               children: [
                 Text(
                   'Nhận diện: ',
-                  style: TextStyle(fontSize: 12, color: AppColors.textTertiary),
+                  style: TextStyle(fontSize: 12, color: c.textTertiary),
                 ),
                 PlatformChip(platform: platform),
               ],
@@ -680,6 +684,7 @@ class _ActionIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Tooltip(
       message: tooltip,
       child: GestureDetector(
@@ -688,10 +693,10 @@ class _ActionIconButton extends StatelessWidget {
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: AppColors.surfaceElevated,
+            color: c.surfaceElevated,
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, color: AppColors.textSecondary, size: 18),
+          child: Icon(icon, color: c.textSecondary, size: 18),
         ),
       ),
     );
@@ -707,6 +712,7 @@ class _ResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -721,20 +727,20 @@ class _ResultCard extends StatelessWidget {
                   fit: BoxFit.cover,
                   placeholder:
                       (_, __) => Container(
-                        color: AppColors.surfaceElevated,
-                        child: const Center(
+                        color: c.surfaceElevated,
+                        child: Center(
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: AppColors.primary,
+                            color: c.primary,
                           ),
                         ),
                       ),
                   errorWidget:
                       (_, __, ___) => Container(
-                        color: AppColors.surfaceElevated,
-                        child: const Icon(
+                        color: c.surfaceElevated,
+                        child: Icon(
                           Icons.broken_image_rounded,
-                          color: AppColors.textTertiary,
+                          color: c.textTertiary,
                           size: 36,
                         ),
                       ),
@@ -746,8 +752,8 @@ class _ResultCard extends StatelessWidget {
 
           Text(
             info.title,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
+            style: TextStyle(
+              color: c.textPrimary,
               fontSize: 15,
               fontWeight: FontWeight.w600,
               height: 1.4,
@@ -782,7 +788,7 @@ class _ResultCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          const Divider(height: 1, color: AppColors.divider),
+          Divider(height: 1, color: c.divider),
           const SizedBox(height: 14),
 
           Consumer(
@@ -821,22 +827,23 @@ class _MetaBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
+        color: c.surfaceElevated,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: AppColors.textTertiary),
+          Icon(icon, size: 12, color: c.textTertiary),
           const SizedBox(width: 4),
           Text(
             label,
             style: TextStyle(
               fontSize: 12,
-              color: AppColors.textSecondary,
+              color: c.textSecondary,
               fontWeight: FontWeight.w400,
             ),
           ),
