@@ -133,17 +133,21 @@ class PlayerProvider extends ChangeNotifier {
     });
   }
 
-  void _onPlaylistEnded() {
-    if (_repeatMode == RepeatMode.shuffleLoop && _originalQueue.isNotEmpty) {
-      _buildShuffledQueueTrueRandom(
-        startIndex: Random().nextInt(_originalQueue.length),
-      );
-      _currentPlayIndex = 0;
-      _currentSong = _playQueue[0];
-      _loadQueueToHandler(0).then((loaded) async {
-        if (loaded) await _handler.play();
-      });
-      notifyListeners();
+  Future<void> _onPlaylistEnded() async {
+    if (_repeatMode != RepeatMode.shuffleLoop || _originalQueue.isEmpty) {
+      return;
+    }
+    _buildShuffledQueueTrueRandom(
+      startIndex: Random().nextInt(_originalQueue.length),
+    );
+    _currentPlayIndex = 0;
+    _currentSong = _playQueue[0];
+    notifyListeners();
+    try {
+      final loaded = await _loadQueueToHandler(0);
+      if (loaded) await _handler.play();
+    } catch (e) {
+      debugPrint('[PlayerProvider] shuffleLoop reload failed: $e');
     }
   }
 

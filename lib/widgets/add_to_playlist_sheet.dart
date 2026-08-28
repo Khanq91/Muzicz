@@ -323,15 +323,16 @@ class _AddToPlaylistSheetState extends State<AddToPlaylistSheet> {
     );
   }
 
-  void _doCreate(
+  Future<void> _doCreate(
     BuildContext dialogCtx,
     TextEditingController ctrl,
     MusicProvider music,
-  ) {
+  ) async {
     final name = ctrl.text.trim();
     if (name.isEmpty) return;
-    final pl = music.createPlaylist(name);
-    music.addToPlaylist(pl.id, widget.song);
+    final pl = await music.createPlaylist(name);
+    await music.addToPlaylist(pl.id, widget.song);
+    if (!dialogCtx.mounted) return;
     Navigator.pop(dialogCtx);
     _showFeedback(dialogCtx, 'Đã tạo "$name" và thêm bài hát');
   }

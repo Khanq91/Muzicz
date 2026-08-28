@@ -317,14 +317,14 @@ class MusicProvider extends ChangeNotifier {
 
   // ── Playlists ─────────────────────────────────────────────────────────────
 
-  PlaylistItem createPlaylist(String name) {
+  Future<PlaylistItem> createPlaylist(String name) async {
     final pl = PlaylistItem(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       name: name,
     );
     _playlists.add(pl);
     notifyListeners();
-    _persistPlaylists();
+    await _persistPlaylists();
     return pl;
   }
 

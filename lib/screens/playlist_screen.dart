@@ -376,12 +376,11 @@ class _CreatePlaylistFab extends StatelessWidget {
                 ),
               ),
               TextButton(
-                onPressed: () {
+                onPressed: () async {
                   final name = ctrl.text.trim();
-                  if (name.isNotEmpty) {
-                    context.read<MusicProvider>().createPlaylist(name);
-                    Navigator.pop(context);
-                  }
+                  if (name.isEmpty) return;
+                  await context.read<MusicProvider>().createPlaylist(name);
+                  if (context.mounted) Navigator.pop(context);
                 },
                 child: Text(
                   'Tạo',
