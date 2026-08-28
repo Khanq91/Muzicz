@@ -58,10 +58,9 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
 
   Future<void> _paste() async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
-    if (data?.text != null) {
-      _controller.text = data!.text!;
-      ref.read(analyzeProvider.notifier).onUrlChanged(data.text!);
-    }
+    if (!mounted || data?.text == null) return;
+    _controller.text = data!.text!;
+    ref.read(analyzeProvider.notifier).onUrlChanged(data.text!);
   }
 
   void _clear() {
@@ -73,6 +72,7 @@ class _AnalyzeScreenState extends ConsumerState<AnalyzeScreen> {
   Future<void> _analyze() async {
     _focusNode.unfocus();
     final results = await Connectivity().checkConnectivity();
+    if (!mounted) return;
     final isOnline = results.any((r) => r != ConnectivityResult.none);
     if (!isOnline) {
       _showSnack('Không có kết nối mạng');
