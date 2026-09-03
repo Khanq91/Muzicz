@@ -1,583 +1,58 @@
 # Auditz report — Muzicz
-_Generated 2026-08-27 14:13 UTC · model claude-code · stack: cached_network_image, core, flutter, http, liquid_glass, provider, riverpod_
+_Generated 2026-08-30 17:32 UTC · model claude-code · stack: cached_network_image, core, flutter, http, liquid_glass, provider, riverpod_
 
 | Severity | New | Baseline |
 |---|---|---|
-| high | 2 | 0 |
-| medium | 30 | 0 |
-| low | 57 | 0 |
+| high | 0 | 0 |
+| medium | 15 | 0 |
+| low | 47 | 0 |
 
-_Dropped: 0 unverified evidence · 65 low confidence · 0 suppressed · 1 invalid · 0 parse errors_
+_Dropped: 0 unverified evidence · 9 low confidence · 0 suppressed · 0 invalid · 0 parse errors_
 
-## [HIGH] singleton_state_leak — `lib/features/downloader/providers/download_provider.dart:17`
-confidence 0.85
-related: lib/features/downloader/services/downloader_storage_service.dart, lib/features/downloader/screens/analyze/analyze_screen.dart, lib/features/downloader/screens/format/format_screen.dart, lib/features/downloader/screens/summary/summary_screen.dart
-
-Thư mục lưu là session state nằm trong singleton toàn cục `DownloaderStorageService.instance._downloadPath`, ngoài Riverpod. `Provider<String>` (không autoDispose, không dependency) cache giá trị ở lần đọc đầu và không bao giờ được invalidate, trong khi analyze_screen/format_screen đổi thư mục qua `setAndSavePath` trực tiếp trên singleton. Kết quả: từ lần tải thứ hai trở đi trong cùng phiên, `ref.read(downloadOutputDirectoryProvider)` (dòng 273) vẫn trả về thư mục cũ và file bị lưu sai chỗ dù UI hiển thị đường dẫn mới.
-
-```dart
-final downloadOutputDirectoryProvider = Provider<String>(
-  (ref) => DownloaderStorageService.instance.downloadPath,
-);
-```
-**Fix:**
-```dart
-// Đưa path vào state: Notifier thay vì singleton
-final downloadOutputDirectoryProvider =
-    NotifierProvider<OutputDirNotifier, String>(OutputDirNotifier.new);
-
-class OutputDirNotifier extends Notifier<String> {
-  @override
-  String build() => DownloaderStorageService.instance.downloadPath;
-  Future<void> setPath(String path) async {
-    await DownloaderStorageService.instance.setAndSavePath(path);
-    state = path; // mọi ref.read/watch thấy giá trị mới
-  }
-}
-// Screens: ref.read(downloadOutputDirectoryProvider.notifier).setPath(path)
-// thay vì DownloaderStorageService.instance.setAndSavePath(path)
-```
-
-## [HIGH] race_shared_mutable — `lib/providers/music_provider.dart:445`
-confidence 0.85
-
-Commit chỉ xoá _homeFilterCache nhưng giữ nguyên _homeFilterCacheQuery/_homeFilterCacheRevision, nên chuỗi thao tác bình thường gõ "a" → xoá ô tìm kiếm → gõ lại "a" khiến getter filteredSongs thấy key cache khớp và chạy `return _homeFilterCache!` trên null → crash 'Null check operator used on a null value'. Cùng lỗi ở _commitLibrarySearchQuery/libraryFilteredSongs (2 site).
-
-```dart
-    _homeSearchQuery = query;
-    _homeFilterCache = null;
-```
-**Fix:**
-```dart
-void _commitHomeSearchQuery(String query) {
-  _homeSearchQuery = query;
-  _homeFilterCache = null;
-  _homeFilterCacheQuery = null; // invalidate key cùng lúc với value
-  notifyListeners();
-}
-// tương tự: _libraryFilterCacheQuery = null; trong _commitLibrarySearchQuery
-// hoặc trong getter: final cached = _homeFilterCache; if (cached != null && key match) return cached;
-```
-
-## [MEDIUM] duplicate_logic — `lib/features/downloader/core/theme/app_colors.dart:7`
-confidence 0.90
-related: lib/theme/app_colors.dart, lib/theme/app_colors_data.dart, lib/features/downloader/core/theme/app_theme.dart, lib/theme/app_theme.dart
-
-Hai class cùng tên `AppColors` với cùng bộ hằng hex (primary/secondary/surface/text/glass…) tồn tại ở `lib/theme/app_colors.dart` (nguồn màu chính thức, có `context.appColors` theme-aware) và `lib/features/downloader/core/theme/app_colors.dart` (bản copy tĩnh, chỉ dark). 10 file downloader dùng bản copy nên toàn bộ feature downloader không đổi theo theme light/dark mà người dùng chọn ở ThemeProvider, và mỗi lần chỉnh palette phải sửa 2 nơi. `core/theme/app_theme.dart` của downloader (`AppTheme.darkTheme`) cũng là bản sao của `lib/theme/app_theme.dart` và hiện không được file nào tham chiếu (dead code).
-
-```dart
-  static const Color primary = Color(0xFF9D50FF);
-```
-**Fix:**
-```dart
-// Xoá lib/features/downloader/core/theme/{app_colors,app_theme}.dart
-// Trong các screen downloader:
-import 'package:muziczz/theme/app_colors_data.dart';
-...
-final c = context.appColors;           // theme-aware
-Container(color: c.surfaceElevated)    // thay AppColors.surfaceElevated
-```
-
-## [MEDIUM] undisposed_resource — `lib/features/downloader/screens/playlist_picker/playlist_picker_screen.dart:32`
-confidence 0.90
-
-State không override dispose(), _searchController không bao giờ được dispose → rò rỉ ChangeNotifier mỗi lần mở màn hình chọn playlist.
-
-```dart
-  final TextEditingController _searchController = TextEditingController();
-```
-**Fix:**
-```dart
-@override
-void dispose() {
-  _searchController.dispose();
-  super.dispose();
-}
-```
-
-## [MEDIUM] god_file — `lib/screens/now_playing_screen.dart:1195`
-confidence 0.90
-related: lib/features/downloader/screens/format/format_screen.dart, lib/screens/library_screen.dart
-
-`now_playing_screen.dart` dài 2318 dòng (~10% toàn repo, gấp 1.6 lần file lớn thứ hai) chứa 20 class: màn hình chính, lyrics view, 3 bottom sheet (speed/sleep timer/queue), progress, controls, blurred background… Riêng `_TopBar` (dòng 1195–1745) là 550 dòng cho một thanh top bar, `_NowPlayingScreenState.build` 142 dòng, 10 điểm setState. Hai hotspot tiếp theo: `format_screen.dart` 1423 dòng (13 class) và `library_screen.dart` 1345 dòng (14 class). Đây cũng là các file gom nhiều finding per-file nhất trong lần audit này: now_playing_screen 9 finding (rebuild_scope_too_wide, blur_layer_abuse, undisposed_resource…), playlist_screen 8, analyze_screen 7, library_screen 5 — tách file trước sẽ giảm chi phí sửa các finding còn lại.
-
-```dart
-class _TopBar extends StatelessWidget {
-```
-**Fix:**
-```dart
-// Tách theo seam đã có sẵn (mỗi class private -> file riêng):
-// lib/widgets/now_playing/lyrics_view.dart        <- _LyricsView, _LyricsListView
-// lib/widgets/now_playing/sheets/speed_sheet.dart  <- _SpeedSheet
-// lib/widgets/now_playing/sheets/sleep_timer_sheet.dart <- _SleepTimerSheet
-// lib/widgets/now_playing/sheets/queue_sheet.dart  <- _QueueSheet
-// lib/widgets/now_playing/top_bar.dart             <- _TopBar (tách tiếp menu/actions)
-// lib/widgets/now_playing/controls.dart            <- _ControlsSection, _PlayButton, _IconBtn, _ProgressSection
-// lib/widgets/now_playing/album_art_section.dart   <- _AlbumArtSection, _FlipCard, _BlurredBackground
-// Tương tự: format_screen -> widgets/format/{folder_sheet,preset_list,format_tile,bottom_bar}.dart
-//           library_screen -> widgets/library/{songs_tab,albums_tab,artists_tab,folders_tab,bulk_playlist_sheet}.dart
-```
-
-## [MEDIUM] async_context_use — `lib/features/downloader/screens/analyze/analyze_screen.dart:77`
-confidence 0.85
-
-_analyze await Connectivity().checkConnectivity() rồi gọi _showSnack → ScaffoldMessenger.of(context) mà không kiểm tra mounted; nếu user rời màn hình trong lúc chờ sẽ ném lỗi 'Looking up a deactivated widget ancestor'.
-
-```dart
-      _showSnack('Không có kết nối mạng');
-```
-**Fix:**
-```dart
-final results = await Connectivity().checkConnectivity();
-if (!mounted) return;
-if (!isOnline) { _showSnack('Không có kết nối mạng'); return; }
-```
-
-## [MEDIUM] setstate_after_async_gap — `lib/screens/library_screen.dart:174`
-confidence 0.85
-
-_exitSelecting() gọi setState sau 2 lần await (showDialog + hideSongsFromLibrary) mà không kiểm tra mounted; nếu người dùng rời màn hình khi đang ẩn bài sẽ ném 'setState() called after dispose()'.
-
-```dart
-    await music.hideSongsFromLibrary(songs);
-    _exitSelecting();
-```
-**Fix:**
-```dart
-await music.hideSongsFromLibrary(songs);
-if (!mounted) return;
-_exitSelecting();
-```
-
-## [MEDIUM] logic_in_presentation — `lib/features/downloader/screens/format/format_screen.dart:248`
-confidence 0.80
-related: lib/features/downloader/screens/analyze/analyze_screen.dart, lib/features/downloader/providers/download_provider.dart, lib/features/downloader/models/playlist_entry.dart
-
-`_FormatScreenState._startDownload` chứa toàn bộ nghiệp vụ bắt đầu tải: lưu output path, xin quyền notification theo platform, map `PlaylistEntry` → `VideoInfo`, quyết định gọi `enqueue` / `enqueueBatch` / `enqueuePlaylist`. Tương tự `_AnalyzeScreenState._initServices` khởi tạo storage service + xin quyền storage từ initState của widget. Logic này không tái sử dụng được (vd. tải lại từ SummaryScreen) và không test được nếu không dựng widget.
-
-```dart
-      final notificationStatus = await Permission.notification.request();
-```
-**Fix:**
-```dart
-// providers/download_provider.dart
-class DownloadNotifier extends Notifier<DownloadState> {
-  Future<void> startFromFormat({
-    required VideoInfo info,
-    required FormatOption format,
-    List<PlaylistEntry>? selectedEntries,
-    String? outputPath,
-  }) async {
-    if (outputPath != null) await ref.read(outputDirProvider.notifier).setPath(outputPath);
-    await ref.read(permissionServiceProvider).ensureNotification();
-    if (selectedEntries case final e? when e.isNotEmpty) {
-      return enqueueBatch(infos: e.map((x) => x.toVideoInfo(info.platform)).toList(), format: format);
-    }
-    return info.type == VideoType.playlist
-        ? enqueuePlaylist(playlistInfo: info, format: format)
-        : enqueue(info: info, format: format);
-  }
-}
-// format_screen: await ref.read(downloadProvider.notifier).startFromFormat(...); rồi navigate
-```
-
-## [MEDIUM] no_action_feedback — `lib/features/downloader/screens/format/format_screen.dart:473`
+## [MEDIUM] silent_catch — `lib/features/downloader/services/downloader_storage_service.dart:182`
 confidence 0.80
 
-_startDownload có nhiều await (lưu path, hộp thoại xin quyền notification, enqueue) nhưng nút 'Bắt đầu tải' không disable/spinner trong lúc chạy → bấm đúp sẽ enqueue video/playlist 2 lần và pushNamedAndRemoveUntil 2 lần.
+openDownloadFolder() nuốt PlatformException (native trả result.error('OPEN_FOLDER_ERROR') khi không có app nào xử lý intent mở thư mục) và chỉ debugPrint. summary_screen bọc openFolder() trong try/catch để hiện SnackBar 'Không thể mở thư mục, vui lòng mở Files thủ công', nhưng vì service đã nuốt lỗi nên catch đó không bao giờ chạy: user bấm 'Mở thư mục Tải', không có gì xảy ra và cũng không có thông báo.
 
 ```dart
-              onDownload: _canDownload ? _startDownload : null,
+    } on PlatformException catch (e) {
 ```
 **Fix:**
 ```dart
-bool _submitting = false;
-Future<void> _startDownload() async {
-  if (_submitting) return;
-  setState(() => _submitting = true);
-  try { ... } finally { if (mounted) setState(() => _submitting = false); }
+Future<void> openDownloadFolder() async {
+  // để PlatformException lan ra: summary_screen đã catch và hiện SnackBar
+  await _channel.invokeMethod('openFolder', {'path': downloadPath});
 }
-// PrimaryButton(isLoading: _submitting, onPressed: _canDownload && !_submitting ? _startDownload : null)
 ```
 
-## [MEDIUM] layering_violation — `lib/features/downloader/screens/playlist_picker/playlist_picker_screen.dart:58`
+## [MEDIUM] rebuild_scope_too_wide — `lib/screens/album_detail_screen.dart:25`
 confidence 0.80
-related: lib/features/downloader/screens/analyze/analyze_screen.dart, lib/features/downloader/screens/format/format_screen.dart, lib/features/downloader/screens/summary/summary_screen.dart, lib/features/downloader/providers/analyze_provider.dart, lib/features/downloader/providers/download_provider.dart, lib/features/downloader/services/downloader_storage_service.dart, lib/features/downloader/services/ytdlp_service.dart
 
-Feature downloader đã thiết lập pattern gateway qua Riverpod (`analyzeGatewayProvider`/`downloadGatewayProvider` bọc `YtdlpService.instance`, `downloadOutputDirectoryProvider` bọc storage) để widget không chạm service. Nhưng `playlist_picker_screen` gọi thẳng `YtdlpService.instance`, và analyze/format/summary screen gọi thẳng `DownloaderStorageService.instance` (init, requestStoragePermission, setAndSavePath, getExternalBasePath) — bỏ qua tầng provider, không mock/test được và là nguồn gốc của lỗi stale path ở download_provider.
-
-```dart
-    final result = await YtdlpService.instance.getPlaylistEntries(
-```
-**Fix:**
-```dart
-// providers/analyze_provider.dart
-abstract interface class PlaylistGateway {
-  Future<PlaylistEntriesResult> getPlaylistEntries(String url);
-}
-final playlistGatewayProvider = Provider<PlaylistGateway>((ref) => YtdlpService.instance);
-
-// playlist_picker_screen.dart (ConsumerStatefulWidget)
-final result = await ref.read(playlistGatewayProvider).getPlaylistEntries(widget.playlistInfo.url);
-```
-
-## [MEDIUM] missing_autodispose — `lib/features/downloader/providers/download_provider.dart:480`
-confidence 0.75
-
-Provider.family không autoDispose: mỗi taskId từng được watch sẽ giữ một instance sống suốt vòng đời app, không bao giờ được giải phóng kể cả sau khi task bị remove/clearFinished — rò rỉ bộ nhớ tăng dần theo số lượt tải.
-
-```dart
-final downloadTaskProvider = Provider.family<DownloadTask?, String>((ref, id) {
-```
-**Fix:**
-```dart
-final downloadTaskProvider = Provider.autoDispose.family<DownloadTask?, String>((ref, id) {
-  return ref.watch(downloadProvider.select((s) => s.tasks.cast<DownloadTask?>().firstWhere((t) => t?.id == id, orElse: () => null)));
-});
-```
-
-## [MEDIUM] image_unbounded — `lib/features/downloader/screens/download/download_screen.dart:345`
-confidence 0.75
-
-Thumbnail YouTube (1280x720) decode full-res vào ô 64x42 cho mỗi item trong ListView — tốn ~3.5MB RAM/ảnh, raster cache phình, GC churn khi cuộn danh sách dài.
-
-```dart
-                    imageUrl: task.thumbnail!,
-```
-**Fix:**
-```dart
-CachedNetworkImage(imageUrl: task.thumbnail!, width: 64, height: 42, memCacheWidth: 192, memCacheHeight: 126, fit: BoxFit.cover, ...)
-```
-
-## [MEDIUM] expensive_work_in_build — `lib/features/downloader/screens/playlist_picker/playlist_picker_screen.dart:46`
-confidence 0.75
-
-_filteredEntries chạy vnNormalize (~134 lần replaceAll mỗi chuỗi) cho toàn bộ entries trong mỗi build và chạy lại lần nữa trong onToggle; playlist vài trăm video sẽ giật theo từng phím gõ và từng lần tap chọn.
-
-```dart
-    return _entries.where((e) {
-      final title = vnNormalize(e.title);
-```
-**Fix:**
-```dart
-// khi load: _normTitle = {for (final e in entries) e.id: vnNormalize(e.title)};
-// onChanged: setState(() => _filtered = q.isEmpty ? _entries : _entries.where((e) => _normTitle[e.id]!.contains(vnNormalize(q))).toList());
-// onToggle nhận entry.id thay vì index
-```
-
-## [MEDIUM] image_unbounded — `lib/features/downloader/screens/playlist_picker/playlist_picker_screen.dart:363`
-confidence 0.75
-
-Thumbnail decode full-res (thường 1280x720) vào ô 72x46 cho từng item của playlist dài — playlist 200+ video phình raster cache và gây GC churn khi cuộn.
-
-```dart
-                        imageUrl: entry.thumbnail!,
-```
-**Fix:**
-```dart
-CachedNetworkImage(imageUrl: entry.thumbnail!, width: 72, height: 46, memCacheWidth: 216, memCacheHeight: 138, fit: BoxFit.cover, ...)
-```
-
-## [MEDIUM] silent_catch — `lib/features/downloader/services/downloader_storage_service.dart:102`
-confidence 0.75
-
-Nếu tạo thư mục thất bại (thiếu quyền, đường dẫn không hợp lệ) lỗi bị nuốt và code vẫn gán _downloadPath rồi lưu vào SharedPreferences; các lần tải sau sẽ ghi vào thư mục không tồn tại và lỗi khó hiểu. Các catch (_) khác ở dòng 64, 93, 140 cũng không log.
-
-```dart
-await dir.create(recursive: true);
-      } catch (_) {}
-```
-**Fix:**
-```dart
-try {
-  await dir.create(recursive: true);
-} catch (e) {
-  debugPrint('[StorageService] cannot create $path: $e');
-  rethrow; // hoặc return false để UI báo user
-}
-```
-
-## [MEDIUM] rebuild_scope_too_wide — `lib/screens/library_screen.dart:315`
-confidence 0.75
-
-build() của _LibraryScreenState dài ~230 dòng và setState() rỗng được gọi trên mỗi phím gõ (và trên mỗi lần đổi tab qua _tabCtrl.addListener) chỉ để cập nhật icon xoá/chỉ báo phạm vi, khiến toàn bộ header, TabBar và tab content rebuild lại.
-
-```dart
-                    context.read<MusicProvider>().setLibrarySearchQuery(q);
-                    setState(() {});
-```
-**Fix:**
-```dart
-// Tách ô search thành widget riêng, dùng ValueListenableBuilder<TextEditingValue>(valueListenable: _searchCtrl, ...) cho suffixIcon/scope row thay vì setState toàn màn hình.
-```
-
-## [MEDIUM] image_unbounded — `lib/screens/playlist_screen.dart:157`
-confidence 0.75
-
-Ảnh bìa tuỳ chỉnh được decode ở độ phân giải gốc (ảnh camera có thể 12MP) cho ô 52x52 trong ListView; mỗi playlist có cover sẽ chiếm hàng chục MB raster cache và gây GC/jank khi cuộn.
-
-```dart
-        child: Image.file(
-          File(playlist.coverPath!),
-```
-**Fix:**
-```dart
-Image.file(
-  File(playlist.coverPath!),
-  width: size, height: size, fit: BoxFit.cover,
-  cacheWidth: (size * MediaQuery.devicePixelRatioOf(context)).round(),
-)
-```
-
-## [MEDIUM] silent_catch — `lib/services/audio_handler.dart:40`
-confidence 0.75
-
-_init() (được gọi fire-and-forget trong constructor) nuốt hoàn toàn lỗi setAudioSource; nếu thất bại thì player không có source, mọi loadSongs/play sau đó im lặng không phát nhạc và không có log nào để chẩn đoán.
-
-```dart
-      await _player.setAudioSource(_playlist);
-    } catch (_) {}
-```
-**Fix:**
-```dart
-Future<void> _init() async {
-  try {
-    await _player.setAudioSource(_playlist);
-  } catch (e, s) {
-    debugPrint('[AudioHandler] setAudioSource failed: $e\n$s');
-    _initError = e; // expose cho PlayerProvider hiển thị / retry
-  }
-}
-// và lưu Future _ready = _init(); để loadSongs await _ready trước khi addAll
-```
-
-## [MEDIUM] expensive_work_in_build — `lib/services/audio_handler.dart:162`
-confidence 0.75
-
-Getter tạo stream combineLatest3 mới mỗi lần truy cập, mà nó được dùng trực tiếp làm `stream:` của StreamBuilder trong build (mini_player._MiniProgressBar, now_playing_screen x2); mỗi rebuild StreamBuilder thấy stream khác → unsubscribe/resubscribe 3 stream của just_audio, snapshot về hasData=false trong 1 frame → thanh progress nháy và tốn CPU vô ích.
-
-```dart
-  Stream<PositionData> get positionDataStream =>
-      Rx.combineLatest3<Duration, Duration, Duration?, PositionData>(
-```
-**Fix:**
-```dart
-late final Stream<PositionData> positionDataStream =
-    Rx.combineLatest3<Duration, Duration, Duration?, PositionData>(
-      _player.positionStream,
-      _player.bufferedPositionStream,
-      _player.durationStream,
-      (pos, buf, dur) => PositionData(pos, buf, dur ?? Duration.zero),
-    ).shareValue(); // 1 broadcast stream dùng chung, identity ổn định
-```
-
-## [MEDIUM] rebuild_scope_too_wide — `lib/widgets/music_list_tile.dart:38`
-confidence 0.75
-
-Mỗi tile trong mọi danh sách subscribe toàn bộ MusicProvider chỉ để lấy isFav — giá trị chỉ dùng trong menu long-press, không hiển thị trên tile. MusicProvider.onSongPlayed()/toggleFavorite() gọi notifyListeners nên mỗi lần phát một bài, toàn bộ tile đang hiển thị (kèm QueryArtworkWidget) rebuild.
-
-```dart
-    final musicProvider = context.watch<MusicProvider>();
-```
-**Fix:**
-```dart
-// bỏ context.watch trong build; lấy khi cần:
-onLongPress: onLongPress ?? () {
-  HapticFeedback.mediumImpact();
-  final music = context.read<MusicProvider>();
-  _showContextMenu(context, music.isFavorite(song.id), music);
-},
-```
-
-## [MEDIUM] silent_catch — `lib/features/downloader/services/ytdlp_service.dart:255`
-confidence 0.72
-
-Lỗi từ channel/JSON bị nuốt hoàn toàn không log (3 chỗ: restoreDownloads, _withLiveProgress, cancel). Khi getDownloadTasks lỗi, toàn bộ lịch sử tải đang chạy biến mất im lặng; khi cancelDownload lỗi, UI chỉ nhận false mà không ai biết nguyên nhân.
-
-```dart
-} catch (_) {
-      return const [];
-    }
-```
-**Fix:**
-```dart
-} catch (e, st) {
-  debugPrint('[YtdlpService] restoreDownloads failed: $e\n$st');
-  return const [];
-}
-```
-
-## [MEDIUM] error_state_missing — `lib/features/downloader/screens/analyze/analyze_screen.dart:54`
-confidence 0.70
-
-Lỗi khởi động hiển thị raw exception $e cho user, không có nút thử lại, và nút Phân tích kẹt ở 'Đang khởi động...' (isLoading = !_serviceReady) vĩnh viễn — user chỉ còn cách thoát app.
-
-```dart
-      if (mounted) setState(() => _initError = 'Khởi động thất bại: $e');
-```
-**Fix:**
-```dart
-_ErrorCard(message: 'Không thể khởi động bộ tải. Vui lòng thử lại.', onRetry: _initServices)
-// và: isLoading: analyzeState.isLoading || (!_serviceReady && _initError == null)
-```
-
-## [MEDIUM] async_context_use — `lib/features/downloader/screens/analyze/analyze_screen.dart:62`
-confidence 0.70
-
-_paste dùng _controller.text và ref.read sau await Clipboard.getData mà không có guard mounted; riverpod 3.x ném StateError 'Using ref when a widget has been unmounted' và TextEditingController đã dispose sẽ crash nếu user thoát màn hình đúng lúc.
-
-```dart
-      ref.read(analyzeProvider.notifier).onUrlChanged(data.text!);
-```
-**Fix:**
-```dart
-final data = await Clipboard.getData(Clipboard.kTextPlain);
-if (!mounted || data?.text == null) return;
-_controller.text = data!.text!;
-```
-
-## [MEDIUM] unawaited_future — `lib/providers/music_provider.dart:322`
-confidence 0.70
-
-createPlaylist bỏ rơi Future ghi SharedPreferences (không await, không unawaited, không bắt lỗi) trong khi mọi hàm playlist khác đều await; caller nhận PlaylistItem và tưởng đã lưu, nếu ghi thất bại playlist mới biến mất sau khi restart mà không ai biết.
-
-```dart
-    notifyListeners();
-    _persistPlaylists();
-```
-**Fix:**
-```dart
-Future<PlaylistItem> createPlaylist(String name) async {
-  final pl = PlaylistItem(id: DateTime.now().millisecondsSinceEpoch.toString(), name: name);
-  _playlists.add(pl);
-  notifyListeners();
-  await _persistPlaylists();
-  return pl;
-}
-```
-
-## [MEDIUM] unawaited_future — `lib/providers/player_provider.dart:134`
-confidence 0.70
-
-Khi hết playlist ở chế độ shuffleLoop, chuỗi loadSongs→play không được await và không có catchError; nếu loadSongs/play ném lỗi (file bị xoá, player lỗi) thì exception rơi vào zone không ai bắt, còn _currentSong/_playQueue đã đổi nên UI hiển thị bài mới mà không phát gì.
-
-```dart
-      _loadQueueToHandler(0).then((_) => _handler.play());
-```
-**Fix:**
-```dart
-Future<void> _onPlaylistEnded() async {
-  if (_repeatMode != RepeatMode.shuffleLoop || _originalQueue.isEmpty) return;
-  _buildShuffledQueueTrueRandom(startIndex: Random().nextInt(_originalQueue.length));
-  _currentPlayIndex = 0;
-  _currentSong = _playQueue[0];
-  notifyListeners();
-  try {
-    await _loadQueueToHandler(0);
-    await _handler.play();
-  } catch (e) {
-    debugPrint('shuffleLoop reload failed: $e');
-  }
-}
-```
-
-## [MEDIUM] race_shared_mutable — `lib/providers/player_provider.dart:171`
-confidence 0.70
-
-playSongs/playSongsShuffled không có token huỷ hay cờ đang-load: người dùng bấm nhanh 2 bài khác nhau → hai lần clear()/addAll() trên ConcatenatingAudioSource đan xen (playlist thực tế = A+B) trong khi _playQueue chỉ là B; ngoài ra currentIndexStream bắn trong lúc load không bị chặn (_isChangingTrack=false) nên _applyCurrentIndex ghi sai _currentSong/_historyStack theo index của queue cũ.
-
-```dart
-    await _loadQueueToHandler(_currentPlayIndex);
-```
-**Fix:**
-```dart
-int _loadGeneration = 0;
-...
-final gen = ++_loadGeneration;
-_isChangingTrack = true;
-try {
-  await _loadQueueToHandler(_currentPlayIndex);
-} finally {
-  _isChangingTrack = false;
-}
-if (gen != _loadGeneration) return; // có lệnh play mới hơn, bỏ qua
-await _handler.play();
-```
-
-## [MEDIUM] rebuild_scope_too_wide — `lib/screens/now_playing_screen.dart:170`
-confidence 0.70
-
-build() của cả màn hình (~180 dòng, gồm nền blur, flip card, queue sheet) watch toàn bộ PlayerProvider và LyricsProvider; PlayerProvider notify mỗi 1 giây khi bật hẹn giờ ngủ (Timer.periodic trong setSleepTimer) và LyricsProvider notify mỗi lần đổi dòng lời (updatePosition gọi từ post-frame ở dòng 502) → toàn bộ cây widget rebuild liên tục chỉ để đổi vài chữ.
+Toàn bộ AlbumDetailScreen (SliverAppBar, 2 QueryArtworkWidget trong header, danh sách bài) rebuild mỗi lần PlayerProvider hoặc MusicProvider notify. PlayerProvider notify mỗi giây khi sleep timer đang chạy (_countdownTimer) và mỗi lần play/pause; MusicProvider notify khi onSongPlayed/favorite. Trong build chỉ dùng player.currentSong?.id ở dòng 220 để highlight tile. ArtistDetailScreen đã fix đúng pattern này (context.read + Selector) nhưng AlbumDetailScreen thì chưa, gây jank khi mở album trong lúc đang phát nhạc với sleep timer.
 
 ```dart
     final player = context.watch<PlayerProvider>();
-    final song = player.currentSong;
+    final music = context.watch<MusicProvider>();
 ```
 **Fix:**
 ```dart
-// Chỉ lấy slice cần thiết ở tầng màn hình, phần còn lại dùng Selector/Consumer cục bộ
-final song = context.select<PlayerProvider, SongItem?>((p) => p.currentSong);
-// _ExpandablePillBar: Selector<PlayerProvider, (double, bool)>(selector: (_, p) => (p.speed, p.sleepTimerActive), ...)
-// _LyricsView: Consumer<LyricsProvider>(builder: ...) thay vì watch ở NowPlayingScreen
-```
-
-## [MEDIUM] blur_layer_abuse — `lib/screens/now_playing_screen.dart:1187`
-confidence 0.70
-
-BackdropFilter sigma 40 phủ toàn màn hình nằm cùng repaint boundary với đĩa cover xoay 60fps (Transform.rotate không có RepaintBoundary ở Normal mode) nên GPU chạy lại blur full-screen + 2 BoxShadow blurRadius 60/40 mỗi frame suốt lúc phát; khi mở queue lại chồng thêm BackdropFilter sigma 10 ở dòng 2313 → 2 lớp saveLayer, jank rõ trên máy tầm trung.
-
-```dart
-          filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
-```
-**Fix:**
-```dart
-// Blur ảnh tĩnh 1 lần thay vì BackdropFilter, cover xoay tách RepaintBoundary
-RepaintBoundary(
-  child: ImageFiltered(
-    imageFilter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
-    child: QueryArtworkWidget(id: albumId, type: ArtworkType.ALBUM, artworkFit: BoxFit.cover),
+final player = context.read<PlayerProvider>();
+final music = context.read<MusicProvider>();
+// ... trong SliverChildBuilderDelegate:
+return Selector<PlayerProvider, int?>(
+  selector: (_, p) => p.currentSong?.id,
+  builder: (_, activeId, __) => MusicListTile(
+    song: song,
+    isActive: activeId == song.id,
+    onTap: () { /* như cũ */ },
   ),
-)
-// ... và trong _AlbumArtSection: RepaintBoundary(child: ReactiveCoverArtTransform(...))
+);
 ```
 
-## [MEDIUM] undisposed_resource — `lib/screens/now_playing_screen.dart:1582`
-confidence 0.70
+## [MEDIUM] watch_whole_object — `lib/widgets/library/songs_tab.dart:33`
+confidence 0.80
 
-Hai TextEditingController (titleCtrl, artistCtrl) được tạo mỗi lần mở sheet 'Sửa thông tin' nhưng không bao giờ dispose → rò rỉ controller + listener sau mỗi lần người dùng mở/đóng sheet.
-
-```dart
-    final titleCtrl = TextEditingController(text: song.title);
-```
-**Fix:**
-```dart
-showModalBottomSheet(...).whenComplete(() {
-  titleCtrl.dispose();
-  artistCtrl.dispose();
-});
-// hoặc tách _EditMetaSheet thành StatefulWidget và dispose trong dispose()
-```
-
-## [MEDIUM] no_action_feedback — `lib/screens/playlist_screen.dart:62`
-confidence 0.70
-
-Xoá playlist từ menu ba chấm thực hiện ngay lập tức, không có dialog xác nhận, không SnackBar/Undo; một cú chạm nhầm mất cả danh sách không thể khôi phục.
-
-```dart
-                  onDelete: () => music.deletePlaylist(pl.id),
-```
-**Fix:**
-```dart
-onDelete: () async {
-  final ok = await showDialog<bool>(context: context, builder: (_) => AlertDialog(title: Text('Xóa ${pl.name}?'), actions: [...]));
-  if (ok == true) { await music.deletePlaylist(pl.id); if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Đã xóa'))); }
-},
-```
-
-## [MEDIUM] rebuild_scope_too_wide — `lib/screens/playlist_screen.dart:340`
-confidence 0.70
-
-build() của PlaylistDetailScreen dài ~330 dòng và watch cả MusicProvider lẫn PlayerProvider ở gốc, nên mỗi notify của player (play/pause, đổi bài, sleep-timer tick mỗi giây) rebuild toàn bộ SliverAppBar, header ảnh, các nút và danh sách chỉ để đổi isActive của một tile.
+SongsTab watch toàn bộ PlayerProvider nhưng chỉ dùng `player.currentSong?.id` để tô tile đang phát. PlayerProvider notifyListeners trên mọi thay đổi: play/pause, shuffle, repeat, speed, và đặc biệt tick 1 lần/giây khi hẹn giờ ngủ đang chạy (Timer.periodic trong setSleepTimer). Mỗi notify rebuild cả ListView.builder → mọi MusicListTile đang hiển thị rebuild → QueryArtworkWidget (StatelessWidget dùng FutureBuilder tạo future mới trong build) gọi lại queryArtwork qua platform channel cho từng tile. Khi người dùng mở tab Bài hát trong lúc nhạc đang phát với sleep timer, ~10-15 truy vấn artwork/giây chạy nền vô ích, gây giật khi cuộn. Các widget khác (controls.dart, expandable_pill_bar.dart, now_playing_screen.dart) đã dùng context.select cho đúng lát cắt.
 
 ```dart
     final music = context.watch<MusicProvider>();
@@ -585,763 +60,660 @@ build() của PlaylistDetailScreen dài ~330 dòng và watch cả MusicProvider 
 ```
 **Fix:**
 ```dart
-// Chỉ watch PlayerProvider trong tile:
-Selector<PlayerProvider, int?>(selector: (_, p) => p.currentSong?.id, builder: (_, activeId, __) => MusicListTile(song: song, isActive: activeId == song.id, ...))
+final activeId = context.select<PlayerProvider, int?>((p) => p.currentSong?.id);
+// ...
+isActive: !isSelecting && activeId == song.id,
+// trong onTap vẫn dùng context.read<PlayerProvider>()
 ```
 
-## [MEDIUM] silent_catch — `lib/services/lyrics_service.dart:138`
-confidence 0.70
+## [MEDIUM] missing_autodispose — `lib/features/downloader/providers/analyze_provider.dart:150`
+confidence 0.75
 
-clearCache và clearAllCache (2 site) nuốt sạch lỗi xoá file/thư mục; người dùng bấm 'xoá cache lyrics' thấy thành công trong khi cache vẫn còn, và không có log để biết vì sao.
+analyzeProvider chỉ phục vụ AnalyzeScreen nhưng không autoDispose, còn reset() chỉ được gọi từ nút xoá URL. Khi user rời downloader (pop về gateway) rồi vào lại, hoặc bấm 'Tải thêm video' ở summary (pushNamedAndRemoveUntil về analyze), AnalyzeScreen mới tạo TextEditingController rỗng trong khi provider vẫn giữ currentUrl/videoInfo cũ: ô nhập trống nhưng card kết quả cũ vẫn hiện, nút Phân tích vẫn bật (canAnalyze dựa vào currentUrl của provider) và bấm sẽ phân tích lại URL cũ. Ngoài ra VideoInfo + formats sống suốt app dù đã rời màn hình.
 
 ```dart
-      if (await file.exists()) await file.delete();
-    } catch (_) {}
+final analyzeProvider = NotifierProvider<AnalyzeNotifier, AnalyzeState>(
 ```
 **Fix:**
 ```dart
-Future<void> clearAllCache() async {
+final analyzeProvider =
+    NotifierProvider.autoDispose<AnalyzeNotifier, AnalyzeState>(
+      AnalyzeNotifier.new,
+    );
+// AnalyzeNotifier extends AutoDisposeNotifier<AnalyzeState>
+// (hoặc giữ keepAlive và gọi reset() trong AnalyzeScreen.dispose())
+```
+
+## [MEDIUM] no_action_feedback — `lib/features/downloader/screens/format/format_screen.dart:175`
+confidence 0.75
+
+Bấm 'Bắt đầu tải' gọi startFromFormat, bên trong await setPath(outputPath) (ghi prefs + tạo thư mục) và requestNotificationPermission() — cả hai có thể ném exception (thư mục vừa chọn không ghi được, SAF/permission lỗi). Không có try/catch ở màn hình lẫn provider: finally chỉ tắt spinner, user đứng nguyên ở màn Format, không snackbar, không biết vì sao chưa tải; exception rơi vào zone như unhandled error.
+
+```dart
+    final outcome = await ref
+        .read(downloadProvider.notifier)
+        .startFromFormat(
+```
+**Fix:**
+```dart
+try {
+  final outcome = await ref.read(downloadProvider.notifier).startFromFormat(...);
+  if (!mounted) return;
+  // ...navigate
+} catch (e) {
+  if (!mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('Không thể bắt đầu tải, vui lòng thử lại')),
+  );
+}
+```
+
+## [MEDIUM] unawaited_future — `lib/features/music_visual/poc/android_visualizer_poc_screen.dart:79`
+confidence 0.75
+
+pickTrack() await _bridge.detach() và _player.setFilePath(path) mà không có try/catch; Future bị bỏ rơi khi gán thẳng vào onPressed. Khi người dùng chọn một file audio hỏng/codec không hỗ trợ, PlayerException bay lên zone uncaught: _error không được set, UI không báo gì, nút vẫn hiển thị tên file cũ và Play/Pause tưởng như vẫn dùng được. Với một harness POC để đo lỗi thì mất luôn dấu vết lỗi quan trọng nhất.
+
+```dart
+                onPressed: _controller.pickTrack,
+```
+**Fix:**
+```dart
+// controller
+Future<bool> pickTrack() async {
+  final result = await FilePicker.platform.pickFiles(type: FileType.audio);
+  final path = result?.files.single.path;
+  if (path == null) return false;
   try {
-    final dir = await _getCacheDir();
-    if (await dir.exists()) await dir.delete(recursive: true);
-    _cacheDir = null;
-  } catch (e, s) {
-    debugPrint('[Lyrics] clearAllCache error: $e\n$s');
-    rethrow; // để UI báo lỗi cho người dùng
+    await _bridge.detach();
+    await _player.setFilePath(path);
+    _filePath = path;
+    _resetPacketStats();
+    _error = null;
+    return true;
+  } catch (e) {
+    _error = e.toString();
+    return false;
+  } finally {
+    notifyListeners();
   }
 }
 ```
 
-## [LOW] duplicate_logic — `lib/features/downloader/models/playlist_entry.dart:61`
-confidence 0.85
-related: lib/features/downloader/models/video_info.dart, lib/models/song_item.dart, lib/screens/now_playing_screen.dart, lib/screens/playlist_screen.dart
+## [MEDIUM] rebuild_scope_too_wide — `lib/providers/player_provider.dart:93`
+confidence 0.75
 
-Định dạng Duration/giây → chuỗi được viết lại 6 lần với 4 kiểu output khác nhau: `PlaylistEntry.formattedDuration` và `VideoInfo.formattedDuration` (giống nhau từng dòng), `SongItem.durationFormatted` (mm:ss từ ms), `_NowPlayingScreenState._fmt` (mm:ss), `_formatRemaining` ('$m phút'), `PlaylistDetailScreen._fmtDuration` ('Xh Ym'). Cùng một bài hát có thể hiện '3:05' ở nơi này và '03:05' ở nơi khác; sửa một chỗ không đồng bộ chỗ khác.
+Khi user bật sleep timer, PlayerProvider gọi notifyListeners() mỗi giây suốt thời gian đếm ngược (có thể 60+ phút). PlayerProvider là provider app-wide với 14 chỗ watch/Consumer: songs_tab.dart watch ở đầu build (toàn bộ ListView bài hát rebuild), home_screen, library_screen, album_detail_screen, mini_player… Trong khi chỉ duy nhất sleep_timer_sheet.dart đọc sleepRemaining. Hậu quả: cả cây UI player + danh sách thư viện rebuild 1 lần/giây trong nền dù không có gì thay đổi, tốn CPU/pin khi user đang nghe nhạc trước khi ngủ — đúng lúc máy nên nghỉ.
 
 ```dart
-    final h = duration! ~/ 3600;
-    final m = (duration! % 3600) ~/ 60;
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      notifyListeners();
+    });
 ```
 **Fix:**
 ```dart
-// lib/utils/duration_format.dart
-extension DurationFormat on Duration {
-  String get mmss => '${inMinutes.toString().padLeft(2, '0')}:${(inSeconds % 60).toString().padLeft(2, '0')}';
-  String get clock => inHours > 0
-      ? '$inHours:${(inMinutes % 60).toString().padLeft(2, '0')}:${(inSeconds % 60).toString().padLeft(2, '0')}'
-      : '${inMinutes}:${(inSeconds % 60).toString().padLeft(2, '0')}';
-  String get compact => inHours > 0 ? '${inHours}h ${inMinutes % 60}m' : '${inMinutes}m';
-}
-// PlaylistEntry/VideoInfo: Duration(seconds: duration!).clock ; SongItem: Duration(milliseconds: duration).mmss
+final sleepRemainingNotifier = ValueNotifier<Duration?>(null);
+_countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+  sleepRemainingNotifier.value = sleepRemaining;
+});
+// sleep_timer_sheet.dart:
+ValueListenableBuilder<Duration?>(
+  valueListenable: player.sleepRemainingNotifier,
+  builder: (_, rem, __) => Text(rem?.mmss ?? ''),
+)
+// dispose(): sleepRemainingNotifier.dispose();
 ```
 
-## [LOW] hardcoded_style — `lib/screens/album_detail_screen.dart:43`
-confidence 0.85
+## [MEDIUM] expensive_work_in_build — `lib/providers/theme_provider.dart:70`
+confidence 0.75
 
-Icon back ghi cứng Colors.white trong SliverAppBar pinned có backgroundColor c.background: khi cuộn thu gọn ở theme Light, icon trắng trên nền sáng gần như biến mất. Các chỗ khác cũng dùng Colors.white/white70/white54 và Colors.black.withValues(alpha: 0.50) thay vì c.onPlayer/c.scrimLight (ArtistDetailScreen đã dùng token đúng).
+Getter này dựng lại toàn bộ ThemeData (GoogleFonts.outfitTextTheme + 3 lần GoogleFonts.outfit + ColorScheme + ~10 sub-theme) mỗi lần được đọc. main.dart gọi `context.watch<ThemeProvider>()` rồi `theme: themeProvider.themeData` trong build của MuzicApp, nên mỗi notifyListeners của ThemeProvider (setTheme và setBottomNavStyle mỗi cái notify 3 lần: isSwitching=true, đổi mode, isSwitching=false) đều tạo ThemeData mới. Vì switchTheme dùng WidgetStateProperty.resolveWith với closure mới → ThemeData mới luôn != ThemeData cũ, nên MaterialApp (themeAnimationDuration 300ms) khởi động AnimatedTheme lerp toàn bộ theme + AppColorsData.lerp (~50 Color.lerp) mỗi frame trong 300ms và mọi widget phụ thuộc Theme.of rebuild theo — kể cả khi user chỉ đổi kiểu bottom nav (theme không hề đổi) hoặc ở notify thứ 3 của setTheme. Kết quả: 300ms rebuild toàn app x3 cho mỗi lần đổi setting, giật đúng lúc animation chuyển theme đang chạy.
 
 ```dart
-                Icons.arrow_back_ios_new_rounded,
-                size: 20,
-                color: Colors.white,
+  ThemeData get themeData => AppTheme.buildTheme(_mode.colors);
 ```
 **Fix:**
 ```dart
-icon: Icon(
-  Icons.arrow_back_ios_new_rounded,
-  size: 20,
-  color: c.onPlayer,
+final _themeCache = <AppThemeMode, ThemeData>{};
+ThemeData get themeData =>
+    _themeCache.putIfAbsent(_mode, () => AppTheme.buildTheme(_mode.colors));
+// Trong main.dart: chỉ watch mode thay vì cả provider
+// theme: context.select<ThemeProvider, ThemeData>((p) => p.themeData),
+```
+
+## [MEDIUM] no_action_feedback — `lib/screens/playlist_screen.dart:542`
+confidence 0.75
+
+Hàng nút 'Phát tất cả / Trộn' được bọc trong `if (playlist.songs.isNotEmpty)` nhưng hàng 'Shuffle loop' (SliverToBoxAdapter dòng 533) thì không, nên playlist rỗng vẫn hiện nút này. Khi bấm, `enableShuffleLoop([])` -> `playSongsShuffled` return sớm vì rỗng, nhưng sau đó vẫn set `_repeatMode = RepeatMode.shuffleLoop` cho hàng đợi đang phát (nếu có) rồi notify; màn hình vẫn push NowPlayingScreen. Kết quả: playlist trống -> người dùng bị đưa sang một Now Playing trắng (chỉ có nút đóng) hoặc thấy bài của queue khác đang phát, và chế độ lặp của queue đó bị đổi ngầm mà không có thông báo nào.
+
+```dart
+                      onTap: () async {
+                        await player.enableShuffleLoop(playlist.songs);
+```
+**Fix:**
+```dart
+// Bọc cả hàng Shuffle-loop như hàng Play/Shuffle:
+if (playlist.songs.isNotEmpty)
+  SliverToBoxAdapter(child: /* _PlayButton shuffleLoop + info */),
+// và trong onTap phòng thủ thêm:
+if (playlist.songs.isEmpty) return;
+await player.enableShuffleLoop(playlist.songs);
+```
+
+## [MEDIUM] no_action_feedback — `lib/screens/profile_screen.dart:353`
+confidence 0.75
+
+(Công tắc không có tác dụng — xếp vào no_action_feedback vì thao tác của user không tạo ra thay đổi lẫn phản hồi nào.) Công tắc 'Lọc file ngắn' trong sheet Cài đặt là giả: `onChanged: (_) {}` không ghi gì, chỉ `_SettingsRowState._val` cục bộ đổi màu. Bộ lọc thực tế nằm cứng trong music_scanner.dart (`duration <= 30000` -> loại), không đọc từ setting nào. Người dùng tắt công tắc, quét lại thư viện, file ngắn vẫn không xuất hiện; đóng sheet mở lại thì công tắc lại bật — thao tác của người dùng bị vứt bỏ âm thầm và họ tưởng app lỗi.
+
+```dart
+            value: true,
+            onChanged: (_) {},
+```
+**Fix:**
+```dart
+// Nối với state thật, hoặc bỏ hàng này cho tới khi có setting
+_SettingsRow(
+  label: AppStrings.filterShortFiles,
+  subtitle: AppStrings.filterShortFilesSubtitle,
+  value: widget.music.filterShortFiles,
+  onChanged: (v) => widget.music.setFilterShortFiles(v), // persist + rescan
+  colors: c,
 ),
 ```
 
-## [LOW] hardcoded_style — `lib/screens/welcome_screen.dart:99`
+## [MEDIUM] no_action_feedback — `lib/widgets/add_to_playlist_sheet.dart:253`
+confidence 0.75
+
+Sheet này luôn được mở bằng showModalBottomSheet (music_list_tile, now_playing/song_info, now_playing/top_bar) và cố ý giữ sheet mở sau khi tick playlist. ScaffoldMessenger.of(context) trỏ tới messenger của MaterialApp, nên SnackBar được vẽ trong Scaffold của màn hình bên dưới — tức là nằm dưới modal barrier và dưới Container màu c.card (đục) của sheet, với margin bottom 80 đúng vùng sheet che. Khi user tick/bỏ tick playlist hoặc tạo playlist mới (_doCreate cũng gọi _showFeedback), thông báo 'Đã thêm vào…' gần như không bao giờ nhìn thấy; hành động ghi dữ liệu không có phản hồi hiển thị ngoài checkbox đổi màu.
+
+```dart
+    // Không close sheet — giống YouTube, user có thể thêm vào nhiều playlist
+    ScaffoldMessenger.of(context).showSnackBar(
+```
+**Fix:**
+```dart
+// Cho sheet có messenger riêng để SnackBar vẽ phía trên sheet:
+@override
+Widget build(BuildContext context) {
+  return ScaffoldMessenger(
+    child: Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Container(/* nội dung sheet hiện tại */),
+    ),
+  );
+}
+// _showFeedback giữ nguyên ScaffoldMessenger.of(context) — giờ resolve tới messenger của sheet.
+```
+
+## [MEDIUM] silent_catch — `lib/features/downloader/services/downloader_storage_service.dart:137`
+confidence 0.70
+
+setAndSavePath() nuốt lỗi tạo thư mục (ví dụ user từ chối 'All files access' rồi chọn Music/ hoặc Movies/) và âm thầm giữ thư mục cũ. Ở format_screen, thư mục chọn được giữ pending rồi truyền vào startFromFormat(outputPath:) -> setPath(): lỗi bị nuốt, tải xuống bắt đầu ngay và file rơi vào thư mục cũ mà user không hề được báo.
+
+```dart
+        debugPrint('[StorageService] cannot create $path: $e');
+```
+**Fix:**
+```dart
+// Trả kết quả để notifier/screen biết và báo user
+Future<bool> setAndSavePath(String path) async {
+  final dir = Directory(path);
+  if (!await dir.exists()) {
+    try {
+      await dir.create(recursive: true);
+    } on FileSystemException catch (e) {
+      debugPrint('[StorageService] cannot create $path: $e');
+      return false;
+    }
+  }
+  _downloadPath = path;
+  await _savePath(path);
+  return true;
+}
+// OutputDirectoryNotifier.setPath: if (!ok) throw StateError('Không tạo được thư mục $path');
+```
+
+## [MEDIUM] no_action_feedback — `lib/screens/playlist_screen.dart:389`
+confidence 0.70
+
+Nút 'Tạo' không bị vô hiệu hoá trong lúc `createPlaylist` đang await `_persistPlaylists()` (SharedPreferences qua platform channel). Bấm đúp trên máy lag sẽ gọi `createPlaylist(name)` hai lần -> hai playlist trùng tên được thêm vào `_playlists` và lưu xuống đĩa. Tệ hơn, cả hai callback đều chạy tới `Navigator.pop(context)` với context của FAB (không phải context dialog): lần pop thứ hai xảy ra khi dialog đã đóng nên nó pop route đang ở trên cùng — chính màn hình chứa tab Playlist.
+
+```dart
+                onPressed: () async {
+                  final name = ctrl.text.trim();
+                  if (name.isEmpty) return;
+```
+**Fix:**
+```dart
+// Dùng StatefulBuilder hoặc cờ cục bộ để chặn double-submit
+bool submitting = false;
+...
+onPressed: submitting ? null : () async {
+  final name = ctrl.text.trim();
+  if (name.isEmpty) return;
+  setDialogState(() => submitting = true);
+  await context.read<MusicProvider>().createPlaylist(name);
+  if (dialogCtx.mounted) Navigator.pop(dialogCtx); // dùng context của dialog
+},
+```
+
+## [MEDIUM] error_state_missing — `lib/screens/splash_screen.dart:84`
+confidence 0.70
+
+_startSequence await AppStartupService.initialize() (SharedPreferences.getInstance + parse JSON favorites/playCounts/hiddenSongs từ prefs) mà không có try/catch và không có nhánh lỗi trên UI. Nếu init ném exception (prefs hỏng, jsonDecode lỗi, plugin lỗi trên một số máy) thì Navigator.pushReplacement không bao giờ chạy: người dùng kẹt vĩnh viễn ở splash với thanh equalizer chạy, không có thông báo hay nút thử lại, chỉ có cách kill app.
+
+```dart
+final destination = await startup;
+```
+**Fix:**
+```dart
+AppStartupDestination destination;
+try {
+  destination = await startup;
+} catch (e, st) {
+  debugPrint('startup failed: $e
+$st');
+  if (!mounted) return;
+  setState(() => _startupError = true); // hiện message + nút Thử lại
+  return;
+}
+if (!mounted) return;
+```
+
+## [MEDIUM] silent_catch — `lib/services/storage_service.dart:112`
+confidence 0.70
+
+Toàn bộ danh sách playlist được decode trong một try/catch; chỉ cần 1 entry lỗi (vd. một SongItem thiếu 'id' sau đổi schema, hoặc ghi dở dang) là TẤT CẢ playlist biến mất, không log, không báo user. Nghiêm trọng hơn: MusicProvider.init() gán _playlists = [] rồi thao tác tiếp theo (createPlaylist/deletePlaylist) gọi savePlaylists ghi đè key 'playlists' bằng danh sách rỗng → dữ liệu cũ bị xoá vĩnh viễn thay vì chỉ tạm ẩn. Cùng pattern `catch (_) { return []; }` ở _readIntList/_readIntMap/_readStringMap khiến favorites, play count, hidden songs, meta overrides cũng có thể bị reset thầm lặng rồi ghi đè.
+
+```dart
+    } catch (e) {
+      // Data bị corrupt → trả về rỗng, không crash app
+      return [];
+```
+**Fix:**
+```dart
+final list = jsonDecode(raw) as List<dynamic>;
+final result = <PlaylistItem>[];
+for (final e in list) {
+  try {
+    result.add(PlaylistItem.fromJson(e as Map<String, dynamic>));
+  } catch (err, st) {
+    debugPrint('[StorageService] skip corrupt playlist: $err\n$st');
+  }
+}
+return result;
+// Nếu decode cả chuỗi thất bại: giữ nguyên raw (backup key) thay vì để save() ghi đè.
+```
+
+## [LOW] duplicate_logic — `lib/screens/album_detail_screen.dart:408`
+confidence 0.90
+related: lib/screens/artist_detail_screen.dart, lib/screens/home_screen.dart, lib/screens/playlist_screen.dart, lib/widgets/mini_player.dart, lib/widgets/library/player_route.dart
+
+Route mở Now Playing (PageRouteBuilder + SlideTransition từ Offset(0,1), 400ms, easeOutCubic) được chép nguyên văn ở 9 chỗ trong 6 file: `album_detail_screen._playerRoute`, `artist_detail_screen._playerRoute`, `home_screen.dart:228`, `playlist_screen.dart` (4 lần: 468, 502, 546, 720), `mini_player.dart:28` và bản public `lib/widgets/library/player_route.dart` (`playerRoute()`, sinh ra khi tách library_screen ở Phase 4c). Muốn đổi thời lượng/curve hay thêm hero phải sửa 9 chỗ, và đã có 1 bản public dùng được cho tất cả.
+
+```dart
+PageRouteBuilder _playerRoute() => PageRouteBuilder(
+  pageBuilder: (_, anim, __) => const NowPlayingScreen(),
+```
+**Fix:**
+```dart
+// lib/widgets/now_playing_route.dart (dời từ lib/widgets/library/player_route.dart)
+PageRouteBuilder nowPlayingRoute() => PageRouteBuilder(
+  pageBuilder: (_, anim, __) => const NowPlayingScreen(),
+  transitionDuration: const Duration(milliseconds: 400),
+  transitionsBuilder: (_, anim, __, child) => SlideTransition(
+    position: Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
+        .animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
+    child: child,
+  ),
+);
+// mọi nơi: Navigator.of(context).push(nowPlayingRoute());
+```
+
+## [LOW] hardcoded_style — `lib/features/downloader/screens/playlist_picker/playlist_picker_screen.dart:559`
 confidence 0.85
 
-Tiêu đề 'Muzic' ghi cứng Colors.white trên Scaffold backgroundColor c.background: ở theme Light chữ trắng trên nền sáng không đọc được, trong khi dòng 'AUDIO' ngay dưới đã dùng token c.textTertiary.
+Icon lỗi trong _ErrorState dùng hex cứng Color(0xFFFF3B30) thay vì c.error của AppColorsData, là chỗ duy nhất trong 4 màn hình bỏ qua theme token: khi đổi theme sáng/tối hoặc đổi palette, màu lỗi ở đây lệch với _ErrorCard/_StatChip ở các màn hình khác.
 
 ```dart
-                          fontSize: 28,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
+            const Icon(
+              Icons.error_outline_rounded,
+              color: Color(0xFFFF3B30),
 ```
 **Fix:**
 ```dart
-color: c.textPrimary,
+Icon(
+  Icons.error_outline_rounded,
+  color: c.error,
+  size: 40,
+),
 ```
 
-## [LOW] empty_state_missing — `lib/features/downloader/screens/playlist_picker/playlist_picker_screen.dart:286`
-confidence 0.80
+## [LOW] duplicate_logic — `lib/screens/album_detail_screen.dart:176`
+confidence 0.85
+related: lib/screens/artist_detail_screen.dart, lib/screens/playlist_screen.dart
 
-Khi playlist không có video hợp lệ hoặc từ khoá tìm kiếm không khớp, _EntryList render trống hoàn toàn — user tưởng app lỗi/đang tải.
-
-```dart
-      itemCount: entries.length,
-```
-**Fix:**
-```dart
-if (entries.isEmpty) return const _EmptyLabel(text: 'Không tìm thấy video nào');
-return ListView.builder(...);
-```
-
-## [LOW] duplicate_logic — `lib/features/downloader/widgets/glass_card.dart:33`
-confidence 0.80
-related: lib/widgets/glass_container.dart
-
-`GlassCard` (downloader) và `GlassContainer` (lib/widgets) là cùng một widget: ClipRRect → BackdropFilter(blur 12) → Container(glassBg, glassBorder, radius 16). Khác biệt duy nhất là GlassContainer lấy màu theo theme (`context.appColors`) còn GlassCard dùng hằng tĩnh, nên card kính của downloader không đổi theo theme. Nên giữ một `GlassContainer` và thêm `onTap`/`width` nếu cần.
+Khối header 'Shuffle Loop' (nút bật `player.enableShuffleLoop(songs)` + nút info mở AlertDialog giải thích với cùng backgroundColor c.card, bo 16, title Row icon + AppStrings.shuffleLoop, nội dung AppStrings.shuffleLoopDescription, Semantics label AppStrings.shuffleLoopInfo) được copy-paste ở 3 màn: `album_detail_screen.dart:107-180`, `artist_detail_screen.dart:113-186`, `playlist_screen.dart:540-630` (~70 dòng mỗi bản). Phase 7 đã gom chuỗi về AppStrings nhưng widget/dialog vẫn nhân ba; sửa layout hay hành vi (vd. xác nhận trước khi bật) phải sửa 3 chỗ.
 
 ```dart
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+label: AppStrings.shuffleLoopInfo,
 ```
 **Fix:**
 ```dart
-// Xoá glass_card.dart; trong downloader:
-import 'package:muziczz/widgets/glass_container.dart';
-GlassContainer(
-  padding: const EdgeInsets.all(16),
-  child: onTap == null ? child : InkWell(onTap: onTap, child: child),
+// lib/widgets/shuffle_loop_header.dart
+class ShuffleLoopHeader extends StatelessWidget {
+  const ShuffleLoopHeader({super.key, required this.songs, required this.onEnabled});
+  final List<SongItem> songs; final VoidCallback onEnabled;
+  @override
+  Widget build(BuildContext context) => Row(children: [
+    _ActionButton(label: AppStrings.shuffleLoop, onTap: () async {
+      await context.read<PlayerProvider>().enableShuffleLoop(songs); onEnabled();
+    }),
+    IconButton(tooltip: AppStrings.shuffleLoopInfo, icon: const Icon(Icons.info_outline),
+      onPressed: () => showShuffleLoopInfoDialog(context)),
+  ]);
+}
+Future<void> showShuffleLoopInfoDialog(BuildContext context) => showDialog(...); // 1 bản duy nhất
+```
+
+## [LOW] missing_semantics — `lib/screens/library_screen.dart:252`
+confidence 0.85
+
+Nút back của LibraryScreen (khi không embedded) là IconButton chỉ có icon, không có tooltip nên TalkBack/VoiceOver chỉ đọc 'Button' không rõ chức năng; các màn hình khác (ArtistDetail, AlbumDetail, NowPlaying) đều đã đặt tooltip: AppStrings.back.
+
+```dart
+                      IconButton(
+                        icon: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+```
+**Fix:**
+```dart
+IconButton(
+  tooltip: AppStrings.back,
+  icon: Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: c.textPrimary),
+  onPressed: () => Navigator.pop(context),
 )
 ```
 
-## [LOW] opacity_animation — `lib/screens/onboarding_screen.dart:173`
-confidence 0.80
+## [LOW] missing_semantics — `lib/widgets/library/bulk_playlist_sheet.dart:63`
+confidence 0.85
 
-Widget Opacity được rebuild mỗi tick của _pulseCtrl (repeat suốt >5 giây quét), mỗi frame tạo saveLayer mới. FadeTransition dùng OpacityLayer ở compositor, không rebuild widget.
+Nút đóng sheet 'Thêm vào playlist' là IconButton chỉ có icon close, không tooltip → screen reader không đọc được tên nút. Không nhất quán với các IconButton còn lại trong dự án vốn đều có tooltip.
 
 ```dart
-                          Opacity(opacity: _pulseOpacity.value, child: child),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
 ```
 **Fix:**
 ```dart
-ScaleTransition(
-  scale: _pulseScale,
-  child: FadeTransition(
-    opacity: _pulseOpacity,
-    child: Container(/* pulse icon */),
+IconButton(
+  tooltip: AppStrings.close,
+  onPressed: () => Navigator.pop(context),
+  icon: Icon(Icons.close_rounded, color: c.textTertiary, size: 22),
+),
+```
+
+## [LOW] missing_semantics — `lib/widgets/library/selection_header.dart:27`
+confidence 0.85
+
+Nút X thoát chế độ chọn là IconButton chỉ có icon, không có tooltip/label → TalkBack đọc là nút không tên; người dùng khiếm thị không biết đây là nút hủy chọn. Các IconButton khác trong dự án (queue_sheet, top_bar, song_info, library_search_bar) đều có tooltip.
+
+```dart
+          IconButton(
+            icon: Icon(Icons.close_rounded, color: c.textPrimary, size: 22),
+            onPressed: onCancel,
+```
+**Fix:**
+```dart
+IconButton(
+  tooltip: AppStrings.cancel,
+  icon: Icon(Icons.close_rounded, color: c.textPrimary, size: 22),
+  onPressed: onCancel,
+),
+```
+
+## [LOW] missing_semantics — `lib/features/downloader/screens/download/download_screen.dart:68`
+confidence 0.80
+
+Nút back chỉ có icon, không có tooltip/semanticLabel nên TalkBack đọc 'Button' không rõ nghĩa; analyze_screen và downloader_gateway_screen đều dùng tooltip: AppStrings.back nên file này là ngoại lệ không nhất quán.
+
+```dart
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+            onPressed: () => Navigator.pop(context),
+```
+**Fix:**
+```dart
+leading: IconButton(
+  tooltip: AppStrings.back,
+  icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+  onPressed: () => Navigator.pop(context),
+),
+```
+
+## [LOW] missing_semantics — `lib/features/downloader/screens/format/format_screen.dart:216`
+confidence 0.80
+
+Nút back trong AppBar chỉ có icon, không có tooltip/semantic label → TalkBack đọc 'Button' không tên; SummaryScreen cùng feature đã đặt tooltip 'Về trang chủ' nên đây là chỗ thiếu nhất quán.
+
+```dart
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+            onPressed: () => Navigator.pop(context),
+```
+**Fix:**
+```dart
+leading: IconButton(
+  tooltip: 'Quay lại',
+  icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+  onPressed: () => Navigator.pop(context),
+),
+```
+
+## [LOW] tap_target_small — `lib/features/downloader/screens/playlist_picker/playlist_picker_screen.dart:574`
+confidence 0.80
+
+GestureDetector 'Thử lại' nằm BÊN TRONG padding của GlassContainer nên vùng bấm chỉ bằng Row (icon 18 + text, cao ~20dp); chạm vào phần padding của khung kính không kích hoạt gì. Đây là đường phục hồi duy nhất khi tải playlist lỗi, user phải chạm rất chính xác mới retry được, và không có Semantics(button) cho screen reader.
+
+```dart
+            GlassContainer(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              child: GestureDetector(
+```
+**Fix:**
+```dart
+Semantics(
+  button: true,
+  child: GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onTap: onRetry,
+    child: GlassContainer(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [...]),
+    ),
   ),
 )
+```
+
+## [LOW] missing_semantics — `lib/features/downloader/screens/playlist_picker/playlist_picker_screen.dart:160`
+confidence 0.80
+
+Nút back (dòng 160) và nút xóa ô tìm kiếm IconButton(icon: Icon(Icons.close)) (dòng 190) đều chỉ có icon, không tooltip; TalkBack đọc 'Button' không rõ chức năng, trái với analyze/gateway đã dùng tooltip: AppStrings.back.
+
+```dart
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+            onPressed: () => Navigator.pop(context),
+```
+**Fix:**
+```dart
+leading: IconButton(
+  tooltip: AppStrings.back,
+  icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+  onPressed: () => Navigator.pop(context),
+),
+// và
+IconButton(
+  tooltip: 'Xóa tìm kiếm',
+  icon: const Icon(Icons.close),
+  onPressed: ...,
+)
+```
+
+## [LOW] hardcoded_style — `lib/features/downloader/widgets/platform_chip.dart:58`
+confidence 0.80
+
+Màu platform hardcode hex, nghiêm trọng nhất là Twitter/X = trắng thuần: app có AppColorsData.light, ở light theme chip trở thành chữ trắng + icon trắng trên nền trắng 12% alpha → gần như vô hình khi user dán link X. Các hex khác (0xFFFF3B30, 0xFF69C9D0...) cũng bỏ qua token theme.
+
+```dart
+      case 'twitter / x':
+        return const Color(0xFFFFFFFF);
+```
+**Fix:**
+```dart
+case 'twitter / x':
+  return c.textPrimary; // hoặc thêm token brandX vào AppColorsData cho từng brightness
+```
+
+## [LOW] hardcoded_ui_strings — `lib/screens/splash_screen.dart:156`
+confidence 0.80
+
+Splash hardcode 'Muzicz' (dòng 157) và 'AUDIO' (dòng 166) trong khi AppStrings đã có brandName/brandSuffix và WelcomeScreen đang dùng chúng. Hiện tại splash hiển thị 'Muzicz' còn welcome hiển thị AppStrings.brandName = 'Muzic' nên tên thương hiệu lệch nhau giữa 2 màn hình liên tiếp; sửa một nơi sẽ không đồng bộ nơi kia.
+
+```dart
+                      Text(
+                        'Muzicz',
+```
+**Fix:**
+```dart
+Text(AppStrings.brandName, style: ...),
+Text(AppStrings.brandSuffix, style: ...),
 ```
 
 ## [LOW] feature_structure_drift — (cross-file)
 confidence 0.75
-related: lib/features/downloader/core/theme/app_colors.dart, lib/features/music_visual/poc/android_visualizer_poc_screen.dart, lib/screens/profile_screen.dart, lib/providers/music_provider.dart, lib/services/storage_service.dart
+related: lib/screens, lib/widgets, lib/features/downloader, lib/features/music_visual, lib/core/app_strings.dart
 
-Repo dùng 2 quy ước cùng lúc: phần lõi là layered-flat (`lib/screens`, `lib/providers`, `lib/services`, `lib/widgets`, `lib/models`, `lib/theme`) còn `lib/features/downloader` và `lib/features/music_visual` là feature-module tự chứa (mỗi feature có models/providers/services/widgets riêng, downloader còn có `core/theme` + `core/constants` riêng, music_visual có `poc/` chứa màn hình vẫn được navigate tới từ profile). Muốn tìm 'provider của màn hình X' phải đoán xem X thuộc quy ước nào; theme và glass widget vì thế bị nhân đôi.
+Repo vẫn dùng 2 quy ước cùng lúc: phần lõi là layered-flat (`lib/screens`, `lib/providers`, `lib/services`, `lib/widgets`, `lib/models`, `lib/theme`, `lib/utils`) còn `lib/features/downloader` và `lib/features/music_visual` là feature-module tự chứa (mỗi feature có models/providers/services/widgets riêng; downloader còn có `core/constants` + `core/app_router`; music_visual có `poc/` chứa màn hình vẫn được navigate tới từ profile). Phase 7 mới tạo `lib/core/app_strings.dart` như bước đầu của `lib/core/`, nhưng `lib/theme`, `lib/widgets/glass_container.dart`, `lib/utils/duration_format.dart` (dùng chung cho cả downloader) vẫn nằm ở tầng lõi flat, và các widget tách ở Phase 4 đi theo 2 nơi khác nhau (`lib/widgets/now_playing|library/` vs `lib/features/downloader/widgets/format/`). Muốn tìm 'widget của màn X' phải đoán X thuộc quy ước nào.
 
 **Fix:**
 ```dart
-// Chọn một quy ước. Đề xuất: feature-first, dùng chung core/
-// lib/core/{theme,widgets,utils}      <- app_colors*, app_theme, glass_container, duration_format
-// lib/features/player/{screens,providers,services,widgets}   <- now_playing, mini_player, player_provider, audio_handler
-// lib/features/library/{screens,providers,services,widgets}  <- library, playlist, album/artist detail, music_provider, music_scanner, storage_service
-// lib/features/downloader/...  (bỏ core/theme, dùng lib/core/theme)
-// lib/features/music_visual/...  (đổi poc/ -> screens/ hoặc gate sau feature flag)
+// Chọn MỘT quy ước — đề xuất feature-first:
+// lib/core/{theme,widgets,utils,strings}/      <- dùng chung (AppColorsData, GlassContainer, DurationFormat, AppStrings)
+// lib/features/library/{screens,widgets,providers}/   <- library_screen + widgets/library
+// lib/features/player/{screens,widgets,providers,services}/ <- now_playing + widgets/now_playing + player_provider + audio_handler
+// lib/features/downloader/...  (giữ)
+// lib/features/music_visual/... (dời poc/ ra khỏi cây production hoặc gate bằng feature flag rõ ràng)
+// Làm trong 1 session riêng: chỉ đổi import, dart analyze sạch, không đổi behavior.
 ```
 
-## [LOW] tap_target_small — `lib/features/downloader/screens/download/download_screen.dart:581`
+## [LOW] tap_target_small — `lib/features/downloader/widgets/format/bottom_download_bar.dart:66`
 confidence 0.75
 
-_TinyButton (Hủy/Thử lại/Xóa) là GestureDetector padding 10x5 với icon 13 + text 12 → cao ~26dp, dưới ngưỡng 44dp; nút Xóa/Hủy cạnh nhau dễ bấm nhầm.
+Hàng chọn thư mục lưu là GestureDetector cao ~31dp (padding dọc 8 + chữ 11pt + icon 13-14) — dưới ngưỡng 44-48dp; đây là cách duy nhất đổi thư mục trước khi tải nên user dễ chạm trượt, và GestureDetector không có role button/label cho TalkBack.
 
 ```dart
-class _TinyButton extends StatelessWidget {
-```
-**Fix:**
-```dart
-ConstrainedBox(constraints: const BoxConstraints(minHeight: 44, minWidth: 44), child: Material(color: Colors.transparent, child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(8), child: Padding(...))))
-```
-
-## [LOW] tap_target_small — `lib/features/downloader/screens/summary/summary_screen.dart:338`
-confidence 0.75
-
-Nút 'Thử lại tất cả' là GestureDetector padding 10x4 với text 12px → cao ~24dp, dưới ngưỡng 44dp.
-
-```dart
-                onTap: onRetryAll,
-```
-**Fix:**
-```dart
-TextButton.icon(onPressed: onRetryAll, style: TextButton.styleFrom(minimumSize: const Size(44, 44)), icon: const Icon(Icons.refresh_rounded, size: 14), label: const Text('Thử lại tất cả'))
-```
-
-## [LOW] missing_semantics — `lib/features/downloader/widgets/primary_icon_button.dart:68`
-confidence 0.75
-
-Nút chỉ có icon, không có tooltip hay Semantics label nên TalkBack chỉ đọc 'button' không rõ chức năng (paste/clear/analyze...).
-
-```dart
-: Icon(icon, color: Colors.white, size: 20),
-```
-**Fix:**
-```dart
-class PrimaryIconButton { final String semanticLabel; ... }
-
-return Semantics(
-  button: true,
-  enabled: enabled,
-  label: semanticLabel,
-  child: Tooltip(message: semanticLabel, child: AnimatedOpacity(...)),
-);
-```
-
-## [LOW] hardcoded_style — `lib/screens/library_screen.dart:456`
-confidence 0.75
-
-Menu sắp xếp dùng token tĩnh AppColors (hằng dark-only) trong khi phần còn lại của file dùng context.appColors theo theme; ở light mode chữ trong PopupMenu (nền c.card) sẽ sai màu. Ngoài ra Colors.white xuất hiện 2 chỗ (dòng 726, 1270) dù đã có token c.onPlayer.
-
-```dart
-          color: _sortType == t ? AppColors.primary : AppColors.textPrimary,
-```
-**Fix:**
-```dart
-final c = context.appColors;
-color: _sortType == t ? c.primary : c.textPrimary,
-```
-
-## [LOW] tap_target_small — `lib/screens/now_playing_screen.dart:826`
-confidence 0.75
-
-Nút đóng pill bar chỉ 16 + 6*2 = 28dp; các action icon trong _buildActionIcon 20 + 10*2 = 40dp; link tên album ở _TopBar (chữ 12sp + icon 9) chỉ cao ~18dp → 3 vùng bấm dưới ngưỡng 44–48dp, khó chạm chính xác.
-
-```dart
-                              padding: const EdgeInsets.all(6),
-```
-**Fix:**
-```dart
-GestureDetector(
-  behavior: HitTestBehavior.opaque,
-  onTap: () => setState(() => _isExpanded = false),
-  child: SizedBox(
-    width: 48, height: 48,
-    child: Center(child: Container(padding: const EdgeInsets.all(6), ... child: const Icon(Icons.close_rounded, size: 16))),
-  ),
-)
-```
-
-## [LOW] opacity_animation — `lib/widgets/theme_switch_wrapper.dart:69`
-confidence 0.75
-
-Overlay toàn màn hình dùng Opacity rebuild mỗi tick trong AnimatedBuilder (560ms) ngay lúc cả cây widget đang rebuild vì đổi theme — mỗi frame thêm một saveLayer full-screen. FadeTransition dùng OpacityLayer, không rebuild widget.
-
-```dart
-                      ? Opacity(
-                        opacity: _opacity.value * 0.45,
-```
-**Fix:**
-```dart
-FadeTransition(
-  opacity: Tween(begin: 0.0, end: 0.45).animate(_opacity),
-  child: IgnorePointer(
-    ignoring: !_ctrl.isAnimating,
-    child: const ModalBarrier(color: Colors.black),
-  ),
-)
-```
-
-## [LOW] tap_target_small — `lib/features/downloader/screens/analyze/analyze_screen.dart:149`
-confidence 0.70
-
-Nút back là GestureDetector 36x36 và _ActionIconButton (Dán/Xóa) cũng 36x36 — dưới ngưỡng 44-48dp, dễ bấm trượt (2 chỗ trong file).
-
-```dart
-                              Navigator.of(context, rootNavigator: true).pop(),
-```
-**Fix:**
-```dart
-SizedBox(width: 48, height: 48, child: IconButton(tooltip: 'Quay lại', icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 16), onPressed: () => Navigator.of(context, rootNavigator: true).pop()))
-```
-
-## [LOW] missing_semantics — `lib/features/downloader/screens/analyze/analyze_screen.dart:519`
-confidence 0.70
-
-Nút chọn thư mục và nút back chỉ có icon, không tooltip/Semantics label — TalkBack đọc 'button' không rõ chức năng.
-
-```dart
-            PrimaryIconButton(
-              icon: Icons.folder_open_rounded,
-              onPressed: onPickFolder,
-```
-**Fix:**
-```dart
-Semantics(label: 'Chọn thư mục lưu', button: true, child: PrimaryIconButton(icon: Icons.folder_open_rounded, onPressed: onPickFolder))
-```
-
-## [LOW] form_field_ergonomics — `lib/features/downloader/screens/analyze/analyze_screen.dart:633`
-confidence 0.70
-
-TextField khai báo action 'Go' nhưng không có onSubmitted, bấm Go trên bàn phím không phân tích gì — user phải đóng bàn phím rồi tìm nút Phân tích.
-
-```dart
-                  textInputAction: TextInputAction.go,
-```
-**Fix:**
-```dart
-onSubmitted: (_) => onSubmit(), // truyền _analyze xuống _UrlInputCard
-```
-
-## [LOW] hardcoded_style — `lib/features/downloader/screens/analyze/analyze_screen.dart:857`
-confidence 0.70
-
-Màu ngữ nghĩa (error 0xFFFF3B30 x4, success 0xFF34C759, warning 0xFFFF9F0A) hardcode rải rác thay vì token trong AppColors — đổi theme phải sửa từng chỗ.
-
-```dart
-        color: const Color(0xFFFF3B30).withValues(alpha: 0.08),
-```
-**Fix:**
-```dart
-// AppColors: static const Color error = Color(0xFFFF3B30);
-color: AppColors.error.withValues(alpha: 0.08),
-```
-
-## [LOW] hardcoded_style — `lib/features/downloader/screens/download/download_screen.dart:136`
-confidence 0.70
-
-Màu trạng thái queued/done/error (0xFFFF9F0A, 0xFF34C759, 0xFFFF3B30) hardcode lặp lại ~12 lần trong 4 widget khác nhau thay vì token AppColors.
-
-```dart
-            color: const Color(0xFFFF9F0A),
-```
-**Fix:**
-```dart
-// AppColors: static const warning = Color(0xFFFF9F0A); success = Color(0xFF34C759); error = Color(0xFFFF3B30);
-color: AppColors.warning,
-```
-
-## [LOW] hardcoded_ui_strings — `lib/features/downloader/screens/downloader_gateway_screen.dart:93`
-confidence 0.70
-
-Toàn bộ copy của màn hình ('Tải nhạc từ URL', 'Quét lại thư viện', 'Cần kết nối mạng để tải nhạc', các dòng Lưu ý...) nằm inline trong widget, không có file strings tập trung.
-
-```dart
-'Tải nhạc',
-```
-**Fix:**
-```dart
-Text(DownloaderStrings.gatewayTitle, style: ...)
-```
-
-## [LOW] hardcoded_style — `lib/features/downloader/screens/downloader_gateway_screen.dart:161`
-confidence 0.70
-
-Màu trạng thái online/offline, màu cảnh báo 0xFFFF9500 (dòng 310), gradient 0xFF5C6BC0 (dòng 136) và màu disabled 0xFF2A2A2A (dòng 406) viết cứng thay vì token AppColors; cùng màu 34C759/FF3B30 lặp lại ở network_status_badge nên đổi theme sẽ lệch nhau.
-
-```dart
-final color = isOnline ? const Color(0xFF34C759) : const Color(0xFFFF3B30);
-```
-**Fix:**
-```dart
-final color = isOnline ? AppColors.success : AppColors.error;
-```
-
-## [LOW] missing_semantics — `lib/features/downloader/screens/downloader_gateway_screen.dart:388`
-confidence 0.70
-
-Hai nút chính của màn hình là GestureDetector bọc Container, không có Semantics(button: true, enabled:) nên TalkBack không nhận ra là nút và không đọc trạng thái disabled/lý do; IconButton back ở dòng 84 cũng thiếu tooltip.
-
-```dart
-onTapDown: widget.enabled ? (_) => _ctrl.forward() : null,
-```
-**Fix:**
-```dart
-return Semantics(
-  button: true,
-  enabled: widget.enabled,
-  label: widget.label,
-  hint: widget.enabled ? widget.subtitle : widget.disabledReason,
-  child: AnimatedOpacity(...),
-);
-```
-
-## [LOW] hardcoded_style — `lib/features/downloader/screens/format/format_screen.dart:338`
-confidence 0.70
-
-Màu warning 0xFFFF9500 (x4), success 0xFF34C759, warning 0xFFFF9F0A hardcode trong widget thay vì token AppColors — 2 sắc cam khác nhau cho cùng ngữ nghĩa warning.
-
-```dart
-                    color: const Color(0xFFFF9500).withValues(alpha: 0.1),
-```
-**Fix:**
-```dart
-color: AppColors.warning.withValues(alpha: 0.1), // AppColors.warning = Color(0xFFFF9F0A)
-```
-
-## [LOW] tap_target_small — `lib/features/downloader/screens/playlist_picker/playlist_picker_screen.dart:253`
-confidence 0.70
-
-Nút 'Chọn tất cả / Bỏ chọn tất cả' là GestureDetector text 12px padding 6 dọc → cao ~28dp, dưới ngưỡng 44dp.
-
-```dart
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-```
-**Fix:**
-```dart
-ConstrainedBox(constraints: const BoxConstraints(minHeight: 44), child: TextButton(onPressed: allSelected ? onDeselectAll : onSelectAll, child: Text(...)))
-```
-
-## [LOW] hardcoded_style — `lib/features/downloader/screens/summary/summary_screen.dart:195`
-confidence 0.70
-
-Màu success/error (0xFF34C759, 0xFF30D158, 0xFFFF3B30 x4) hardcode rải rác thay vì token AppColors — không đồng bộ với các màn khác nếu đổi palette.
-
-```dart
-                      colors: [Color(0xFF34C759), Color(0xFF30D158)],
-```
-**Fix:**
-```dart
-gradient: AppColors.successGradient, // định nghĩa trong AppColors
-```
-
-## [LOW] hardcoded_style — `lib/features/downloader/widgets/network_status_badge.dart:76`
-confidence 0.70
-
-Màu online/offline viết cứng (trùng với downloader_gateway_screen) và fontSize 11 magic number thay vì token AppColors / textTheme; đổi theme sẽ không đồng bộ.
-
-```dart
-? const Color(0xFF34C759) // xanh lá hệ thống iOS
-```
-**Fix:**
-```dart
-final color = isOnline ? AppColors.success : AppColors.error;
-```
-
-## [LOW] hardcoded_ui_strings — `lib/features/music_visual/widgets/visual_mode_selector_sheet.dart:97`
-confidence 0.70
-
-Tiêu đề, mô tả, nút 'Áp dụng', badge 'Hiện tại' và mô tả từng mode viết inline trong widget; không có file strings tập trung.
-
-```dart
-                      'Chọn phong cách hiển thị khi phát nhạc',
-```
-**Fix:**
-```dart
-Text(S.visualModeSubtitle, style: ...),
-```
-
-## [LOW] missing_semantics — `lib/screens/album_detail_screen.dart:41`
-confidence 0.70
-
-2 control chỉ có icon không có nhãn a11y: nút back (không tooltip) và nút info Shuffle Loop (GestureDetector bọc Icon, dòng 117).
-
-```dart
-            leading: IconButton(
-              icon: const Icon(
-```
-**Fix:**
-```dart
-IconButton(
-  tooltip: 'Quay lại',
-  icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-  onPressed: () => Navigator.pop(context),
-)
-```
-
-## [LOW] hardcoded_ui_strings — `lib/screens/album_detail_screen.dart:198`
-confidence 0.70
-
-Nhãn nút, chuỗi đếm bài và nội dung dialog Shuffle Loop ghi cứng inline (trùng nguyên văn với ArtistDetailScreen, nên càng cần gom về một file strings).
-
-```dart
-                '${songs.length} bài hát',
-```
-**Fix:**
-```dart
-AppStrings.songCount(songs.length)
-```
-
-## [LOW] missing_semantics — `lib/screens/artist_detail_screen.dart:46`
-confidence 0.70
-
-2 control chỉ có icon không có nhãn a11y: nút back (không tooltip) và nút info Shuffle Loop (GestureDetector bọc Icon, dòng 119) — screen reader không biết chúng là nút hay làm gì.
-
-```dart
-            leading: IconButton(
-              icon: Icon(
-                Icons.arrow_back_ios_new_rounded,
-```
-**Fix:**
-```dart
-IconButton(
-  tooltip: 'Quay lại',
-  icon: Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: c.onPlayer),
-  onPressed: () => Navigator.pop(context),
-)
-// nút info: Semantics(button: true, label: 'Giải thích Shuffle Loop', child: GestureDetector(...))
-```
-
-## [LOW] hardcoded_ui_strings — `lib/screens/artist_detail_screen.dart:72`
-confidence 0.70
-
-Nhãn nút, tiêu đề section, nội dung dialog Shuffle Loop và chuỗi đếm '$songCount bài hát · $albumCount album' đều ghi cứng inline.
-
-```dart
-                      label: 'Phát tất cả',
-```
-**Fix:**
-```dart
-label: AppStrings.playAll,
-```
-
-## [LOW] expensive_work_in_build — `lib/screens/artist_detail_screen.dart:218`
-confidence 0.70
-
-Mỗi item của ListView album tạo lại toàn bộ list entries (O(n) cho từng item → O(n²)), và bản thân việc gom bài theo album (dòng 29-32) chạy lại trong build mỗi khi PlayerProvider/MusicProvider notify (play/pause, onSongPlayed).
-
-```dart
-                    final entry = albumMap.entries.toList()[i];
-```
-**Fix:**
-```dart
-final albums = albumMap.entries.toList(); // ngoài itemBuilder
-...
-itemBuilder: (_, i) {
-  final entry = albums[i];
-// hoặc nhận albumMap đã gom sẵn từ MusicProvider.artistAlbums(artistId)
-```
-
-## [LOW] hardcoded_ui_strings — `lib/screens/hidden_songs_screen.dart:31`
-confidence 0.70
-
-Chuỗi giao diện viết cứng trong widget, không có file strings tập trung.
-
-```dart
-          'Bài hát đã ẩn',
-```
-**Fix:**
-```dart
-Text(AppStrings.hiddenSongs)
-```
-
-## [LOW] hardcoded_ui_strings — `lib/screens/home_screen.dart:359`
-confidence 0.70
-
-Chuỗi giao diện (lời chào, hint, tiêu đề section, empty state) viết cứng trong widget, không có file strings tập trung.
-
-```dart
-          hintText: 'Tìm bài hát, nghệ sĩ, album…',
-```
-**Fix:**
-```dart
-hintText: AppStrings.searchHint,
-```
-
-## [LOW] hardcoded_ui_strings — `lib/screens/library_screen.dart:260`
-confidence 0.70
-
-Toàn bộ chuỗi giao diện (tiêu đề, hint, snackbar, dialog) viết cứng trong widget, không có file strings tập trung nên không thể địa phương hoá.
-
-```dart
-                        'Thư viện',
-```
-**Fix:**
-```dart
-Text(AppStrings.library) // gom vào lib/l10n hoặc lib/constants/strings.dart
-```
-
-## [LOW] tap_target_small — `lib/screens/library_screen.dart:341`
-confidence 0.70
-
-Nút xoá tìm kiếm là GestureDetector bọc Icon 18px không padding nên vùng chạm chỉ ~18x18dp, rất khó bấm trúng.
-
-```dart
-                                Icons.close_rounded,
-                                color: c.textTertiary,
-                                size: 18,
-```
-**Fix:**
-```dart
-suffixIcon: IconButton(
-  tooltip: 'Xóa tìm kiếm',
-  icon: Icon(Icons.close_rounded, size: 18, color: c.textTertiary),
-  onPressed: () { _searchCtrl.clear(); context.read<MusicProvider>().setLibrarySearchQuery(''); setState(() {}); },
-)
-```
-
-## [LOW] hardcoded_style — `lib/screens/now_playing_screen.dart:391`
-confidence 0.70
-
-Nhiều màu raw (Colors.black.withValues 0.55/0.75, Colors.white54/white38/white24, Slider activeTrackColor: Colors.white) rải rác dù đã có token c.onPlayer*/c.surface* trong AppColorsData → không đồng bộ khi đổi theme/độ tương phản.
-
-```dart
-              color: Colors.black.withValues(alpha: 0.75),
-```
-**Fix:**
-```dart
-color: c.onPlayerGhostBg, // hoặc thêm token c.overlayStrong vào AppColorsData
-style: GoogleFonts.outfit(fontSize: 12, color: c.onPlayerLow),
-```
-
-## [LOW] hardcoded_ui_strings — `lib/screens/now_playing_screen.dart:423`
-confidence 0.70
-
-Hàng chục chuỗi tiếng Việt (nhãn menu, tiêu đề sheet, snackbar, dialog) viết inline trong widget; dự án chưa có i18n hay file strings tập trung nên khó sửa/dịch thống nhất.
-
-```dart
-              'Đang tải lời bài hát…',
-```
-**Fix:**
-```dart
-// lib/core/strings.dart
-abstract final class S {
-  static const lyricsLoading = 'Đang tải lời bài hát…';
-}
-// Text(S.lyricsLoading, ...)
-```
-
-## [LOW] missing_semantics — `lib/screens/now_playing_screen.dart:604`
-confidence 0.70
-
-Bìa album (chạm để lật sang lời bài hát) và _LyricsView (chạm để lật về) là GestureDetector trần không có Semantics button/label; các chip tốc độ và preset hẹn giờ cũng là GestureDetector thuần → screen reader không biết đây là nút bấm được (5 vị trí).
-
-```dart
-    return GestureDetector(
-      onTap: onTap,
-      child: Center(
+            onTap: onPickFolder,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
 ```
 **Fix:**
 ```dart
 Semantics(
   button: true,
-  label: 'Bìa album, chạm để xem lời bài hát',
-  child: GestureDetector(onTap: onTap, child: Center(...)),
+  label: 'Đổi thư mục lưu',
+  child: InkWell(
+    onTap: onPickFolder,
+    borderRadius: BorderRadius.circular(10),
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 44),
+      child: Container(padding: ..., child: Row(...)),
+    ),
+  ),
 )
 ```
 
-## [LOW] form_field_ergonomics — `lib/screens/now_playing_screen.dart:1677`
-confidence 0.70
+## [LOW] image_unbounded — `lib/features/downloader/widgets/format/video_preview_card.dart:23`
+confidence 0.75
 
-Form 2 trường (Tên bài hát, Nghệ sĩ) không có textInputAction next/done và không có onSubmitted → nhấn Enter trên bàn phím không chuyển trường/không lưu, người dùng phải tự đóng bàn phím rồi bấm 'Lưu'.
+Thumbnail YouTube/TikTok thường 1280x720 (maxresdefault) được decode full-res rồi vẽ vào ô 80x52 — ~3.6MB bitmap chiếm image cache cho một ô nhỏ, mỗi lần mở FormatScreen với video mới lại decode một ảnh lớn.
 
 ```dart
-          controller: ctrl,
+                child: CachedNetworkImage(
+                  imageUrl: info.thumbnail!,
+                  width: 80,
 ```
 **Fix:**
 ```dart
-TextField(
-  controller: ctrl,
-  textInputAction: isLast ? TextInputAction.done : TextInputAction.next,
-  onSubmitted: isLast ? (_) => onSave() : null,
+CachedNetworkImage(
+  imageUrl: info.thumbnail!,
+  width: 80,
+  height: 52,
+  memCacheWidth: (80 * MediaQuery.devicePixelRatioOf(context)).round(),
+  fit: BoxFit.cover,
   ...
 )
 ```
 
-## [LOW] hardcoded_ui_strings — `lib/screens/onboarding_screen.dart:289`
-confidence 0.70
+## [LOW] hardcoded_ui_strings — `lib/features/music_visual/poc/android_visualizer_poc_screen.dart:59`
+confidence 0.75
 
-Mọi chuỗi trạng thái quét, lỗi, nút 'Thử lại'/'Mở cài đặt' và 20 câu quote đều ghi cứng inline, không có file strings trung tâm.
+Toàn bộ copy của màn hình POC viết inline ('POC này chỉ dành cho Android.', 'Chọn bài test', 'Realtime RMS (POC)', 'Play'/'Pause', SnackBar 'Cần quyền mic cho Android Visualizer; app không ghi âm.') trong khi sheet cùng feature đã dùng AppStrings.visualizerPocTitle/visualizerPocSubtitle. Sửa copy hoặc thêm ngôn ngữ phải chạm vào widget này.
 
 ```dart
-          'Đang quét nhạc của bạn…',
+        body: Center(child: Text('POC này chỉ dành cho Android.')),
 ```
 **Fix:**
 ```dart
-Text(AppStrings.scanningLibrary)  // lib/l10n/app_strings.dart
+// app_strings.dart
+static const visualizerPocAndroidOnly = 'POC này chỉ dành cho Android.';
+static const visualizerPocPickTrack = 'Chọn bài test';
+// screen
+body: Center(child: Text(AppStrings.visualizerPocAndroidOnly)),
 ```
 
-## [LOW] hardcoded_ui_strings — `lib/screens/online_screen.dart:34`
-confidence 0.70
+## [LOW] hardcoded_ui_strings — `lib/providers/theme_provider.dart:35`
+confidence 0.75
 
-Chuỗi giao diện viết cứng trong widget, không có file strings tập trung.
+Nhãn hiển thị cho user ('Bình thường', 'Xịn xò', và 'Dark'/'AMOLED'/'Light' ở AppThemeMode phía trên) được hardcode trong enum của provider thay vì đi qua lib/core/app_strings.dart — file chuẩn của dự án. Các label này được render trực tiếp ở profile_screen.dart (subtitle), bottom_nav_style_selector_sheet.dart và theme_selector_sheet.dart, nên lệch ngôn ngữ (Anh/Việt lẫn lộn) và không thể đổi/dịch tập trung.
 
 ```dart
-                    'Trực tuyến',
+  normal('normal', 'Bình thường'),
+  fancy('fancy', 'Xịn xò');
 ```
 **Fix:**
 ```dart
-Text(AppStrings.online)
+// app_strings.dart
+static const themeDark = 'Dark';
+static const bottomNavNormal = 'Bình thường';
+static const bottomNavFancy = 'Xịn xò';
+// theme_provider.dart
+normal('normal', AppStrings.bottomNavNormal),
+fancy('fancy', AppStrings.bottomNavFancy);
 ```
 
-## [LOW] missing_semantics — `lib/screens/playlist_screen.dart:248`
-confidence 0.70
+## [LOW] missing_semantics — `lib/screens/hidden_songs_screen.dart:23`
+confidence 0.75
 
-FAB tạo playlist, nút info (dòng 492), nút gỡ bài (dòng 652) là GestureDetector bọc Icon không có Semantics/tooltip; các IconButton back/edit (dòng 354, 363) cũng không có tooltip nên screen reader không biết chức năng.
+Nút quay lại của màn Bài hát đã ẩn chỉ có icon, không có `tooltip`, trong khi ProfileScreen và PlaylistDetailScreen đều đặt `tooltip: AppStrings.back` cho cùng nút này. TalkBack đọc 'nút' không nhãn, người dùng khiếm thị không biết đây là nút quay lại.
 
 ```dart
-    return GestureDetector(
-      onTap: () => _showCreateDialog(context),
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
 ```
 **Fix:**
 ```dart
-Semantics(
-  button: true,
-  label: 'Tạo danh sách phát',
-  child: GestureDetector(onTap: () => _showCreateDialog(context), child: ...),
-)
+leading: IconButton(
+  tooltip: AppStrings.back,
+  icon: Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: c.textPrimary),
+  onPressed: () => Navigator.pop(context),
+),
 ```
 
-## [LOW] undisposed_resource — `lib/screens/playlist_screen.dart:267`
-confidence 0.70
+## [LOW] missing_semantics — `lib/screens/online_screen.dart:25`
+confidence 0.75
 
-TextEditingController tạo trong _showCreateDialog không bao giờ được dispose; mỗi lần mở dialog tạo playlist rò rỉ một controller.
-
-```dart
-    final ctrl = TextEditingController();
-```
-**Fix:**
-```dart
-showDialog(...).whenComplete(ctrl.dispose);
-```
-
-## [LOW] hardcoded_ui_strings — `lib/screens/playlist_screen.dart:381`
-confidence 0.70
-
-Mọi chuỗi giao diện (nút, dialog, empty state) viết cứng tiếng Việt trong widget, không có file strings tập trung.
-
-```dart
-                        label: 'Phát tất cả',
-```
-**Fix:**
-```dart
-label: AppStrings.playAll,
-```
-
-## [LOW] tap_target_small — `lib/screens/playlist_screen.dart:576`
-confidence 0.70
-
-Nút 'Thêm bài' là GestureDetector bọc Row icon 18px + chữ 13px không padding (cao ~20dp); nút gỡ bài trong danh sách (dòng 652) cũng chỉ ~36dp. Khó chạm chính xác.
-
-```dart
-                  GestureDetector(
-                    onTap: () => _showAddSongsSheet(context, music, playlist),
-```
-**Fix:**
-```dart
-TextButton.icon(
-  onPressed: () => _showAddSongsSheet(context, music, playlist),
-  icon: Icon(Icons.add_rounded, size: 18),
-  label: Text('Thêm bài'),
-)
-```
-
-## [LOW] undisposed_resource — `lib/screens/playlist_screen.dart:679`
-confidence 0.70
-
-TextEditingController trong _showEditDialog không được dispose sau khi dialog đóng, rò rỉ mỗi lần đổi tên.
-
-```dart
-    final ctrl = TextEditingController(text: playlist.name);
-```
-**Fix:**
-```dart
-showDialog(...).whenComplete(ctrl.dispose);
-```
-
-## [LOW] hardcoded_ui_strings — `lib/screens/profile_screen.dart:130`
-confidence 0.70
-
-Toàn bộ chuỗi UI ghi cứng; đặc biệt số phiên bản '1.0.0' lệch với pubspec (2.0.0+19) và hộp About viết sai tên app 'Muzizc Audio'. Nên đọc version từ package_info_plus và gom chuỗi vào một file strings.
-
-```dart
-                          subtitle: 'Muzicz Audio v1.0.0',
-```
-**Fix:**
-```dart
-final info = await PackageInfo.fromPlatform();
-subtitle: '${AppStrings.appName} v${info.version}',
-```
-
-## [LOW] missing_semantics — `lib/screens/profile_screen.dart:493`
-confidence 0.70
-
-IconButton quay lại chỉ có icon, không có tooltip nên TalkBack đọc là 'Button' không rõ chức năng.
+Nút quay lại của OnlineScreen (khi mở dạng route riêng, `isEmbedded == false`) là IconButton chỉ có icon, không `tooltip`, khác với chuẩn `tooltip: AppStrings.back` đã dùng ở profile_screen.dart và playlist_screen.dart. Screen reader đọc thành nút không tên.
 
 ```dart
                     IconButton(
@@ -1351,128 +723,610 @@ IconButton quay lại chỉ có icon, không có tooltip nên TalkBack đọc l�
 **Fix:**
 ```dart
 IconButton(
-  tooltip: 'Quay lại',
+  tooltip: AppStrings.back,
   icon: Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: c.textPrimary),
   onPressed: () => Navigator.pop(context),
+),
+```
+
+## [LOW] no_action_feedback — `lib/widgets/now_playing/sheets/edit_song_sheet.dart:53`
+confidence 0.75
+
+Người dùng xóa trắng tên bài rồi bấm Lưu (hoặc Done trên bàn phím): sheet đóng ngay mà không lưu gì và không có thông báo, người dùng tưởng đã lưu. Tương tự, xóa trắng nghệ sĩ thì giá trị cũ được giữ lại âm thầm (`a.isEmpty ? song.artist : a`). Điều kiện `t.isEmpty ? song.title : t` bên trong nhánh `t.isNotEmpty` cũng là mã chết, cho thấy logic chưa được nghĩ kỹ.
+
+```dart
+    if (t.isNotEmpty) {
+      context.read<MusicProvider>().updateSongMeta(
+        song.id,
+```
+**Fix:**
+```dart
+if (t.isEmpty) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(AppStrings.titleRequired)),
+  );
+  return; // giữ sheet mở để người dùng sửa
+}
+context.read<MusicProvider>().updateSongMeta(song.id, t, a.isEmpty ? song.artist : a);
+Navigator.pop(context);
+```
+
+## [LOW] undisposed_resource — `lib/features/downloader/core/app_router.dart:77`
+confidence 0.70
+
+transitionsBuilder được ModalRoute gọi lại mỗi frame trong lúc chuyển màn (và mỗi khi secondaryAnimation chạy khi có route đè lên). Mỗi lần gọi tạo một CurvedAnimation mới; constructor của CurvedAnimation gọi parent.addStatusListener(...) và chỉ gỡ trong dispose(), ở đây không bao giờ dispose. Mỗi lần push/pop tích thêm ~20 listener + CurvedAnimation lên animation của route, chỉ được giải phóng khi route bị huỷ; route analyze nằm đáy stack nên giữ chúng suốt phiên downloader.
+
+```dart
+        final curved = CurvedAnimation(
+```
+**Fix:**
+```dart
+static final _slideTween = Tween<Offset>(
+  begin: const Offset(1.0, 0.0),
+  end: Offset.zero,
+).chain(CurveTween(curve: Curves.easeOutCubic));
+
+transitionsBuilder: (_, animation, __, child) => SlideTransition(
+  position: animation.drive(_slideTween),
+  child: child,
+),
+```
+
+## [LOW] tap_target_small — `lib/features/downloader/screens/analyze/analyze_screen.dart:523`
+confidence 0.70
+
+Vùng bấm để xem đường dẫn đầy đủ chỉ là Row gồm Text 12sp + Icon 14 (cao ~16dp) không padding, không có Semantics(button) nên vừa khó chạm vừa không được TalkBack đọc là nút; user thường bấm trượt vào khoảng trống bên dưới và không mở được dialog.
+
+```dart
+              child: GestureDetector(
+                onTap:
+                    outputPath != null
+```
+**Fix:**
+```dart
+Semantics(
+  button: true,
+  label: 'Xem đường dẫn lưu',
+  child: InkWell(
+    onTap: outputPath != null ? () => _showFullPath(context, outputPath!) : null,
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 44),
+      child: Row(children: [...]),
+    ),
+  ),
 )
 ```
 
-## [LOW] hardcoded_ui_strings — `lib/screens/welcome_screen.dart:128`
+## [LOW] missing_semantics — `lib/features/downloader/screens/analyze/analyze_screen.dart:300`
 confidence 0.70
 
-Tagline và nhãn CTA ghi cứng inline, không có file strings trung tâm.
+Các dòng chọn thư mục trong _FolderPickerSheet (và dòng 'Chọn đường dẫn' ở dòng 378) là GestureDetector thuần: TalkBack chỉ đọc text, không báo là nút và không báo mục nào đang được chọn (isSelected), trong khi cùng file _ActionIconButton đã bọc Semantics(button: true). User dùng screen reader không biết có thể chạm để chọn thư mục.
 
 ```dart
-                        label: 'Quét nhạc trên máy',
+              return GestureDetector(
+                onTap: () {
+                  Navigator.pop(context);
 ```
 **Fix:**
 ```dart
-label: AppStrings.scanDeviceMusic,
+return Semantics(
+  button: true,
+  selected: isSelected,
+  label: '${opt.label}, ${opt.sublabel}',
+  child: GestureDetector(
+    onTap: () { Navigator.pop(context); onSelect(opt.path); },
+    child: AnimatedContainer(...),
+  ),
+);
 ```
 
-## [LOW] hardcoded_ui_strings — `lib/widgets/add_to_playlist_sheet.dart:88`
+## [LOW] expensive_work_in_build — `lib/features/downloader/screens/format/format_screen.dart:104`
 confidence 0.70
 
-Chuỗi giao diện (tiêu đề, hint, snackbar, dialog) viết cứng trong widget, không có file strings tập trung.
+_audioFormats và _videoFormats là getter copy + sort (+ dedupe theo height) chạy lại mỗi lần được gọi; build gọi mỗi getter ~3 lần (_isMuxedOnly, .isEmpty, .map) nên mỗi lần chạm một tile hay đổi tab (setState) là sort lại 6 lần cùng một dữ liệu bất biến (videoInfo không đổi suốt vòng đời màn hình).
 
 ```dart
-                        'Lưu vào danh sách',
+  List<FormatOption> get _audioFormats {
+    final list = widget.videoInfo.audioFormats.toList();
+    list.sort((a, b) => (b.bitrate ?? 0).compareTo(a.bitrate ?? 0));
 ```
 **Fix:**
 ```dart
-Text(AppStrings.saveToPlaylist)
+late final List<FormatOption> _audioFormats;
+late final List<FormatOption> _videoFormats;
+
+@override
+void initState() {
+  super.initState();
+  _audioFormats = _sortAudio(widget.videoInfo.audioFormats);
+  _videoFormats = _dedupeVideo(widget.videoInfo.videoFormats);
+  ...
+}
 ```
 
-## [LOW] tap_target_small — `lib/widgets/add_to_playlist_sheet.dart:156`
+## [LOW] missing_semantics — `lib/features/downloader/screens/playlist_picker/playlist_picker_screen.dart:362`
 confidence 0.70
 
-Nút xoá tìm kiếm là GestureDetector bọc Icon 18px không padding nên vùng chạm chỉ ~18x18dp.
+_EntryTile là ô chọn/bỏ chọn video nhưng checkbox là AnimatedContainer vẽ tay và tile là GestureDetector thuần: screen reader chỉ đọc tiêu đề, không biết ô đang được chọn hay không và không biết chạm để toggle. Với playlist hàng trăm video, user dùng TalkBack không thể biết mình đã chọn những gì trước khi bấm 'Tiếp theo'.
 
 ```dart
-                              Icons.close_rounded,
-                              color: c.textTertiary,
-                              size: 18,
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
 ```
 **Fix:**
 ```dart
-suffixIcon: IconButton(tooltip: 'Xóa', icon: Icon(Icons.close_rounded, size: 18, color: c.textTertiary), onPressed: () { _searchCtrl.clear(); setState(() => _query = ''); })
+return Semantics(
+  button: true,
+  selected: entry.selected,
+  toggled: entry.selected,
+  label: entry.title,
+  child: GestureDetector(
+    onTap: onTap,
+    child: AnimatedContainer(...),
+  ),
+);
 ```
 
-## [LOW] undisposed_resource — `lib/widgets/add_to_playlist_sheet.dart:266`
+## [LOW] sync_io_main — `lib/features/downloader/services/downloader_storage_service.dart:133`
 confidence 0.70
 
-TextEditingController tạo trong _showCreateDialog không bao giờ được dispose; rò rỉ mỗi lần mở dialog tạo playlist.
+existsSync() chạy stat đồng bộ trên isolate chính ngay trong đường đi tương tác của user (chọn thư mục ở sheet, bấm 'Bắt đầu tải' -> setPath). Trên Android 11+ thư mục /storage/emulated/0 đi qua FUSE, stat lạnh có thể mất vài ms và chặn frame; cùng pattern lặp ở _loadSavedOrInitDownloadPath (dòng 64) và _initDownloadPath (dòng 87, 103) khi mở màn analyze. Hàm đã là async nên dùng bản bất đồng bộ không tốn gì.
 
 ```dart
-    final ctrl = TextEditingController();
+    if (!dir.existsSync()) {
 ```
 **Fix:**
 ```dart
-showDialog(...).whenComplete(ctrl.dispose);
+final dir = Directory(path);
+if (!await dir.exists()) {
+  try {
+    await dir.create(recursive: true);
+  } ...
 ```
 
-## [LOW] hardcoded_ui_strings — `lib/widgets/app_bottom_navigation.dart:73`
+## [LOW] missing_semantics — `lib/features/downloader/widgets/format/format_tile.dart:20`
 confidence 0.70
 
-Nhãn tab ghi cứng và lặp 2 lần (glass + normal), trộn tiếng Anh 'Home' với 'Trực tuyến'/'Thư viện' tiếng Việt.
+Tile chọn định dạng là GestureDetector không có Semantics(button/selected): trạng thái đang chọn chỉ thể hiện bằng màu và icon check → TalkBack đọc tên format nhưng không biết format nào đang được chọn, cũng không biết đây là nút.
 
 ```dart
-          label: 'Home',
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
 ```
 **Fix:**
 ```dart
-label: AppStrings.tabHome,
+return Semantics(
+  button: true,
+  selected: isSelected,
+  child: GestureDetector(
+    onTap: onTap,
+    child: AnimatedContainer(...),
+  ),
+);
 ```
 
-## [LOW] hardcoded_ui_strings — `lib/widgets/bottom_nav_style_selector_sheet.dart:94`
+## [LOW] missing_semantics — `lib/features/downloader/widgets/format/playlist_preset_list.dart:49`
 confidence 0.70
 
-Tiêu đề, mô tả, nhãn 'Áp dụng', 'Hiện tại' và subtitle option ghi cứng inline.
+_PresetTile (chọn chất lượng playlist) là GestureDetector không khai báo button/selected cho screen reader; user TalkBack không phân biệt được preset đang chọn (1080p mặc định) với các preset khác vì chỉ khác màu + icon check.
 
 ```dart
-                      'Chọn phong cách thanh điều hướng dưới',
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
 ```
 **Fix:**
 ```dart
-Text(AppStrings.bottomNavStyleSubtitle, ...)
+return Semantics(
+  button: true,
+  selected: isSelected,
+  child: GestureDetector(
+    onTap: onTap,
+    child: AnimatedContainer(...),
+  ),
+);
 ```
 
-## [LOW] hardcoded_ui_strings — `lib/widgets/mini_player.dart:228`
+## [LOW] undisposed_resource — `lib/features/music_visual/poc/android_visualizer_poc_bridge.dart:27`
 confidence 0.70
 
-Chuỗi dialog và nhãn semantics ('Dừng phát nhạc?', 'Hàng chờ hiện tại sẽ bị xóa.', 'Đóng trình phát', 'Bài trước'...) viết inline; không có file strings tập trung.
+receiveBroadcastStream().map(...) đã là broadcast stream; bọc thêm asBroadcastStream() không có onCancel khiến subscription ngầm vào EventChannel KHÔNG bị huỷ khi controller cancel listener lúc dispose (Dart chỉ huỷ subscription gốc khi stream nguồn đóng). Vì vậy native onCancel (releaseVisualizer + eventSink = null) không bao giờ được gọi từ phía Dart; mỗi lần mở lại màn hình POC là thêm một chuỗi stream cũ bị giữ trong binary messenger. Hiện chỉ nhờ dispose() gọi _bridge.detach() thủ công mà Visualizer (đang giữ RECORD_AUDIO) được thả.
 
 ```dart
-              'Dừng phát nhạc?',
+              .asBroadcastStream();
 ```
 **Fix:**
 ```dart
-title: Text(S.stopPlaybackTitle, ...),
-content: Text(S.stopPlaybackBody, ...),
+Stream<AndroidVisualizerPacket> get packets =>
+    _packets ??= _events.receiveBroadcastStream().map(
+      (event) => AndroidVisualizerPacket.fromMap(
+        Map<Object?, Object?>.from(event as Map),
+      ),
+    ); // đã là broadcast, cancel listener cuối sẽ gửi 'cancel' xuống native
 ```
 
-## [LOW] hardcoded_ui_strings — `lib/widgets/music_list_tile.dart:337`
+## [LOW] error_state_missing — `lib/features/music_visual/poc/android_visualizer_poc_screen.dart:162`
 confidence 0.70
 
-Nhãn menu ngữ cảnh, SnackBar và bảng 'Thông tin bài hát' ghi cứng inline.
+Lỗi được hiển thị bằng exception.toString() thô, ví dụ 'PlatformException(ATTACH_FAILED, null, null, null)' (native trả exception.message có thể null) hoặc 'PlatformException(RECORD_AUDIO_REQUIRED, ...)'. Khi attach Visualizer thất bại (thiết bị không hỗ trợ, app khác đang giữ Visualizer) người dùng thấy chuỗi kỹ thuật, switch capture vẫn ON, không có nút thử lại hay mở Settings để cấp quyền.
 
 ```dart
-            label: 'Thêm vào danh sách phát',
+                  _controller.error!,
 ```
 **Fix:**
 ```dart
-label: AppStrings.addToPlaylist,
+String _describe(String raw) {
+  if (raw.contains('RECORD_AUDIO_REQUIRED')) return AppStrings.visualizerNeedMic;
+  if (raw.contains('ATTACH_FAILED')) return AppStrings.visualizerAttachFailed;
+  return AppStrings.visualizerGenericError;
+}
+// ...
+if (_controller.error != null)
+  ListTile(
+    title: Text(_describe(_controller.error!)),
+    trailing: TextButton(
+      onPressed: () => _controller.setCaptureEnabled(true),
+      child: Text(AppStrings.retry),
+    ),
+  ),
 ```
 
-## [LOW] hardcoded_ui_strings — `lib/widgets/theme_selector_sheet.dart:101`
+## [LOW] silent_catch — `lib/features/music_visual/providers/visual_feature_controller.dart:46`
 confidence 0.70
 
-Tiêu đề, mô tả, nhãn 'Áp dụng', 'Hiện tại', hint và 3 subtitle theme ghi cứng inline.
+catch bắt mọi thứ (kể cả Error lập trình như RangeError trong _downsample) rồi chỉ gán vào _error; getter error không được widget nào đọc (ReactiveWaveformView chỉ xem waveform/isLoading, cover pulse chỉ xem amplitude) và không có log. Khi just_waveform không decode được file (codec lạ, file bị xoá) người dùng chỉ thấy icon tĩnh giống hệt trạng thái 'chưa có dữ liệu', dev không có dấu vết, và vì thất bại không được cache nên mỗi lần mở lại bài đó extraction lại chạy từ đầu.
 
 ```dart
-                      'Chọn bộ màu sắc cho ứng dụng',
+    } catch (error) {
+      if (_disposed || generation != _requestGeneration) return;
+      _error = error;
 ```
 **Fix:**
 ```dart
-Text(AppStrings.themeSheetSubtitle, ...)
+} catch (error, stack) {
+  if (_disposed || generation != _requestGeneration) return;
+  _error = error;
+  FlutterError.reportError(FlutterErrorDetails(
+    exception: error, stack: stack, library: 'music_visual'));
+}
+// và trong ReactiveWaveformView:
+if (_controller.error != null) return Tooltip(message: AppStrings.waveformUnavailable, child: Icon(...));
+```
+
+## [LOW] hardcoded_ui_strings — `lib/features/music_visual/providers/visual_mode_provider.dart:5`
+confidence 0.70
+
+Nhãn hiển thị 'Bình thường'/'Xịn xò' gắn cứng trong enum và được render trực tiếp ở profile_screen (subtitle) và _VisualModeOption, trong khi mọi chuỗi khác của feature đi qua AppStrings. Đổi copy/thêm ngôn ngữ phải sửa lớp model.
+
+```dart
+  normal('normal', 'Bình thường'),
+  fancy('fancy', 'Xịn xò');
+```
+**Fix:**
+```dart
+// app_strings.dart
+static const visualModeNormal = 'Bình thường';
+static const visualModeFancy = 'Xịn xò';
+// enum
+enum MusicVisualMode {
+  normal('normal'), fancy('fancy');
+  String get label => this == fancy ? AppStrings.visualModeFancy : AppStrings.visualModeNormal;
+}
+```
+
+## [LOW] hardcoded_ui_strings — `lib/main.dart:75`
+confidence 0.70
+
+MaterialApp.title (hiện trong task switcher) hardcode 'Muzicz Audio' dù AppStrings.appName đã có đúng giá trị này; androidNotificationChannelName ở dòng 24 còn hardcode 'Muziczz Audio' (thừa một chữ z) và tên này hiển thị cho người dùng trong Cài đặt thông báo Android, sai chính tả thương hiệu và không thể sửa tập trung.
+
+```dart
+        title: 'Muzicz Audio',
+```
+**Fix:**
+```dart
+await JustAudioBackground.init(
+  androidNotificationChannelId: 'com.muziczz.muziczz.channel.audio',
+  androidNotificationChannelName: AppStrings.appName,
+  ...);
+// ...
+MaterialApp(title: AppStrings.appName, ...)
+```
+
+## [LOW] hardcoded_ui_strings — `lib/models/song_item.dart:35`
+confidence 0.70
+
+Chuỗi fallback 'Unknown Artist'/'Unknown Album' (lặp lại ở fromJson dòng 67-68) là tên nhóm nghệ sĩ/album hiển thị trực tiếp trên tab Nghệ sĩ/Album và màn chi tiết, nhưng hardcode tiếng Anh trong model thay vì AppStrings (đã có AppStrings.unknown = 'Unknown'). Khi user có file thiếu tag, UI tiếng Việt hiện nhóm 'Unknown Artist' — không đổi được tập trung và dễ lệch với các chỗ khác dùng AppStrings.unknown.
+
+```dart
+      artist: s.artist ?? 'Unknown Artist',
+      album: s.album ?? 'Unknown Album',
+```
+**Fix:**
+```dart
+// app_strings.dart
+static const unknownArtist = 'Nghệ sĩ không rõ';
+static const unknownAlbum = 'Album không rõ';
+// song_item.dart
+artist: s.artist ?? AppStrings.unknownArtist,
+album: s.album ?? AppStrings.unknownAlbum,
+```
+
+## [LOW] tap_target_small — `lib/screens/album_detail_screen.dart:177`
+confidence 0.70
+
+Nút info Shuffle Loop là GestureDetector bọc Container 40x46dp, dưới ngưỡng 48dp theo chiều ngang và nằm sát nút Shuffle Loop, dễ bấm trượt sang nút bên cạnh và bật shuffle loop ngoài ý muốn.
+
+```dart
+                          child: Container(
+                            width: 40,
+                            height: 46,
+```
+**Fix:**
+```dart
+GestureDetector(
+  behavior: HitTestBehavior.opaque,
+  onTap: ...,
+  child: SizedBox(
+    width: 48, height: 48,
+    child: Center(child: Container(width: 40, height: 46, ...)),
+  ),
+)
+```
+
+## [LOW] tap_target_small — `lib/screens/artist_detail_screen.dart:183`
+confidence 0.70
+
+Nút info (mở dialog giải thích Shuffle Loop) là GestureDetector bọc Container 40x46dp, nhỏ hơn ngưỡng 48dp của Material / 44dp của iOS theo chiều ngang, lại nằm sát cạnh nút Shuffle Loop lớn nên người dùng dễ bấm trượt sang nút bên cạnh và kích hoạt shuffle loop ngoài ý muốn.
+
+```dart
+                          child: Container(
+                            width: 40,
+                            height: 46,
+```
+**Fix:**
+```dart
+GestureDetector(
+  behavior: HitTestBehavior.opaque,
+  onTap: ...,
+  child: SizedBox(
+    width: 48, height: 48,
+    child: Center(child: Container(width: 40, height: 46, ...)),
+  ),
+)
+```
+
+## [LOW] rebuild_scope_too_wide — `lib/screens/home_screen.dart:677`
+confidence 0.70
+
+`_SmartListsSection` (và `_SearchResultsSliver` dòng 421) watch toàn bộ PlayerProvider chỉ để lấy `player.currentSong?.id`. PlayerProvider notify mỗi giây khi hẹn giờ ngủ đang chạy (`_countdownTimer` 1s) và mỗi lần play/pause, nên 10 MusicListTile (kèm QueryArtworkWidget) và toàn bộ danh sách kết quả tìm kiếm bị rebuild mỗi giây trong lúc người dùng cuộn Home. playlist_screen.dart đã xử lý đúng bằng `Selector<PlayerProvider, int?>` cho từng tile.
+
+```dart
+    final music = context.watch<MusicProvider>();
+    final player = context.watch<PlayerProvider>();
+    final recentlyAdded = music.recentlyAdded;
+```
+**Fix:**
+```dart
+final activeId = context.select<PlayerProvider, int?>((p) => p.currentSong?.id);
+...
+MusicListTile(
+  song: song,
+  isActive: activeId == song.id,
+  ...
+)
+```
+
+## [LOW] missing_semantics — `lib/screens/home_screen.dart:574`
+confidence 0.70
+
+Thẻ Quick Access (Nghe gần đây / Nghe nhiều / Yêu thích / Ngẫu nhiên) là GestureDetector với onTapDown/onTapUp tuỳ biến, không có `Semantics(button: true)`; trong cùng file `_AvatarButton` và nút xoá tìm kiếm đều được gắn Semantics. Screen reader chỉ đọc tiêu đề và số bài như văn bản tĩnh, không báo là nút và không nhận double-tap để phát, nên bốn lối tắt chính của Home vô hình với người dùng TalkBack.
+
+```dart
+    return GestureDetector(
+      onTapDown: (_) => _ctrl.forward(),
+```
+**Fix:**
+```dart
+return Semantics(
+  button: true,
+  label: '${s.title}, ${AppStrings.songCountShort(songCount)}',
+  child: GestureDetector(
+    onTapDown: (_) => _ctrl.forward(),
+    ...
+  ),
+);
+```
+
+## [LOW] image_unbounded — `lib/screens/playlist_screen.dart:972`
+confidence 0.70
+
+`_PlaylistCover` đã cẩn thận đặt `cacheWidth` với ghi chú ảnh camera có thể 12MP, nhưng header của PlaylistDetailScreen lại decode cùng file đó ở độ phân giải gốc để vẽ vào vùng cao 260dp. Một ảnh 4000x3000 giải mã thành ~48MB bitmap cho mỗi lần mở playlist, gây GC churn và tràn raster cache trên máy yếu. Hiện chưa có UI đặt `coverPath` nên đường này đang ngủ, nhưng model đã serialize trường này nên sẽ phát nổ ngay khi tính năng chọn bìa được bật.
+
+```dart
+        if (playlist.coverPath != null)
+          Image.file(File(playlist.coverPath!), fit: BoxFit.cover)
+```
+**Fix:**
+```dart
+final dpr = MediaQuery.devicePixelRatioOf(context);
+final w = MediaQuery.sizeOf(context).width;
+Image.file(
+  File(playlist.coverPath!),
+  fit: BoxFit.cover,
+  cacheWidth: (w * dpr).round(),
+)
+```
+
+## [LOW] form_field_ergonomics — `lib/screens/playlist_screen.dart:361`
+confidence 0.70
+
+Cả dialog 'Tạo playlist' (dòng 361) và 'Đổi tên' (dòng 786) đều là form một ô nhập nhưng không có `textInputAction: TextInputAction.done` và `onSubmitted`. Người dùng gõ tên xong bấm phím Done/Enter trên bàn phím thì không có gì xảy ra, phải với tay lên bấm nút 'Tạo'/'Lưu' trong dialog; đây là thao tác lặp lại nhiều lần khi quản lý playlist.
+
+```dart
+            content: TextField(
+              controller: ctrl,
+              autofocus: true,
+```
+**Fix:**
+```dart
+TextField(
+  controller: ctrl,
+  autofocus: true,
+  textInputAction: TextInputAction.done,
+  onSubmitted: (_) => _submit(), // cùng logic với nút Tạo/Lưu
+  ...
+)
+```
+
+## [LOW] missing_semantics — `lib/screens/playlist_screen.dart:1049`
+confidence 0.70
+
+`_PlayButton` (Phát tất cả / Trộn / Shuffle loop) là GestureDetector bọc Container, không có `Semantics(button: true)` trong khi FAB tạo playlist và nút info ngay bên cạnh đều có. TalkBack chỉ đọc nhãn dạng text tĩnh, không báo đây là nút bấm được, nên người dùng khiếm thị không biết có thể kích hoạt các hành động phát chính của màn hình.
+
+```dart
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+```
+**Fix:**
+```dart
+return Semantics(
+  button: true,
+  label: label,
+  child: GestureDetector(
+    onTap: onTap,
+    child: Container(...),
+  ),
+);
+```
+
+## [LOW] god_file — `lib/screens/playlist_screen.dart:411`
+confidence 0.70
+related: lib/screens/album_detail_screen.dart, lib/screens/artist_detail_screen.dart
+
+Sau Phase 4 (tách now_playing/format/library), `playlist_screen.dart` là file dài nhất repo: 1084 dòng, 7 class (PlaylistsTab, _PlaylistTile, _PlaylistCover, _CreatePlaylistFab, PlaylistDetailScreen, _PlaylistHeader, _PlayButton), gấp ~5 lần LOC trung bình (~213) và là file gom nhiều finding nhất đợt này (5 per-file + 1 duplicate_logic: nút Shuffle Loop, 4 bản copy route Now Playing, dialog tạo/sửa/xoá, header có ảnh bìa). Không cực đoan như now_playing cũ (2318) nên chỉ low, nhưng là seam tách tự nhiên tiếp theo.
+
+```dart
+class PlaylistDetailScreen extends StatelessWidget {
+```
+**Fix:**
+```dart
+// Tách theo seam đã có (mỗi class private -> file riêng), giống Phase 4c:
+// lib/widgets/playlist/playlists_tab.dart        <- PlaylistsTab (+ dialog tạo)
+// lib/widgets/playlist/playlist_header.dart      <- _PlaylistHeader (ảnh bìa, Image.file cacheWidth)
+// lib/widgets/playlist/playlist_actions.dart     <- hàng Phát tất cả / Trộn / Shuffle Loop (dùng chung với album/artist)
+// lib/widgets/playlist/sheets/edit_playlist_dialog.dart <- _showEditDialog/_showCreateDialog
+// lib/screens/playlist_screen.dart               <- chỉ PlaylistDetailScreen
+```
+
+## [LOW] rebuild_scope_too_wide — `lib/screens/profile_screen.dart:30`
+confidence 0.70
+
+ProfileScreen.build watch toàn bộ PlayerProvider nhưng chỉ dùng một bool `player.currentSong != null` (dòng 153) để quyết định hiện MiniPlayer. Mỗi tick hẹn giờ ngủ (1 lần/giây) và mỗi play/pause khiến toàn bộ Scaffold — header, 3 stat card, 4 action tile, FutureBuilder — rebuild lại. home_screen.dart đã làm đúng bằng `Consumer<PlayerProvider>` bọc riêng MiniPlayer.
+
+```dart
+    final player = context.watch<PlayerProvider>();
+```
+**Fix:**
+```dart
+final hasSong = context.select<PlayerProvider, bool>((p) => p.currentSong != null);
+...
+if (hasSong) const MiniPlayer(),
+```
+
+## [LOW] missing_semantics — `lib/widgets/library/selection_action_bar.dart:76`
+confidence 0.70
+
+Ba nút hành động hàng loạt (Playlist / Yêu thích / Ẩn) là GestureDetector trần: không có vai trò button, và khi chưa chọn bài nào (onTap == null) screen reader vẫn đọc y hệt lúc bật, không báo trạng thái vô hiệu. Các GestureDetector khác trong dự án (queue_sheet, sleep_timer_sheet, speed_sheet, swipe_hint, expandable_pill_bar) đều được bọc Semantics(button: true).
+
+```dart
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+```
+**Fix:**
+```dart
+return Semantics(
+  button: true,
+  enabled: enabled,
+  label: label,
+  child: GestureDetector(
+    onTap: onTap,
+    behavior: HitTestBehavior.opaque,
+    child: ExcludeSemantics(child: Padding(/* ... */)),
+  ),
+);
+```
+
+## [LOW] rebuild_scope_too_wide — `lib/widgets/now_playing/lyrics_view.dart:164`
+confidence 0.70
+
+StreamBuilder bọc toàn bộ ListView lời bài hát chỉ để đẩy position vào LyricsProvider.updatePosition() qua post-frame callback. positionDataStream phát ~5 lần/giây (just_audio maxPeriod 200ms) nên `_buildList` và mọi dòng lyric đang hiển thị (AnimatedDefaultTextStyle + GoogleFonts.outfit) rebuild 5 lần/giây dù chỉ số dòng không đổi. LyricsView đã watch LyricsProvider và provider chỉ notify khi currentIndex đổi, nên việc rebuild list theo stream là thừa; chỉ cần subscribe stream để cập nhật provider.
+
+```dart
+      return StreamBuilder<PositionData>(
+        stream: player.positionDataStream,
+        builder: (context, snap) {
+```
+**Fix:**
+```dart
+// Chuyển LyricsListView thành StatefulWidget:
+@override
+void initState() {
+  super.initState();
+  _sub = widget.player.positionDataStream.listen((d) {
+    widget.lyricsProvider.updatePosition(d.position);
+    widget.onScrollToLine(widget.lyricsProvider.currentIndex);
+  });
+}
+@override
+void dispose() { _sub.cancel(); super.dispose(); }
+// build() chỉ return _buildList(context, c);
+```
+
+## [LOW] tap_target_small — `lib/widgets/now_playing/sheets/sleep_timer_sheet.dart:118`
+confidence 0.70
+
+Các chip chọn thời lượng hẹn giờ chỉ cao ≈ 10 + 10 + ~18 (chữ Outfit 14) ≈ 38-40dp, dưới ngưỡng 44-48dp; trong Wrap với runSpacing 10 nên người dùng dễ bấm hụt hoặc trúng chip hàng bên cạnh. SpeedSheet cùng kiểu đã dùng chiều cao 48 cố định.
+
+```dart
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 10,
+```
+**Fix:**
+```dart
+child: ConstrainedBox(
+  constraints: const BoxConstraints(minHeight: 48, minWidth: 64),
+  child: Container(
+    alignment: Alignment.center,
+    padding: const EdgeInsets.symmetric(horizontal: 18),
+    decoration: /* giữ nguyên */,
+    child: Text(p.label, /* ... */),
+  ),
+),
+```
+
+## [LOW] tap_target_small — `lib/widgets/now_playing/swipe_hint.dart:18`
+confidence 0.70
+
+Nút gợi ý mở hàng đợi là GestureDetector bọc trực tiếp Icon 20dp + Text 11pt, không padding, không HitTestBehavior.opaque → vùng chạm thực tế chỉ ≈ 34dp cao × ~45dp rộng (bằng chiều rộng chữ). Bấm lệch một chút là không mở được queue.
+
+```dart
+      child: GestureDetector(
+        onTap: onTap,
+        child: Column(
+```
+**Fix:**
+```dart
+child: GestureDetector(
+  onTap: onTap,
+  behavior: HitTestBehavior.opaque,
+  child: Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+    child: Column(mainAxisSize: MainAxisSize.min, children: [/* icon + text */]),
+  ),
+),
 ```
