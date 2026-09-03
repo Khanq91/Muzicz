@@ -15,19 +15,14 @@ _Sinh từ session review toàn project ngày 2026-09-03 (Claude Code), sau khi 
 - App KHÔNG lên Play Store → giữ `MANAGE_EXTERNAL_STORAGE`, chỉ sửa cách xin quyền (không bật màn cài đặt mỗi lần mở Analyze).
 - Keystore release: t nói "có vẻ là rồi" → Phase 13 hỏi vị trí file trước khi nối vào gradle (KHÔNG commit keystore).
 - Làm theo từng phase, mỗi phase một session, như AUDIT_PLAN.
+- (2026-09-03, đợt 2) Hết hàng chờ khi không bật lặp: tạm dừng và quay về bài đầu; nếu đang bật xáo trộn thì xáo trộn lại danh sách rồi về bài đầu của danh sách mới. Spec ở Phase 10 `queue_end_state`.
+- (2026-09-03, đợt 2) "Phát tiếp theo" chèn ngay sau bài đang phát, VÀ thêm nút "Thêm vào hàng chờ" (thêm cuối) trong menu bài hát. Spec ở Phase 10 `play_next_semantics`.
+- (2026-09-03, đợt 2) Preset video cần ffmpeg: TẠM BỎ QUA, chưa sửa. t test tay theo `plan/MANUAL_TESTS_TODO.md` mục 1 rồi quyết định sau.
 
 ## Câu hỏi còn mở (trả lời trước khi làm phase tương ứng)
-1. **Hết hàng chờ khi không bật lặp (Phase 10).** Hiện tại: bài cuối kết thúc, nhạc im nhưng app vẫn coi là "đang phát" (nút hiện icon tạm dừng, đĩa vẫn xoay); bấm nút đó rồi bấm lại không phát gì vì `play()` của just_audio không tự quay về 0. Chọn một:
-   - A. Tạm dừng và đưa bài cuối về 0:00 (nút hiện "play", bấm thì phát lại bài cuối).
-   - B. Tạm dừng và quay về bài đầu hàng chờ (bấm play thì nghe lại từ đầu danh sách). **Khuyên B.**
-   - C. Giữ như hiện tại.
-2. **"Phát tiếp theo" trong menu bài hát (Phase 10).** Hiện nó thêm bài vào CUỐI hàng chờ: hàng chờ 50 bài thì 49 bài nữa mới tới. Chọn một:
-   - A. Chèn ngay sau bài đang phát, đúng nghĩa tên nút. **Khuyên A.**
-   - B. Giữ hành vi, đổi tên nút thành "Thêm vào hàng chờ".
-   - C. Có cả hai nút.
-3. **Preset video của downloader cần ffmpeg (Phase 12).** Các preset "Tốt nhất / 1080p / 720p / 480p" dùng selector `bestvideo+bestaudio`: yt-dlp tải hình và tiếng thành 2 file rồi cần ffmpeg để ghép, nhưng APK chỉ có yt-dlp. Khả năng cao ra file mp4 không tiếng kèm 1 file m4a rời. Bước 1 (làm trước, không cần quyết định): tải thử 1 video YouTube 1080p trên máy thật để xác nhận. Nếu đúng, chọn một:
-   - A. Đóng gói ffmpeg vào APK (nặng thêm vài chục MB, cần kiểm tra cách nhúng cùng Chaquopy).
-   - B. Chỉ hiện các stream có sẵn cả hình lẫn tiếng (YouTube thường tối đa 720p mp4), preset cao hơn bị ẩn. **Khuyên B.**
+1. ~~Hết hàng chờ khi không bật lặp (Phase 10)~~ — **ĐÃ CHỐT 2026-09-03:** tạm dừng và quay về bài đầu hàng chờ; nếu đang bật xáo trộn thì xáo trộn lại danh sách rồi về bài đầu của danh sách mới. Spec: Phase 10 `queue_end_state`.
+2. ~~"Phát tiếp theo" trong menu bài hát (Phase 10)~~ — **ĐÃ CHỐT 2026-09-03:** "Phát tiếp theo" chèn ngay sau bài đang phát, VÀ thêm nút "Thêm vào hàng chờ" (thêm cuối). Spec: Phase 10 `play_next_semantics`.
+3. ~~Preset video của downloader cần ffmpeg (Phase 12)~~ — **TẠM BỎ QUA 2026-09-03:** t test tay theo `plan/MANUAL_TESTS_TODO.md` mục 1 rồi mới quyết định (A: đóng gói ffmpeg vào APK, nặng thêm vài chục MB / B: chỉ hiện stream có sẵn cả hình lẫn tiếng, khuyên B). Phase 12 không đụng mục này cho tới khi chốt.
 4. **Keystore release (Phase 13).** File keystore đang ở đâu (đường dẫn local, KHÔNG đưa vào repo)? CI trên GitHub có cần ký bằng keystore đó không (phải thêm secrets), hay chỉ build local là đủ?
 5. **Chờ duyệt xoá/sửa thêm** (chưa nằm trong danh sách đã duyệt):
    - POC Visualizer (`lib/features/music_visual/poc/**`, `AndroidVisualizerPocPlugin.kt`, quyền `RECORD_AUDIO`): xoá hẳn, hay chỉ ẩn ở bản release (`kDebugMode`)?
@@ -89,7 +84,7 @@ Trước khi xoá từng mục: grep lại symbol trong `lib/` + `test/` để c
 ## Phase 10 — Player & điều hướng
 **Effort: M — 1 session**
 
-Mỗi mục một commit. Có 2 mục [CHỜ QUYẾT ĐỊNH] (câu hỏi 1, 2) — hỏi trước khi bắt đầu session. Sau phase: check tay trên máy thật theo danh sách cuối phase.
+Mỗi mục một commit. Hai quyết định (hết hàng chờ, phát tiếp theo) đã chốt 2026-09-03, spec nằm ngay trong checklist — không cần hỏi lại. Sau phase: check tay trên máy thật theo danh sách cuối phase và `plan/MANUAL_TESTS_TODO.md` mục 3.
 
 **Câu mồi session:**
 ```
@@ -97,11 +92,11 @@ Mỗi mục một commit. Có 2 mục [CHỜ QUYẾT ĐỊNH] (câu hỏi 1, 2) 
 ```
 
 **Checklist:**
-- [ ] `queue_end_state` **[CHỜ QUYẾT ĐỊNH – câu 1]** — `lib/providers/player_provider.dart:136` (high) — `_onPlaylistEnded` chỉ xử lý shuffleLoop; với repeat tắt just_audio giữ `playing = true` ở `completed` (mini player icon pause, đĩa xoay, bấm play không kêu — `AudioPlayer.java:965-980` không seek). Xử lý `ProcessingState.completed` theo phương án đã chọn (pause + seek / seekToIndex(0)).
+- [ ] `queue_end_state` — `lib/providers/player_provider.dart:136` (high) — `_onPlaylistEnded` chỉ xử lý shuffleLoop; với repeat tắt just_audio giữ `playing = true` ở `completed` (mini player icon pause, đĩa xoay, bấm play không kêu — `AudioPlayer.java:965-980` không seek). **ĐÃ CHỐT, spec:** khi `completed`, `_repeatMode == none`, `_originalQueue` không rỗng: (1) ghi `generation = _loadGeneration`, `await _handler.pause()` TRƯỚC mọi seek/load (vì `playing` đang true, load xong sẽ tự phát); nếu `_loadGeneration` đã đổi thì return (người dùng vừa bấm bài mới). (2) Nếu `_shuffleEnabled`: `_buildShuffledQueueTrueRandom(startIndex: Random().nextInt(_originalQueue.length))`, `_currentPlayIndex = 0`, `_currentSong = _playQueue[0]`, `_historyStack.clear()`, `notifyListeners()`, `await _loadQueueToHandler(0)` — KHÔNG gọi play (giống nhánh shuffleLoop nhưng dừng). (3) Nếu không shuffle: `await _seekToIndex(0, recordHistory: false)`, `_historyStack.clear()`. Kết quả: nút hiện "play", thanh về 0:00 ở bài đầu (danh sách mới nếu shuffle), bấm play thì nghe từ đầu. Test trong `player_provider_test.dart` với fake gateway phát `ProcessingState.completed`: pause được gọi trước load/seek, index về 0, `isPlaying == false`, shuffle bật thì queue đổi thứ tự và được load lại, shuffleLoop giữ hành vi cũ (phát tiếp).
 - [ ] `nav_stack_duplicate` — `lib/screens/onboarding_screen.dart:111` (high) — `_navigateHome` dùng `pushReplacement` trong khi 6 nơi gọi (`welcome_screen:134`, `home_screen:322,738`, `library_screen:215`, `profile_screen:104`, `downloader_gateway_screen:68`) đều `push` → lần đầu stack `[Welcome, Home]` (back về Welcome), quét lại tạo Home thứ hai. Lần đầu: `pushAndRemoveUntil(home, (_) => false)`; quét lại: `pop()` về màn gọi.
 - [ ] `empty_shuffle_loop` — `lib/screens/playlist_screen.dart:533-571` + `player_provider.dart:221-226` (high) — Hàng nút Shuffle Loop nằm ngoài guard `songs.isNotEmpty`; `enableShuffleLoop([])` vẫn gán `_repeatMode` và mở Now Playing trống. Đưa vào guard/disable khi rỗng; `enableShuffleLoop` return sớm khi rỗng (đóng luôn ghi chú Phase 1 của AUDIT_PLAN).
 - [ ] `double_push_now_playing` — `playlist_screen.dart:498-524,542-568`, `album_detail_screen.dart:86-91,110-115`, `artist_detail_screen.dart:94-99,116-121` (medium) — Shuffle/Shuffle Loop `await playSongsShuffled()` xong mới push Now Playing, nút vẫn bấm được → double-tap ra 2 màn Now Playing. Push ngay như "Phát tất cả" (currentSong đã set trước await đầu) hoặc cờ busy.
-- [ ] `play_next_semantics` **[CHỜ QUYẾT ĐỊNH – câu 2]** — `lib/widgets/music_list_tile.dart:361-389` + `player_provider.dart:343-348` (medium) — "Phát tiếp theo" gọi `addToQueue` (thêm cuối). Theo phương án đã chọn: thêm `insertNext` (chèn `_currentPlayIndex + 1` vào `_playQueue`, `_originalQueue` và handler `insert`) và/hoặc đổi nhãn.
+- [ ] `play_next_semantics` — `lib/widgets/music_list_tile.dart:361-389` + `player_provider.dart:343-348` (medium) — "Phát tiếp theo" gọi `addToQueue` (thêm cuối). **ĐÃ CHỐT, spec:** (1) `PlayerProvider.insertNext(SongItem)`: chèn vào `_playQueue` tại `_currentPlayIndex + 1`, vào `_originalQueue` ngay sau bài hiện tại (tìm theo id; không thấy thì thêm cuối); gateway thêm `insertSongAt(int index, SongItem song)` (handler: `_playlist.insert(index, AudioSource.uri(...))` + `_currentSongs.insert`, tách helper tạo `AudioSource` dùng chung với `loadSongs`/`addSongToQueue`); nếu chưa có bài nào đang phát thì `playSongs([song])` như hiện tại. Cập nhật 4 fake gateway trong `test/` (accessibility ×3, player_provider_test). (2) Menu bài hát (`music_list_tile.dart:361`): "Phát tiếp theo" gọi `insertNext`, snackbar `AppStrings.willPlayNext(title)` mới ('Sẽ phát tiếp theo: "$title"'); thêm mục mới ngay dưới: `AppStrings.addToQueue` ('Thêm vào hàng chờ', icon `Icons.playlist_add_rounded`) gọi `addToQueue` với snackbar `addedToQueue(title)` hiện có. Grep `AppStrings.playNext` để áp cùng pattern cho menu khác nếu có. (3) Test `player_provider_test.dart`: insertNext khi đang phát giữa queue → bài mới ở `queue[currentIndex + 1]`, gateway nhận đúng index; shuffle bật → `_originalQueue` cũng có bài; chưa phát → playSongs; addToQueue vẫn thêm cuối.
 - [ ] `play_count_source` — `lib/providers/music_provider.dart:360-367` + 11 chỗ gọi `onSongPlayed` trên UI (medium) — Auto-next, Next/Prev, queue, shuffle không được ghi "Nghe gần đây/Nghe nhiều". Ghi 1 lần từ PlayerProvider khi currentSong đổi (callback inject từ main.dart), xoá 11 lời gọi UI. Chú ý mục `prefs_write_race` (Phase 11) khi bấm Next liên tục.
 - [ ] `selection_mode_back` — `lib/screens/library_screen.dart` (low) — Không có `PopScope`: back khi đang chọn thoát luôn màn. `PopScope(canPop: !_isSelecting, onPopInvokedWithResult: … _exitSelecting())`.
 - [ ] `selection_mode_scroll_jump` — `lib/screens/library_screen.dart:320-348` (medium) — Vào/ra chế độ chọn đổi child của `Expanded` giữa `_FadeTabBarView` và `_SongsTab` trần → ListView dựng lại, nhảy về đầu. Giữ 1 element `_SongsTab` (truyền `isSelecting` xuống) hoặc `PageStorageKey`.
@@ -109,7 +104,7 @@ Mỗi mục một commit. Có 2 mục [CHỜ QUYẾT ĐỊNH] (câu hỏi 1, 2) 
 - [ ] `rescan_fixed_delay` — `lib/screens/onboarding_screen.dart:82` (medium) — Mỗi lần quét lại chờ cứng 5s intro + 2s kết quả. Bỏ intro khi `music.hasScannedOnce`, overlap thời gian tối thiểu với scan như `AppStartupService`.
 - [ ] `seek_during_load` — `lib/providers/player_provider.dart:473-481` (low, ghi chú Phase 1 AUDIT_PLAN) — `_seekToIndex` không qua `_loadChain`; bấm Next đúng lúc queue đang load có thể seek vào playlist chưa build xong. Chờ `_loadChain` trước khi seek.
 
-**Check tay:** lần đầu cài: Welcome → quét → Home, back không về Welcome; quét lại từ Home/Hồ sơ xong quay về đúng màn; hết hàng chờ (repeat tắt) đúng phương án; "Phát tiếp theo"; playlist rỗng không mở Now Playing; double-tap Shuffle chỉ 1 màn; chọn nhiều bài ở Library không nhảy list, back thoát chế độ chọn.
+**Check tay:** lần đầu cài: Welcome → quét → Home, back không về Welcome; quét lại từ Home/Hồ sơ xong quay về đúng màn; hết hàng chờ (repeat tắt): nút về "play", bài đầu 0:00, shuffle bật thì thứ tự mới; "Phát tiếp theo" chèn ngay sau bài đang phát, "Thêm vào hàng chờ" thêm cuối; playlist rỗng không mở Now Playing; double-tap Shuffle chỉ 1 màn; chọn nhiều bài ở Library không nhảy list, back thoát chế độ chọn.
 
 ## Phase 11 — Quyền, dữ liệu lưu trữ, lyrics, tìm kiếm
 **Effort: M — 1 session**
@@ -142,7 +137,7 @@ Mỗi mục một commit; thêm test cho mục nào có logic thuần (storage, 
 ## Phase 12 — Downloader
 **Effort: M/L — 1 session, cần máy thật để test tải**
 
-Bước đầu tiên của session: tải thử 1 video YouTube 1080p bằng preset "1080p" trên máy thật để xác nhận mục `video_merge_no_ffmpeg` (câu hỏi 3) trước khi sửa. Nếu Phase 4b (tách `format_screen.dart` 1418 dòng) chưa làm thì sửa tại chỗ, không tách.
+Mục `video_merge_no_ffmpeg` TẠM BỎ QUA (t test tay theo `plan/MANUAL_TESTS_TODO.md` mục 1 rồi mới chốt) — session Phase 12 làm các mục còn lại; riêng `video_only_formats` vẫn làm vì độc lập với ffmpeg. Nếu Phase 4b (tách `format_screen.dart` 1418 dòng) chưa làm thì sửa tại chỗ, không tách.
 
 **Câu mồi session:**
 ```
@@ -151,7 +146,7 @@ Bước đầu tiên của session: tải thử 1 video YouTube 1080p bằng pre
 
 **Checklist:**
 - [ ] `video_only_formats` — `lib/features/downloader/models/video_info.dart:140-141` + `screens/format/format_screen.dart:194-209` (high) — `videoFormats` = mọi format không audio-only → stream DASH video-only (137/136/248…) lọt vào tab Video và `_bestVideoFormat` → tải ra mp4 câm. Lọc `acodec != 'none' && vcodec != 'none'`.
-- [ ] `video_merge_no_ffmpeg` **[CHỜ QUYẾT ĐỊNH – câu 3]** — `format_screen.dart:63-96` (preset `bestvideo+bestaudio/...`), `android/app/src/main/python/ytdlp_bridge.py:264,272-284`, `android/app/build.gradle.kts:57-64` (chỉ `pip install yt-dlp`) (high) — Selector "+" cần ffmpeg để ghép; `ignoreerrors: True` → yt-dlp cảnh báo và để lại `title.f137.mp4` + `title.f140.m4a`. Kiểm tra thêm nhánh `__extract_audio__` (Phase 6 test ra `.m4a` OK, nhưng nghi `DownloadForegroundService.kt:216-221` có thể mux file lên chính nó khi `extractedPath == outputPath`) — guard `extractedPath != outputPath`.
+- [ ] `video_merge_no_ffmpeg` **[TẠM BỎ QUA – chờ kết quả test tay, câu 3]** — `format_screen.dart:63-96` (preset `bestvideo+bestaudio/...`), `android/app/src/main/python/ytdlp_bridge.py:264,272-284`, `android/app/build.gradle.kts:57-64` (chỉ `pip install yt-dlp`) (high) — Selector "+" cần ffmpeg để ghép; `ignoreerrors: True` → yt-dlp cảnh báo và để lại `title.f137.mp4` + `title.f140.m4a`. Kiểm tra thêm nhánh `__extract_audio__` (Phase 6 test ra `.m4a` OK, nhưng nghi `DownloadForegroundService.kt:216-221` có thể mux file lên chính nó khi `extractedPath == outputPath`) — guard `extractedPath != outputPath`.
 - [ ] `outtmpl_collision` — `ytdlp_bridge.py:267` + `test/features/downloader/android/download_foreground_service_test.dart:49-50` (medium) — `%(title)s.%(ext)s`: 2 video trùng tên → "already downloaded", task báo xong trỏ file cũ; `AudioExtractor.kt:33` xoá `title.m4a` có sẵn. Dùng `%(title)s [%(id)s].%(ext)s`, bỏ assertion `isNot(contains('[%(id)s]'))`.
 - [ ] `summary_nav_blank` — `screens/summary/summary_screen.dart:128-134,152-154` + `analyze_screen.dart:139-141` (medium) — "Tải thêm video" `pushNamedAndRemoveUntil(analyze, (_) => false)` xoá cả Home/Gateway → back từ Analyze pop route cuối → màn đen; "Về trang chủ" chỉ pop Summary. `popUntil(name == analyze)` / `popUntil((r) => r.isFirst)`.
 - [ ] `manage_storage_prompt` — `services/downloader_storage_service.dart:160-176` + `providers/download_provider.dart:51-56` (medium) — `manageExternalStorage.request()` chạy mỗi lần `OutputDirectoryNotifier` build và mỗi `pickDirectory()` → API 30+ bật màn "Truy cập tất cả file" ngay khi mở Analyze. Giữ quyền (không lên store) nhưng check `status` trước, chỉ request khi người dùng chọn thư mục ngoài Download/Music.
