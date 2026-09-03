@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:just_audio/just_audio.dart';
 import 'package:rxdart/rxdart.dart';
@@ -161,18 +163,19 @@ class MuzicAudioHandler implements PlayerAudioGateway {
   @override
   Stream<ProcessingState>  get processingStateStream  => _player.processingStateStream;
 
-  /// One shared broadcast stream with a stable identity. A getter that built
-  /// a new combineLatest3 on every access made each StreamBuilder rebuild
-  /// unsubscribe/resubscribe three just_audio streams and flash an empty
-  /// snapshot for a frame.
+  /// One shared stream with a stable identity that lives as long as this
+  /// handler. A getter that built a new combineLatest3 on every access made
+  /// each StreamBuilder rebuild unsubscribe/resubscribe three just_audio
+  /// streams and flash an empty snapshot for a frame. `.shareValue()` is not
+  /// an option either: see [PositionDataFeed].
+  late final PositionDataFeed _positionFeed = PositionDataFeed(
+    position: _player.positionStream,
+    bufferedPosition: _player.bufferedPositionStream,
+    duration: _player.durationStream,
+  );
+
   @override
-  late final Stream<PositionData> positionDataStream =
-      Rx.combineLatest3<Duration, Duration, Duration?, PositionData>(
-        _player.positionStream,
-        _player.bufferedPositionStream,
-        _player.durationStream,
-        (pos, buf, dur) => PositionData(pos, buf, dur ?? Duration.zero),
-      ).shareValue();
+  Stream<PositionData> get positionDataStream => _positionFeed.stream;
 
   bool           get playing            => _player.playing;
   LoopMode       get loopMode           => _player.loopMode;
@@ -186,4 +189,42 @@ class PositionData {
   final Duration bufferedPosition;
   final Duration duration;
   const PositionData(this.position, this.bufferedPosition, this.duration);
+}
+
+/// Fan-out of the combined position / buffered position / duration streams
+/// for every progress UI (mini player bar, Now Playing slider, lyrics sync,
+/// waveform).
+///
+/// A BehaviorSubject fed by one permanent subscription: new listeners get the
+/// latest value immediately and the feed stays open while nobody listens.
+/// `.shareValue()` must not be used here. Its refCount closes the subject when
+/// the last listener cancels, which happens every time `stopAndClear()` hides
+/// the mini player; the StreamBuilders created for the next song then only
+/// received the stale last position followed by `done`, so the progress bar,
+/// lyrics and waveform froze until the app was restarted.
+class PositionDataFeed {
+  PositionDataFeed({
+    required Stream<Duration> position,
+    required Stream<Duration> bufferedPosition,
+    required Stream<Duration?> duration,
+  }) {
+    _subscription =
+        Rx.combineLatest3<Duration, Duration, Duration?, PositionData>(
+          position,
+          bufferedPosition,
+          duration,
+          (pos, buf, dur) => PositionData(pos, buf, dur ?? Duration.zero),
+        ).listen(_subject.add, onError: _subject.addError);
+  }
+
+  final _subject = BehaviorSubject<PositionData>();
+  late final StreamSubscription<PositionData> _subscription;
+
+  /// Replays the latest [PositionData] to each new listener, then live updates.
+  Stream<PositionData> get stream => _subject.stream;
+
+  Future<void> dispose() async {
+    await _subscription.cancel();
+    await _subject.close();
+  }
 }
