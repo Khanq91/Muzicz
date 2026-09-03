@@ -153,7 +153,6 @@ class DownloadNotifier extends Notifier<DownloadState> {
   final Map<String, StreamSubscription<DownloadTask>> _subs = {};
   final Map<String, Future<bool>> _cancellations = {};
   var _disposed = false;
-  // final Map<String, FakeProgress> _fakeMap = {};
 
   @override
   DownloadState build() {
@@ -383,17 +382,6 @@ class DownloadNotifier extends Notifier<DownloadState> {
       (current) => current.copyWith(status: DownloadStatus.preparing),
     );
 
-    // START: FAKE PROCESS ---------------------------------------------
-    // final fake = FakeProgress();
-    // fake.start((progress) {
-    //   if (!_subs.containsKey(task.id)) return;
-    //
-    //   _updateTask(task.id, (t) => t.copyWith(progress: progress));
-    // });
-    //
-    // _fakeMap[task.id] = fake;
-    // END: FAKE PROCESS  ---------------------------------------------
-
     late final Stream<DownloadTask> stream;
     try {
       // requireValue rethrows the storage init error, which then lands on the
@@ -429,36 +417,11 @@ class DownloadNotifier extends Notifier<DownloadState> {
           _subs.remove(task.id);
           _processQueue();
         } else if (updatedTask.status.isFinished) {
-          // _fakeMap[task.id]?.dispose();
-          // _fakeMap.remove(task.id);
           _subs.remove(task.id);
           _processQueue();
         }
-        // // TASK PROCESS FAKE
-        // if (updatedTask.status.isFinished) {
-        //   // Future.delayed(const Duration(milliseconds: 100), () {
-        //   //   _fakeMap[task.id]?.complete((progress) {
-        //   //     _updateTask(task.id, (t) => t.copyWith(progress: progress));
-        //   //   });
-        //   _fakeMap[task.id]?.complete((progress) {
-        //     if (!_subs.containsKey(task.id)) return;
-        //
-        //     _updateTask(task.id, (t) => t.copyWith(progress: progress));
-        //   });
-        //
-        //     _fakeMap.remove(task.id);
-        //   // });
-        //
-        //   _subs.remove(task.id);
-        //   _processQueue();
-        // }
       },
       onError: (_) {
-        // START: FAKE PROCESS ---------------------------------------------
-        // _fakeMap[task.id]?.dispose();
-        // _fakeMap.remove(task.id);
-        // END: FAKE PROCESS ---------------------------------------------
-
         _updateTask(
           task.id,
           (t) => t.copyWith(
