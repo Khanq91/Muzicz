@@ -10,7 +10,7 @@ _Sinh từ session review toàn project ngày 2026-09-03 (Claude Code), sau khi 
 - Build local cần Python 3.13 cho Chaquopy (xem ghi chú Phase 3/4a trong AUDIT_PLAN.md).
 
 ## Quyết định đã chốt (2026-09-03)
-- Sửa bug thanh tiến trình đứng (Phase 8) ngay trong session review, 1 commit riêng + test hồi quy.
+- Sửa bug thanh tiến trình đứng (Phase 8) ngay trong session review, 1 commit riêng + test hồi quy — ĐÃ XONG (commit e7e83e5), còn check tay trên máy thật.
 - Được xoá: nhóm file rác (Phase 9 A), code chết đã xác minh không có caller (Phase 9 B), `cupertino_icons` trong pubspec (Phase 9 C).
 - App KHÔNG lên Play Store → giữ `MANAGE_EXTERNAL_STORAGE`, chỉ sửa cách xin quyền (không bật màn cài đặt mỗi lần mở Analyze).
 - Keystore release: t nói "có vẻ là rồi" → Phase 13 hỏi vị trí file trước khi nối vào gradle (KHÔNG commit keystore).
@@ -41,7 +41,7 @@ _Sinh từ session review toàn project ngày 2026-09-03 (Claude Code), sau khi 
 Nguyên nhân: `positionDataStream` dùng `.shareValue()` (rxdart 0.27.7). Khi ấn X trên mini player, `stopAndClear()` đặt currentSong = null, mọi StreamBuilder bị dispose, listener về 0 → `refCount()` đóng BehaviorSubject bên dưới (`ConnectableStreamSubscription.cancel()` gọi `_subject.close()`); bài sau subscribe lại chỉ nhận giá trị cuối + done. Hồi quy từ commit 1faa85b (Phase 5). rxdart 0.28 hành vi giống hệt nên không nâng. Âm thanh vẫn phát từ 0, chỉ UI (thanh tiến trình, lyrics sync, waveform, pulse bìa) đứng.
 
 **Checklist:**
-- [ ] `position_stream_closed` — `lib/services/audio_handler.dart:169` (high) — Thay `.shareValue()` bằng `PositionDataFeed`: BehaviorSubject được nuôi bởi 1 subscription cố định tới combineLatest3, sống suốt vòng đời handler, replay giá trị cuối cho listener mới, không đóng khi hết listener. Test hồi quy `test/services/position_data_feed_test.dart` (listen → cancel hết → listen lại vẫn nhận cập nhật).
+- [x] `position_stream_closed` — `lib/services/audio_handler.dart:169` (high) — Thay `.shareValue()` bằng `PositionDataFeed`: BehaviorSubject được nuôi bởi 1 subscription cố định tới combineLatest3, sống suốt vòng đời handler, replay giá trị cuối cho listener mới, không đóng khi hết listener. Test hồi quy `test/services/position_data_feed_test.dart` (listen → cancel hết → listen lại vẫn nhận cập nhật).
 
 **Check tay trên máy thật:** phát bài → mở Now Playing → đóng → ấn X → phát bài khác: thanh tiến trình mini player + Now Playing chạy tiếp, lyrics sync/waveform chạy; lặp lại 2-3 lần.
 
@@ -230,3 +230,6 @@ Chỉ tạo widget chung cho các bản copy giống hệt; mỗi nhóm một co
 - Các claim "không có caller" ở Phase 9 B đã grep ngày 2026-09-03; số dòng trong checklist là tại HEAD e2f13dc, có thể lệch sau các phase khác.
 
 ## Ghi chú ngoài phạm vi (Claude Code ghi vào đây, không tự sửa)
+- (Phase 8, 2026-09-03) Kiểm chứng: `dart analyze` sạch; `flutter test` 87/87 (84 cũ + 3 mới trong `test/services/position_data_feed_test.dart`). CHƯA chạy trên máy thật/emulator trong session này — cần check tay theo mục "Check tay" của Phase 8 (phát → mở Now Playing → đóng → X → phát bài khác, lặp 2-3 lần; để ý cả lyrics sync và waveform ở chế độ Fancy).
+- (Phase 8, 2026-09-03) `positionDataStream` giờ giữ 1 subscription cố định tới 3 stream just_audio từ lần truy cập đầu (trước đây refCount huỷ khi hết listener). Không thêm timer: `AudioPlayer.positionStream` của just_audio vốn là BehaviorSubject + `addStream(createPositionStream(...))` sống suốt đời player. `PositionDataFeed.dispose()` có sẵn nhưng `MuzicAudioHandler` chưa có `dispose()` (main.dart tạo 1 handler cho cả app) — nếu sau này thêm thì gọi `_positionFeed.dispose()` rồi `_player.dispose()`.
+- (Phase 8, 2026-09-03) Không đụng file khác. `audio_handler.dart` vẫn chưa qua `dart format` ở HEAD (ghi chú Phase 3 AUDIT_PLAN) nên chỉ format tay phần code mới, không format cả file.
