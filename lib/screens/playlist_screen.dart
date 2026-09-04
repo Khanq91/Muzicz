@@ -429,7 +429,7 @@ class PlaylistDetailScreen extends StatelessWidget {
             ),
           ),
           // Play all button
-          if (playlist.songs.isNotEmpty)
+          if (playlist.songs.isNotEmpty) ...[
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
@@ -484,98 +484,99 @@ class PlaylistDetailScreen extends StatelessWidget {
               ),
             ),
 
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _PlayButton(
-                      label: AppStrings.shuffleLoop,
-                      icon: Icons.all_inclusive_rounded,
-                      onTap: () {
-                        player.enableShuffleLoop(playlist.songs);
-                        Navigator.of(context).push(playerRoute());
-                      },
-                      primary: false,
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _PlayButton(
+                        label: AppStrings.shuffleLoop,
+                        icon: Icons.all_inclusive_rounded,
+                        onTap: () {
+                          player.enableShuffleLoop(playlist.songs);
+                          Navigator.of(context).push(playerRoute());
+                        },
+                        primary: false,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  // Nút info
-                  GestureDetector(
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder:
-                            (_) => AlertDialog(
-                              backgroundColor: c.card,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              title: Row(
-                                children: [
-                                  Icon(
-                                    Icons.all_inclusive_rounded,
-                                    color: c.primary,
-                                    size: 20,
+                    const SizedBox(width: 8),
+                    // Nút info
+                    GestureDetector(
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder:
+                              (_) => AlertDialog(
+                                backgroundColor: c.card,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                title: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.all_inclusive_rounded,
+                                      color: c.primary,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      AppStrings.shuffleLoop,
+                                      style: GoogleFonts.outfit(
+                                        color: c.textPrimary,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                content: Text(
+                                  AppStrings.shuffleLoopDescription,
+                                  style: GoogleFonts.outfit(
+                                    color: c.textSecondary,
+                                    fontSize: 14,
+                                    height: 1.6,
                                   ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    AppStrings.shuffleLoop,
-                                    style: GoogleFonts.outfit(
-                                      color: c.textPrimary,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 16,
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: Text(
+                                      AppStrings.ok,
+                                      style: GoogleFonts.outfit(
+                                        color: c.primary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
-                              content: Text(
-                                AppStrings.shuffleLoopDescription,
-                                style: GoogleFonts.outfit(
-                                  color: c.textSecondary,
-                                  fontSize: 14,
-                                  height: 1.6,
-                                ),
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: Text(
-                                    AppStrings.ok,
-                                    style: GoogleFonts.outfit(
-                                      color: c.primary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                      );
-                    },
-                    child: Semantics(
-                      button: true,
-                      label: AppStrings.shuffleLoopInfo,
-                      child: Container(
-                        width: 40,
-                        height: 46,
-                        decoration: BoxDecoration(
-                          color: c.surfaceElevated,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: c.border, width: 0.5),
-                        ),
-                        child: Icon(
-                          Icons.info_outline_rounded,
-                          color: c.textTertiary,
-                          size: 20,
+                        );
+                      },
+                      child: Semantics(
+                        button: true,
+                        label: AppStrings.shuffleLoopInfo,
+                        child: Container(
+                          width: 40,
+                          height: 46,
+                          decoration: BoxDecoration(
+                            color: c.surfaceElevated,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: c.border, width: 0.5),
+                          ),
+                          child: Icon(
+                            Icons.info_outline_rounded,
+                            color: c.textTertiary,
+                            size: 20,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
+          ],
           // Song list with reorder
           SliverToBoxAdapter(
             child: Padding(

@@ -251,6 +251,14 @@ void main() {
     await loop;
   });
 
+  test('shuffle loop on an empty list is a no-op', () async {
+    await provider.enableShuffleLoop(const []);
+
+    expect(provider.repeatMode, RepeatMode.none);
+    expect(provider.currentSong, isNull);
+    expect(gateway.log, isEmpty);
+  });
+
   group('queue end with repeat off', () {
     test('pauses first, then rewinds to the first song without playing', () async {
       await provider.playSongs([_song(1), _song(2), _song(3)], initialIndex: 2);

@@ -253,6 +253,7 @@ class PlayerProvider extends ChangeNotifier {
   }
 
   Future<void> enableShuffleLoop(List<SongItem> songs) async {
+    if (songs.isEmpty) return;
     // Set before the first await so Now Playing, pushed immediately by
     // the caller, already shows the loop state.
     _repeatMode = RepeatMode.shuffleLoop;
