@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
-import 'package:provider/provider.dart';
-import '../../providers/music_provider.dart';
 import 'package:muziczz/core/app_strings.dart';
 
 class LibraryEmptyState extends StatelessWidget {
@@ -13,12 +11,17 @@ class LibraryEmptyState extends StatelessWidget {
     this.showSearchTip = false,
     this.searchQuery = '',
     this.onScanTap,
+    this.onClearSearch,
   });
   final IconData icon;
   final String message;
   final bool showSearchTip;
   final String searchQuery;
   final VoidCallback? onScanTap;
+
+  /// Clears both the search field and the provider query; the owner of the
+  /// TextEditingController supplies it. Shown with [showSearchTip].
+  final VoidCallback? onClearSearch;
 
   @override
   Widget build(BuildContext context) {
@@ -97,9 +100,7 @@ class LibraryEmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             TextButton.icon(
-              onPressed: () {
-                context.read<MusicProvider>().setLibrarySearchQuery('');
-              },
+              onPressed: onClearSearch,
               icon: Icon(Icons.close_rounded, size: 16, color: c.primary),
               label: Text(
                 AppStrings.clearSearch,

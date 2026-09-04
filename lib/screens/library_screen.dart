@@ -209,6 +209,13 @@ class _LibraryScreenState extends State<LibraryScreen>
     );
   }
 
+  /// Empty-state "Xóa tìm kiếm": the field must be cleared too, or typing the
+  /// same text again is a no-op for the debounced query.
+  void _clearSearch() {
+    _searchCtrl.clear();
+    context.read<MusicProvider>().setLibrarySearchQuery('');
+  }
+
   void _navigateToScan() {
     Navigator.of(
       context,
@@ -330,6 +337,7 @@ class _LibraryScreenState extends State<LibraryScreen>
                       selectedIds: _selectedIds,
                       onEnterSelect: _enterSelecting,
                       onToggleSelect: _toggleSelect,
+                      onClearSearch: _clearSearch,
                     ),
                     const PlaylistsTab(),
                     AlbumsTab(onScanTap: _navigateToScan),

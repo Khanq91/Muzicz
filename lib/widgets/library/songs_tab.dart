@@ -20,6 +20,7 @@ class SongsTab extends StatelessWidget {
     this.selectedIds = const {},
     this.onEnterSelect,
     this.onToggleSelect,
+    this.onClearSearch,
   });
   final SortType sortType;
   final VoidCallback onScanTap;
@@ -27,6 +28,7 @@ class SongsTab extends StatelessWidget {
   final Set<int> selectedIds;
   final void Function(SongItem)? onEnterSelect;
   final void Function(SongItem)? onToggleSelect;
+  final VoidCallback? onClearSearch;
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +51,7 @@ class SongsTab extends StatelessWidget {
         showSearchTip: music.librarySearchQuery.isNotEmpty,
         searchQuery: music.librarySearchQuery,
         onScanTap: music.librarySearchQuery.isEmpty ? onScanTap : null,
+        onClearSearch: onClearSearch,
       );
     }
 
