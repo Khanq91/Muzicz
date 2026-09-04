@@ -308,35 +308,29 @@ class _LibraryScreenState extends State<LibraryScreen>
             ],
 
             // ── Tab content ──────────────────────────────────
+            // One SongsTab element in both modes: swapping the tab view for a
+            // bare copy while selecting rebuilt the ListView and jumped to
+            // the top. Selection starts from a long-press inside this tab,
+            // so the view already sits on it, and the TabBar is hidden
+            // above until selection ends.
             Expanded(
-              child:
-                  _isSelecting
-                      // Khi selecting: chỉ hiện danh sách bài hát (không có tab)
-                      ? SongsTab(
-                        sortType: _sortType,
-                        onScanTap: _navigateToScan,
-                        isSelecting: true,
-                        selectedIds: _selectedIds,
-                        onEnterSelect: _enterSelecting,
-                        onToggleSelect: _toggleSelect,
-                      )
-                      : FadeTabBarView(
-                        controller: _tabCtrl,
-                        children: [
-                          SongsTab(
-                            sortType: _sortType,
-                            onScanTap: _navigateToScan,
-                            isSelecting: false,
-                            selectedIds: const {},
-                            onEnterSelect: _enterSelecting,
-                            onToggleSelect: _toggleSelect,
-                          ),
-                          const PlaylistsTab(),
-                          AlbumsTab(onScanTap: _navigateToScan),
-                          ArtistsTab(onScanTap: _navigateToScan),
-                          FoldersTab(onScanTap: _navigateToScan),
-                        ],
-                      ),
+              child: FadeTabBarView(
+                controller: _tabCtrl,
+                children: [
+                  SongsTab(
+                    sortType: _sortType,
+                    onScanTap: _navigateToScan,
+                    isSelecting: _isSelecting,
+                    selectedIds: _selectedIds,
+                    onEnterSelect: _enterSelecting,
+                    onToggleSelect: _toggleSelect,
+                  ),
+                  const PlaylistsTab(),
+                  AlbumsTab(onScanTap: _navigateToScan),
+                  ArtistsTab(onScanTap: _navigateToScan),
+                  FoldersTab(onScanTap: _navigateToScan),
+                ],
+              ),
             ),
 
             // ── Action bar — chỉ hiện khi selecting ─────────
