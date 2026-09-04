@@ -187,11 +187,7 @@ class PlayerProvider extends ChangeNotifier {
         int initialIndex = 0,
         SongItem? specificSong,
       }) async {
-    if (_repeatMode == RepeatMode.one) {
-      _repeatMode = RepeatMode.none;
-      await _handler.setLoopMode(LoopMode.off);
-    }
-
+    final loopModeDirty = _dropRepeatOne();
     _originalQueue = List.from(songs);
     _historyStack.clear();
 
@@ -212,6 +208,7 @@ class PlayerProvider extends ChangeNotifier {
     _currentSong = _playQueue[_currentPlayIndex];
     notifyListeners();
 
+    if (loopModeDirty) await _handler.setLoopMode(LoopMode.off);
     if (!await _loadQueueToHandler(_currentPlayIndex)) return;
     await _handler.play();
   }
@@ -219,11 +216,7 @@ class PlayerProvider extends ChangeNotifier {
   Future<void> playSongsShuffled(List<SongItem> songs) async {
     if (songs.isEmpty) return;
 
-    if (_repeatMode == RepeatMode.one) {
-      _repeatMode = RepeatMode.none;
-      await _handler.setLoopMode(LoopMode.off);
-    }
-
+    final loopModeDirty = _dropRepeatOne();
     _originalQueue = List.from(songs);
     _historyStack.clear();
     _shuffleEnabled = true;
@@ -234,8 +227,20 @@ class PlayerProvider extends ChangeNotifier {
     _currentSong = _playQueue[0];
     notifyListeners();
 
+    if (loopModeDirty) await _handler.setLoopMode(LoopMode.off);
     if (!await _loadQueueToHandler(0)) return;
     await _handler.play();
+  }
+
+  /// Repeat-one belongs to the track that was playing; a new queue drops
+  /// it. Only the flag changes here so callers can publish the new
+  /// `currentSong` before their first await (screens push Now Playing
+  /// right away and must not see the previous song); the returned value
+  /// tells them to update the engine afterwards.
+  bool _dropRepeatOne() {
+    if (_repeatMode != RepeatMode.one) return false;
+    _repeatMode = RepeatMode.none;
+    return true;
   }
 
   void _buildShuffledQueueTrueRandom({required int startIndex}) {
@@ -248,8 +253,10 @@ class PlayerProvider extends ChangeNotifier {
   }
 
   Future<void> enableShuffleLoop(List<SongItem> songs) async {
-    await playSongsShuffled(songs);
+    // Set before the first await so Now Playing, pushed immediately by
+    // the caller, already shows the loop state.
     _repeatMode = RepeatMode.shuffleLoop;
+    await playSongsShuffled(songs);
     await _handler.setLoopMode(LoopMode.off);
     notifyListeners();
   }

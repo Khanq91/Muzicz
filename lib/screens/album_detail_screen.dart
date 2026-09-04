@@ -83,11 +83,9 @@ class AlbumDetailScreen extends StatelessWidget {
                       label: AppStrings.shuffle,
                       icon: Icons.shuffle_rounded,
                       primary: false,
-                      onTap: () async {
-                        await player.playSongsShuffled(songs);
-                        if (context.mounted) {
-                          Navigator.of(context).push(_playerRoute());
-                        }
+                      onTap: () {
+                        player.playSongsShuffled(songs);
+                        Navigator.of(context).push(_playerRoute());
                       },
                     ),
                   ),
@@ -107,11 +105,9 @@ class AlbumDetailScreen extends StatelessWidget {
                       label: AppStrings.shuffleLoop,
                       icon: Icons.all_inclusive_rounded,
                       primary: false,
-                      onTap: () async {
-                        await player.enableShuffleLoop(songs);
-                        if (context.mounted) {
-                          Navigator.of(context).push(_playerRoute());
-                        }
+                      onTap: () {
+                        player.enableShuffleLoop(songs);
+                        Navigator.of(context).push(_playerRoute());
                       },
                     ),
                   ),

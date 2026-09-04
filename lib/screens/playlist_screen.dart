@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/library/player_route.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:muziczz/utils/duration_format.dart';
@@ -471,32 +472,9 @@ class PlaylistDetailScreen extends StatelessWidget {
                       child: _PlayButton(
                         label: AppStrings.shuffle,
                         icon: Icons.shuffle_rounded,
-                        onTap: () async {
-                          await player.playSongsShuffled(playlist.songs);
-                          if (context.mounted) {
-                            Navigator.of(context).push(
-                              PageRouteBuilder(
-                                pageBuilder:
-                                    (_, anim, __) => const NowPlayingScreen(),
-                                transitionDuration: const Duration(
-                                  milliseconds: 400,
-                                ),
-                                transitionsBuilder:
-                                    (_, anim, __, child) => SlideTransition(
-                                      position: Tween<Offset>(
-                                        begin: const Offset(0, 1),
-                                        end: Offset.zero,
-                                      ).animate(
-                                        CurvedAnimation(
-                                          parent: anim,
-                                          curve: Curves.easeOutCubic,
-                                        ),
-                                      ),
-                                      child: child,
-                                    ),
-                              ),
-                            );
-                          }
+                        onTap: () {
+                          player.playSongsShuffled(playlist.songs);
+                          Navigator.of(context).push(playerRoute());
                         },
                         primary: false,
                       ),
@@ -515,32 +493,9 @@ class PlaylistDetailScreen extends StatelessWidget {
                     child: _PlayButton(
                       label: AppStrings.shuffleLoop,
                       icon: Icons.all_inclusive_rounded,
-                      onTap: () async {
-                        await player.enableShuffleLoop(playlist.songs);
-                        if (context.mounted) {
-                          Navigator.of(context).push(
-                            PageRouteBuilder(
-                              pageBuilder:
-                                  (_, anim, __) => const NowPlayingScreen(),
-                              transitionDuration: const Duration(
-                                milliseconds: 400,
-                              ),
-                              transitionsBuilder:
-                                  (_, anim, __, child) => SlideTransition(
-                                    position: Tween<Offset>(
-                                      begin: const Offset(0, 1),
-                                      end: Offset.zero,
-                                    ).animate(
-                                      CurvedAnimation(
-                                        parent: anim,
-                                        curve: Curves.easeOutCubic,
-                                      ),
-                                    ),
-                                    child: child,
-                                  ),
-                            ),
-                          );
-                        }
+                      onTap: () {
+                        player.enableShuffleLoop(playlist.songs);
+                        Navigator.of(context).push(playerRoute());
                       },
                       primary: false,
                     ),

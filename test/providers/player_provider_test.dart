@@ -229,6 +229,28 @@ void main() {
     expect(gateway.seekCalls, [Duration.zero]);
   });
 
+  test('play requests publish the new song before their first await', () async {
+    await provider.playSongs([_song(1)]);
+    await provider.toggleRepeat();
+    expect(provider.repeatMode, RepeatMode.one);
+
+    final play = provider.playSongs([_song(2), _song(3)]);
+    expect(provider.currentSong?.id, 2);
+    expect(provider.repeatMode, RepeatMode.none);
+    await play;
+
+    await provider.toggleRepeat();
+    final shuffled = provider.playSongsShuffled([_song(4), _song(5)]);
+    expect(provider.currentSong?.id, anyOf(4, 5));
+    expect(provider.repeatMode, RepeatMode.none);
+    await shuffled;
+
+    final loop = provider.enableShuffleLoop([_song(6), _song(7)]);
+    expect(provider.currentSong?.id, anyOf(6, 7));
+    expect(provider.repeatMode, RepeatMode.shuffleLoop);
+    await loop;
+  });
+
   group('queue end with repeat off', () {
     test('pauses first, then rewinds to the first song without playing', () async {
       await provider.playSongs([_song(1), _song(2), _song(3)], initialIndex: 2);
