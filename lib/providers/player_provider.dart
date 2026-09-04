@@ -543,6 +543,11 @@ class PlayerProvider extends ChangeNotifier {
     bool recordHistory = true,
     bool played = true,
   }) async {
+    // Never seek into a playlist the engine is still rebuilding; if a newer
+    // play request lands meanwhile, this skip belongs to the old queue.
+    final generation = _loadGeneration;
+    await _loadChain;
+    if (generation != _loadGeneration) return;
     _isChangingTrack = true;
     try {
       await _handler.seekToIndex(index);

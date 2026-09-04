@@ -259,6 +259,42 @@ void main() {
     expect(gateway.log, isEmpty);
   });
 
+  test('next during a queue load waits for the load, then seeks inside it', () async {
+    gateway.blockLoads = true;
+    final play = provider.playSongs([_song(1), _song(2), _song(3)]);
+    await _settle();
+
+    final next = provider.skipToNext();
+    await _settle();
+    expect(gateway.seekToIndexCalls, isEmpty);
+
+    gateway.pendingLoads.removeAt(0).complete();
+    await Future.wait([play, next]);
+
+    expect(gateway.seekToIndexCalls, [1]);
+    expect(provider.currentSong?.id, 2);
+    expect(gateway.currentSong?.id, 2);
+  });
+
+  test('a skip issued before a newer play request is dropped', () async {
+    gateway.blockLoads = true;
+    final play = provider.playSongs([_song(1), _song(2), _song(3)]);
+    await _settle();
+    final next = provider.skipToNext();
+    final replace = provider.playSongs([_song(7), _song(8)]);
+    await _settle();
+
+    while (gateway.pendingLoads.isNotEmpty) {
+      gateway.pendingLoads.removeAt(0).complete();
+      await _settle();
+    }
+    await Future.wait([play, next, replace]);
+
+    expect(gateway.seekToIndexCalls, isEmpty);
+    expect(provider.currentSong?.id, 7);
+    expect(gateway.currentSong?.id, 7);
+  });
+
   group('onSongPlayed', () {
     late List<int> played;
     late PlayerProvider counting;
