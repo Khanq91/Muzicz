@@ -227,121 +227,128 @@ class _LibraryScreenState extends State<LibraryScreen>
             ? music.allSongs.length
             : music.libraryFilteredSongs.length;
 
-    return Scaffold(
-      backgroundColor: c.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ── Header ───────────────────────────────────────
-            if (_isSelecting)
-              SelectionHeader(
-                count: _selectedIds.length,
-                total: displayedTotal,
-                onToggleSelectAll: () => _toggleSelectAll(music),
-                onCancel: _exitSelecting,
-              )
-            else
-              Padding(
-                padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
-                child: Row(
-                  children: [
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Text(
-                        AppStrings.library,
-                        style: GoogleFonts.outfit(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: c.textPrimary,
-                        ),
-                      ),
-                    ),
-                    if (isScanning)
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: c.primary,
+    return PopScope(
+      // Back while selecting leaves selection mode instead of the screen.
+      canPop: !_isSelecting,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _exitSelecting();
+      },
+      child: Scaffold(
+        backgroundColor: c.background,
+        body: SafeArea(
+          child: Column(
+            children: [
+              // ── Header ───────────────────────────────────────
+              if (_isSelecting)
+                SelectionHeader(
+                  count: _selectedIds.length,
+                  total: displayedTotal,
+                  onToggleSelectAll: () => _toggleSelectAll(music),
+                  onCancel: _exitSelecting,
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          AppStrings.library,
+                          style: GoogleFonts.outfit(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: c.textPrimary,
                           ),
                         ),
                       ),
-                    PopupMenuButton<SortType>(
-                      color: c.card,
-                      icon: Icon(Icons.sort_rounded, color: c.textSecondary),
-                      onSelected: (t) => setState(() => _sortType = t),
-                      itemBuilder:
-                          (_) => [
-                            _menuItem(SortType.az, AppStrings.sortAZ),
-                            _menuItem(
-                              SortType.recentlyAdded,
-                              AppStrings.sortNewest,
+                      if (isScanning)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: c.primary,
                             ),
-                            _menuItem(SortType.duration, AppStrings.duration),
-                          ],
+                          ),
+                        ),
+                      PopupMenuButton<SortType>(
+                        color: c.card,
+                        icon: Icon(Icons.sort_rounded, color: c.textSecondary),
+                        onSelected: (t) => setState(() => _sortType = t),
+                        itemBuilder:
+                            (_) => [
+                              _menuItem(SortType.az, AppStrings.sortAZ),
+                              _menuItem(
+                                SortType.recentlyAdded,
+                                AppStrings.sortNewest,
+                              ),
+                              _menuItem(SortType.duration, AppStrings.duration),
+                            ],
+                      ),
+                    ],
+                  ),
+                ),
+
+              // Scan progress bar
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                height: isScanning ? 2 : 0,
+                child:
+                    isScanning
+                        ? LinearProgressIndicator(
+                          backgroundColor: c.divider,
+                          color: c.primary,
+                        )
+                        : const SizedBox.shrink(),
+              ),
+
+              // ── Search bar + scope indicator — ẩn khi selecting ──
+              if (!_isSelecting) ...[
+                LibrarySearchBar(controller: _searchCtrl),
+
+                // ── TabBar ──────────────────────────────────────
+                LibraryTabBar(tabCtrl: _tabCtrl, music: music),
+              ],
+
+              // ── Tab content ──────────────────────────────────
+              // One SongsTab element in both modes: swapping the tab view for a
+              // bare copy while selecting rebuilt the ListView and jumped to
+              // the top. Selection starts from a long-press inside this tab,
+              // so the view already sits on it, and the TabBar is hidden
+              // above until selection ends.
+              Expanded(
+                child: FadeTabBarView(
+                  controller: _tabCtrl,
+                  children: [
+                    SongsTab(
+                      sortType: _sortType,
+                      onScanTap: _navigateToScan,
+                      isSelecting: _isSelecting,
+                      selectedIds: _selectedIds,
+                      onEnterSelect: _enterSelecting,
+                      onToggleSelect: _toggleSelect,
                     ),
+                    const PlaylistsTab(),
+                    AlbumsTab(onScanTap: _navigateToScan),
+                    ArtistsTab(onScanTap: _navigateToScan),
+                    FoldersTab(onScanTap: _navigateToScan),
                   ],
                 ),
               ),
 
-            // Scan progress bar
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              height: isScanning ? 2 : 0,
-              child:
-                  isScanning
-                      ? LinearProgressIndicator(
-                        backgroundColor: c.divider,
-                        color: c.primary,
-                      )
-                      : const SizedBox.shrink(),
-            ),
-
-            // ── Search bar + scope indicator — ẩn khi selecting ──
-            if (!_isSelecting) ...[
-              LibrarySearchBar(controller: _searchCtrl),
-
-              // ── TabBar ──────────────────────────────────────
-              LibraryTabBar(tabCtrl: _tabCtrl, music: music),
+              // ── Action bar — chỉ hiện khi selecting ─────────
+              if (_isSelecting)
+                SelectionActionBar(
+                  count: _selectedIds.length,
+                  onAddToPlaylist: () => _showBulkPlaylistSheet(music),
+                  onFavorite: () => _bulkFavorite(music),
+                  onHide: () => _bulkHide(music),
+                ),
             ],
-
-            // ── Tab content ──────────────────────────────────
-            // One SongsTab element in both modes: swapping the tab view for a
-            // bare copy while selecting rebuilt the ListView and jumped to
-            // the top. Selection starts from a long-press inside this tab,
-            // so the view already sits on it, and the TabBar is hidden
-            // above until selection ends.
-            Expanded(
-              child: FadeTabBarView(
-                controller: _tabCtrl,
-                children: [
-                  SongsTab(
-                    sortType: _sortType,
-                    onScanTap: _navigateToScan,
-                    isSelecting: _isSelecting,
-                    selectedIds: _selectedIds,
-                    onEnterSelect: _enterSelecting,
-                    onToggleSelect: _toggleSelect,
-                  ),
-                  const PlaylistsTab(),
-                  AlbumsTab(onScanTap: _navigateToScan),
-                  ArtistsTab(onScanTap: _navigateToScan),
-                  FoldersTab(onScanTap: _navigateToScan),
-                ],
-              ),
-            ),
-
-            // ── Action bar — chỉ hiện khi selecting ─────────
-            if (_isSelecting)
-              SelectionActionBar(
-                count: _selectedIds.length,
-                onAddToPlaylist: () => _showBulkPlaylistSheet(music),
-                onFavorite: () => _bulkFavorite(music),
-                onHide: () => _bulkHide(music),
-              ),
-          ],
+          ),
         ),
       ),
     );
