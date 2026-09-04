@@ -6,8 +6,6 @@ import 'package:rxdart/rxdart.dart';
 import '../models/song_item.dart';
 import 'package:audio_service/audio_service.dart';
 
-typedef VoidCallback = void Function();
-
 abstract class PlayerAudioGateway {
   Future<void> loadSongs(List<SongItem> songs, {int initialIndex = 0});
   Future<void> reorderTo(List<SongItem> newOrder);
@@ -21,7 +19,6 @@ abstract class PlayerAudioGateway {
   Future<void> seekToIndex(int index);
   Future<void> setLoopMode(LoopMode mode);
   Future<void> setSpeed(double speed);
-  Future<void> setShuffleModeEnabled(bool enabled);
 
   Stream<bool> get playingStream;
   Stream<int?> get currentIndexStream;
@@ -136,8 +133,6 @@ class MuzicAudioHandler implements PlayerAudioGateway {
   Future<void> stop()                  => _player.stop();
   @override
   Future<void> seek(Duration position) => _player.seek(position);
-  Future<void> seekToNext()            => _player.seekToNext();
-  Future<void> seekToPrevious()        => _player.seekToPrevious();
 
   @override
   Future<void> seekToIndex(int index) async {
@@ -150,11 +145,6 @@ class MuzicAudioHandler implements PlayerAudioGateway {
   // ── Playback speed (0.5x → 2.0x) ─────────────────────────────────────────
   @override
   Future<void> setSpeed(double speed) => _player.setSpeed(speed);
-
-  @override
-  Future<void> setShuffleModeEnabled(bool enabled) async {
-    await _player.setShuffleModeEnabled(false);
-  }
 
   @override
   Stream<bool>             get playingStream          => _player.playingStream;

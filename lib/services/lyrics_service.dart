@@ -15,7 +15,6 @@ class LyricsResult {
   const LyricsResult._({
     required this.type,
     this.lines = const [],
-    this.errorMessage,
   });
 
   factory LyricsResult.synced(List<LyricLine> lines) =>
@@ -27,15 +26,13 @@ class LyricsResult {
   factory LyricsResult.notFound() =>
       const LyricsResult._(type: LyricsResultType.notFound);
 
-  factory LyricsResult.error(String message) =>
-      LyricsResult._(type: LyricsResultType.error, errorMessage: message);
+  factory LyricsResult.error() =>
+      const LyricsResult._(type: LyricsResultType.error);
 
   final LyricsResultType type;
   final List<LyricLine> lines;
-  final String? errorMessage;
 
   bool get isSynced => type == LyricsResultType.synced;
-  bool get isPlain => type == LyricsResultType.plain;
   bool get hasLyrics => lines.isNotEmpty;
 }
 
@@ -127,28 +124,7 @@ class LyricsService {
       return result;
     } catch (e, stack) {
       debugPrint('❌ [Lyrics] Fetch error: $e\n$stack');
-      return LyricsResult.error(e.toString());
-    }
-  }
-
-  /// Xóa cache của một bài.
-  Future<void> clearCache(String title, String artist) async {
-    try {
-      final file = await _cacheFile(title, artist);
-      if (await file.exists()) await file.delete();
-    } catch (e) {
-      debugPrint('⚠️ [Lyrics] clearCache error: $e');
-    }
-  }
-
-  /// Xóa toàn bộ lyrics cache.
-  Future<void> clearAllCache() async {
-    try {
-      final dir = await _getCacheDir();
-      if (await dir.exists()) await dir.delete(recursive: true);
-      _cacheDir = null;
-    } catch (e) {
-      debugPrint('⚠️ [Lyrics] clearAllCache error: $e');
+      return LyricsResult.error();
     }
   }
 
@@ -184,7 +160,7 @@ class LyricsService {
 
     if (response.statusCode != 200) {
       debugPrint('🔴 [Lyrics] Non-200 status: ${response.statusCode}');
-      return LyricsResult.error('HTTP ${response.statusCode}');
+      return LyricsResult.error();
     }
 
     final json = jsonDecode(response.body) as Map<String, dynamic>;

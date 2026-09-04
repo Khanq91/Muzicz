@@ -44,9 +44,6 @@ class MusicProvider extends ChangeNotifier {
   List<PlaylistItem> _playlists = [];
   List<PlaylistItem> get playlists => _playlists;
 
-  int _scanCount = 0;
-  int get scanCount => _scanCount;
-
   Map<int, Map<String, String>> get hiddenSongs => _storage.hiddenSongs;
 
   String _homeSearchQuery = '';
@@ -75,9 +72,6 @@ class MusicProvider extends ChangeNotifier {
 
   String get homeSearchQuery => _homeSearchQuery;
   String get librarySearchQuery => _librarySearchQuery;
-
-  // Deprecated - kept for backward compat but redirects to home
-  String get searchQuery => _homeSearchQuery;
 
   void setHomeSearchQuery(String q) {
     final query = q.toLowerCase().trim();
@@ -113,9 +107,6 @@ class MusicProvider extends ChangeNotifier {
     await _storage.unhideSong(songId);
     await scanMusic();
   }
-
-  // Deprecated
-  void setSearchQuery(String q) => setHomeSearchQuery(q);
 
   List<SongItem> get filteredSongs {
     if (_homeSearchQuery.isEmpty) return _allSongs;
@@ -186,8 +177,6 @@ class MusicProvider extends ChangeNotifier {
 
   // ── Scanning ──────────────────────────────────────────────────────────────
 
-  // FIX P1: debounce notifyListeners during scan
-  int _lastNotifiedCount = 0;
   Future<void>? _activeScan;
 
   Future<void> scanMusic() {
@@ -204,8 +193,6 @@ class MusicProvider extends ChangeNotifier {
 
   Future<void> _performScan() async {
     _status = LibraryStatus.scanning;
-    _scanCount = 0;
-    _lastNotifiedCount = 0;
     notifyListeners();
 
     try {
@@ -216,17 +203,7 @@ class MusicProvider extends ChangeNotifier {
         return;
       }
 
-      var songs = await _scanner.scanSongs(
-        ensurePermission: false,
-        onProgress: (count) {
-          _scanCount = count;
-          // FIX P1: Only notify every 50 songs to avoid excessive rebuilds
-          if (count - _lastNotifiedCount >= 50 || count == 0) {
-            _lastNotifiedCount = count;
-            notifyListeners();
-          }
-        },
-      );
+      var songs = await _scanner.scanSongs(ensurePermission: false);
 
       // Filter hidden
       final hidden = _storage.hiddenSongIds;
@@ -381,8 +358,6 @@ class MusicProvider extends ChangeNotifier {
       artistId: song.artistId,
       data: song.data,
       duration: song.duration,
-      size: song.size,
-      track: song.track,
       dateAdded: song.dateAdded,
     );
   }

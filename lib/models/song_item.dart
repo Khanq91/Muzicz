@@ -10,8 +10,6 @@ class SongItem {
   final int artistId;
   final String data; // absolute file path
   final int duration; // milliseconds
-  final int? size;
-  final int? track;
   final DateTime? dateAdded;
 
   const SongItem({
@@ -23,8 +21,6 @@ class SongItem {
     required this.artistId,
     required this.data,
     required this.duration,
-    this.size,
-    this.track,
     this.dateAdded,
   });
 
@@ -38,8 +34,6 @@ class SongItem {
       artistId: s.artistId ?? 0,
       data: s.data,
       duration: s.duration ?? 0,
-      size: s.size,
-      track: s.track,
       dateAdded: s.dateAdded != null
           ? DateTime.fromMillisecondsSinceEpoch(s.dateAdded! * 1000)
           : null,
@@ -56,8 +50,6 @@ class SongItem {
     'artistId': artistId,
     'data': data,
     'duration': duration,
-    'size': size,
-    'track': track,
     'dateAdded': dateAdded?.millisecondsSinceEpoch,
   };
 
@@ -70,8 +62,6 @@ class SongItem {
     artistId: json['artistId'] as int? ?? 0,
     data: json['data'] as String? ?? '',
     duration: json['duration'] as int? ?? 0,
-    size: json['size'] as int?,
-    track: json['track'] as int?,
     dateAdded: json['dateAdded'] != null
         ? DateTime.fromMillisecondsSinceEpoch(json['dateAdded'] as int)
         : null,

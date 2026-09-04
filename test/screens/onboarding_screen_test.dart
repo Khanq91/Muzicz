@@ -153,13 +153,9 @@ class _OnboardingScanner extends MusicScanner {
   Future<bool> requestPermission() async => permissionGranted;
 
   @override
-  Future<List<SongItem>> scanSongs({
-    ScanProgressCallback? onProgress,
-    bool ensurePermission = true,
-  }) async {
+  Future<List<SongItem>> scanSongs({bool ensurePermission = true}) async {
     final error = scanError;
     if (error != null) throw error;
-    onProgress?.call(songs.length);
     return songs;
   }
 }

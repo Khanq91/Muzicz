@@ -62,19 +62,14 @@ class ThemeProvider extends ChangeNotifier {
   int _visualRevision = 0;
   int get visualRevision => _visualRevision;
 
-  bool _isSwitching = false;
-  bool get isSwitching => _isSwitching;
-
   AppColorsData get colors => _mode.colors;
 
   ThemeData get themeData => AppTheme.buildTheme(_mode.colors);
 
-  /// Đổi theme: set cờ isSwitching để UI có thể dùng skeleton/fade,
-  /// sau đó apply theme và sync SystemUI overlay style.
+  /// Đổi theme rồi sync SystemUI overlay style.
   Future<void> setTheme(AppThemeMode mode) async {
     if (_mode == mode) return;
 
-    _isSwitching = true;
     notifyListeners();
 
     // Nhường frame để overlay kịp render trước khi theme bật
@@ -85,9 +80,8 @@ class ThemeProvider extends ChangeNotifier {
     _syncSystemUI(mode);
     notifyListeners();
 
-    // Chờ animation xong rồi bỏ cờ
+    // Chờ animation xong
     await Future.delayed(const Duration(milliseconds: 320));
-    _isSwitching = false;
     notifyListeners();
 
     final prefs = await SharedPreferences.getInstance();
@@ -97,7 +91,6 @@ class ThemeProvider extends ChangeNotifier {
   Future<void> setBottomNavStyle(BottomNavStyle style) async {
     if (_bottomNavStyle == style) return;
 
-    _isSwitching = true;
     notifyListeners();
 
     await Future.delayed(const Duration(milliseconds: 16));
@@ -107,18 +100,10 @@ class ThemeProvider extends ChangeNotifier {
     notifyListeners();
 
     await Future.delayed(const Duration(milliseconds: 320));
-    _isSwitching = false;
     notifyListeners();
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_bottomNavStylePrefKey, style.key);
-  }
-
-  /// Toggle nhanh qua 3 mode
-  Future<void> cycleTheme() async {
-    final next =
-        AppThemeMode.values[(_mode.index + 1) % AppThemeMode.values.length];
-    await setTheme(next);
   }
 
   /// Đồng bộ thanh status bar / navigation bar với theme mới

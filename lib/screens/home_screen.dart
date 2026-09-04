@@ -33,8 +33,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   static const _tabs = [
     _HomeTabBody(),
-    OnlineScreen(isEmbedded: true),
-    LibraryScreen(isEmbedded: true),
+    OnlineScreen(),
+    LibraryScreen(),
   ];
 
   @override

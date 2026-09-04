@@ -3,8 +3,6 @@ import 'package:on_audio_query/on_audio_query.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../models/song_item.dart';
 
-typedef ScanProgressCallback = void Function(int count);
-
 class MusicScanner {
   MusicScanner({OnAudioQuery? audioQuery})
     : _audioQuery = audioQuery ?? OnAudioQuery();
@@ -45,20 +43,7 @@ class MusicScanner {
     return false;
   }
 
-  Future<bool> checkPermission() async {
-    if (Platform.isAndroid) {
-      final audio = await Permission.audio.status;
-      if (audio.isGranted) return true;
-      final storage = await Permission.storage.status;
-      return storage.isGranted;
-    }
-    return _audioQuery.permissionsStatus();
-  }
-
-  Future<List<SongItem>> scanSongs({
-    ScanProgressCallback? onProgress,
-    bool ensurePermission = true,
-  }) async {
+  Future<List<SongItem>> scanSongs({bool ensurePermission = true}) async {
     if (ensurePermission) {
       final hasPermission = await requestPermission();
       if (!hasPermission) return [];
@@ -110,27 +95,7 @@ class MusicScanner {
           return audioExtensions.contains(ext);
         }).toList();
 
-    final result = filtered.map(SongItem.fromAudioQuery).toList();
-    onProgress?.call(result.length);
-    return result;
-  }
-
-  Future<List<AlbumModel>> scanAlbums() async {
-    final hasPermission = await requestPermission();
-    if (!hasPermission) return [];
-    return _audioQuery.queryAlbums(
-      sortType: AlbumSortType.ALBUM,
-      orderType: OrderType.ASC_OR_SMALLER,
-    );
-  }
-
-  Future<List<ArtistModel>> scanArtists() async {
-    final hasPermission = await requestPermission();
-    if (!hasPermission) return [];
-    return _audioQuery.queryArtists(
-      sortType: ArtistSortType.ARTIST,
-      orderType: OrderType.ASC_OR_SMALLER,
-    );
+    return filtered.map(SongItem.fromAudioQuery).toList();
   }
 
   Future<Map<String, List<SongItem>>> groupByAlbum(List<SongItem> songs) async {

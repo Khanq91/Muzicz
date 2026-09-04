@@ -267,7 +267,6 @@ class PlayerProvider extends ChangeNotifier {
     }
 
     _shuffleEnabled = !_shuffleEnabled;
-    await _handler.setShuffleModeEnabled(false);
 
     if (_shuffleEnabled) {
       final currentSongId = _currentSong?.id;

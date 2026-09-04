@@ -283,10 +283,6 @@ class _SettingsSheetState extends State<_SettingsSheet> {
                 ),
               ],
             ),
-            // onTap: () {
-            //   Navigator.pop(context);
-            //   ThemeSelectorSheet.show(context);
-            // },
             onTap: () {
               Navigator.pop(context);
 
@@ -639,48 +635,45 @@ class _ActionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = colors;
-    return Opacity(
-      opacity: 1.0,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        decoration: BoxDecoration(
-          color: c.surfaceElevated,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: c.border, width: 0.5),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: c.surfaceElevated,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: c.border, width: 0.5),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 4,
         ),
-        child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 4,
+        leading: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            color: iconColor.withValues(alpha: 0.15),
           ),
-          leading: Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: iconColor.withValues(alpha: 0.15),
-            ),
-            child: Icon(icon, color: iconColor, size: 22),
-          ),
-          title: Text(
-            title,
-            style: GoogleFonts.outfit(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: c.textPrimary,
-            ),
-          ),
-          subtitle: Text(
-            subtitle,
-            style: GoogleFonts.outfit(fontSize: 12, color: c.textTertiary),
-          ),
-          trailing: Icon(
-            Icons.chevron_right_rounded,
-            color: c.textDisabled,
-            size: 20,
-          ),
-          onTap: onTap,
+          child: Icon(icon, color: iconColor, size: 22),
         ),
+        title: Text(
+          title,
+          style: GoogleFonts.outfit(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            color: c.textPrimary,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: GoogleFonts.outfit(fontSize: 12, color: c.textTertiary),
+        ),
+        trailing: Icon(
+          Icons.chevron_right_rounded,
+          color: c.textDisabled,
+          size: 20,
+        ),
+        onTap: onTap,
       ),
     );
   }

@@ -4,7 +4,6 @@ import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:provider/provider.dart';
 import '../models/song_item.dart';
 import '../providers/music_provider.dart';
-import '../providers/player_provider.dart';
 import '../widgets/library/albums_tab.dart';
 import '../widgets/library/artists_tab.dart';
 import '../widgets/library/bulk_playlist_sheet.dart';
@@ -16,14 +15,12 @@ import '../widgets/library/selection_action_bar.dart';
 import '../widgets/library/selection_header.dart';
 import '../widgets/library/songs_tab.dart';
 import '../widgets/library/sort_type.dart';
-import '../widgets/mini_player.dart';
 import 'onboarding_screen.dart';
 import 'playlist_screen.dart';
 import 'package:muziczz/core/app_strings.dart';
 
 class LibraryScreen extends StatefulWidget {
-  const LibraryScreen({super.key, this.isEmbedded = false});
-  final bool isEmbedded;
+  const LibraryScreen({super.key});
 
   @override
   State<LibraryScreen> createState() => _LibraryScreenState();
@@ -248,16 +245,7 @@ class _LibraryScreenState extends State<LibraryScreen>
                 padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
                 child: Row(
                   children: [
-                    if (!widget.isEmbedded)
-                      IconButton(
-                        icon: Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          size: 20,
-                          color: c.textPrimary,
-                        ),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    if (widget.isEmbedded) const SizedBox(width: 16),
+                    const SizedBox(width: 16),
                     Expanded(
                       child: Text(
                         AppStrings.library,
@@ -358,15 +346,6 @@ class _LibraryScreenState extends State<LibraryScreen>
                 onAddToPlaylist: () => _showBulkPlaylistSheet(music),
                 onFavorite: () => _bulkFavorite(music),
                 onHide: () => _bulkHide(music),
-              ),
-
-            if (!widget.isEmbedded)
-              Consumer<PlayerProvider>(
-                builder:
-                    (_, player, __) =>
-                        player.currentSong != null
-                            ? const MiniPlayer()
-                            : const SizedBox.shrink(),
               ),
           ],
         ),

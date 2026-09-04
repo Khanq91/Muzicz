@@ -405,12 +405,6 @@ class DownloadNotifier extends Notifier<DownloadState> {
       (updatedTask) async {
         _replaceTask(updatedTask);
 
-        // Khi task xong → xử lý queue tiếp (TASK PROCESS RIEAL
-        // if (updatedTask.status.isFinished) {
-        //   _subs.remove(task.id);
-        //   _processQueue();
-        // }
-
         if (updatedTask.status == DownloadStatus.done) {
           // Audio extraction now belongs to the foreground service so it can
           // finish even when the Flutter activity is detached.
@@ -584,8 +578,3 @@ class DownloadTaskNotifier
   @override
   DownloadTask? build(String arg) => ref.watch(downloadProvider).taskById(arg);
 }
-
-/// Đếm task đang active (dùng cho badge trên Download tab)
-final activeDownloadCountProvider = Provider<int>((ref) {
-  return ref.watch(downloadProvider).activeTasks.length;
-});

@@ -350,14 +350,10 @@ class _RecordingMusicScanner extends MusicScanner {
   }
 
   @override
-  Future<List<SongItem>> scanSongs({
-    ScanProgressCallback? onProgress,
-    bool ensurePermission = true,
-  }) async {
+  Future<List<SongItem>> scanSongs({bool ensurePermission = true}) async {
     scanCalls += 1;
     lastEnsurePermission = ensurePermission;
     if (ensurePermission) await requestPermission();
-    onProgress?.call(0);
     return songs;
   }
 }
@@ -375,10 +371,7 @@ class _BlockingMusicScanner extends MusicScanner {
   }
 
   @override
-  Future<List<SongItem>> scanSongs({
-    ScanProgressCallback? onProgress,
-    bool ensurePermission = true,
-  }) {
+  Future<List<SongItem>> scanSongs({bool ensurePermission = true}) {
     scanCalls += 1;
     return scan.future;
   }

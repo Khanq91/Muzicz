@@ -20,7 +20,6 @@ class DownloadScreen extends ConsumerStatefulWidget {
 
 class _DownloadScreenState extends ConsumerState<DownloadScreen> {
   bool _navigated = false;
-  ProviderSubscription<DownloadState>? _sub;
 
   @override
   void initState() {
@@ -37,12 +36,6 @@ class _DownloadScreenState extends ConsumerState<DownloadScreen> {
         });
       }
     });
-  }
-
-  @override
-  void dispose() {
-    _sub?.close();
-    super.dispose();
   }
 
   @override

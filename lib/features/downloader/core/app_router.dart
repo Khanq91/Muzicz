@@ -1,5 +1,3 @@
-// lib/core/app_router.dart
-
 import 'package:flutter/material.dart';
 
 import '../models/playlist_entry.dart';
@@ -11,11 +9,6 @@ import '../screens/playlist_picker/playlist_picker_screen.dart';
 import '../screens/summary/summary_screen.dart';
 
 class AppRoutes {
-  // static const String analyze = '/';
-  // static const String playlistPicker  = '/playlist-picker';
-  // static const String format = '/format';
-  // static const String download = '/download';
-  // static const String summary = '/summary';
   static const String analyze        = '/dl/analyze';
   static const String playlistPicker = '/dl/playlist-picker';
   static const String format         = '/dl/format';
@@ -44,19 +37,14 @@ class AppRouter {
         return _slide(PlaylistPickerScreen(playlistInfo: info), settings);
 
       case AppRoutes.format:
-        final args = settings.arguments;
-        // Hỗ trợ cả 2 dạng arguments để không break code cũ
-        if (args is FormatScreenArgs) {
-          return _slide(
-            FormatScreen(
-              videoInfo: args.videoInfo,
-              selectedEntries: args.selectedEntries,
-            ),
-            settings,
-          );
-        }
-        // Legacy: truyền thẳng VideoInfo (video đơn từ analyze_screen)
-        return _slide(FormatScreen(videoInfo: args as VideoInfo), settings);
+        final args = settings.arguments as FormatScreenArgs;
+        return _slide(
+          FormatScreen(
+            videoInfo: args.videoInfo,
+            selectedEntries: args.selectedEntries,
+          ),
+          settings,
+        );
 
       case AppRoutes.download:
         return _slide(const DownloadScreen(), settings);

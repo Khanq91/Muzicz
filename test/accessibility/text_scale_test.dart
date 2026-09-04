@@ -160,9 +160,6 @@ class _FakePlayerAudioGateway implements PlayerAudioGateway {
   Future<void> setLoopMode(LoopMode mode) async {}
 
   @override
-  Future<void> setShuffleModeEnabled(bool enabled) async {}
-
-  @override
   Future<void> setSpeed(double speed) async {}
 
   @override

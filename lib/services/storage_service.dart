@@ -143,16 +143,6 @@ class StorageService {
     _replaceMap(_metaOverrides, map);
   }
 
-  Future<void> removeMetaOverride(int songId) async {
-    final map = {..._metaOverrides};
-    map.remove(songId);
-    await _prefs.setString(
-      _keyMetaOverrides,
-      jsonEncode(map.map((k, v) => MapEntry(k.toString(), v))),
-    );
-    _replaceMap(_metaOverrides, map);
-  }
-
   // ── Hidden songs ──────────────────────────────────────────────────────────
 
   Map<int, Map<String, String>> get hiddenSongs =>

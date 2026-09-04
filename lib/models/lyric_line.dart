@@ -9,9 +9,4 @@ class LyricLine {
 
   /// null = plain lyrics (không có timestamp).
   final Duration? time;
-
-  bool get isSynced => time != null;
-
-  @override
-  String toString() => 'LyricLine(${time?.inMilliseconds}ms, "$text")';
 }

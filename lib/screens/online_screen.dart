@@ -4,8 +4,7 @@ import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:muziczz/core/app_strings.dart';
 
 class OnlineScreen extends StatelessWidget {
-  const OnlineScreen({super.key, this.isEmbedded = false});
-  final bool isEmbedded;
+  const OnlineScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -20,17 +19,7 @@ class OnlineScreen extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(8, 4, 16, 0),
               child: Row(
                 children: [
-                  // ← Ẩn back button khi isEmbedded
-                  if (!isEmbedded)
-                    IconButton(
-                      icon: Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        size: 20,
-                        color: c.textPrimary,
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  if (isEmbedded) const SizedBox(width: 16),
+                  const SizedBox(width: 16),
                   Text(
                     AppStrings.online,
                     style: GoogleFonts.outfit(

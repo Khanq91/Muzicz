@@ -17,11 +17,3 @@ final networkStatusProvider = StreamProvider<NetworkStatus>((ref) {
   service.init();
   return service.statusStream;
 });
-
-/// Shortcut: chỉ cần biết online hay không
-final isOnlineProvider = Provider<bool>((ref) {
-  return ref.watch(networkStatusProvider).maybeWhen(
-    data: (status) => status == NetworkStatus.online,
-    orElse: () => true, // Giả sử online khi đang load
-  );
-});

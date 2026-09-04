@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
@@ -218,24 +217,6 @@ class _PlaylistCover extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
-    // Custom image
-    if (playlist.coverPath != null) {
-      // Camera photos can be 12MP; decode at the cell's physical size
-      // (x2 so a landscape photo still fills the square after the cover
-      // crop) instead of the original resolution.
-      final cacheWidth =
-          (size * MediaQuery.devicePixelRatioOf(context) * 2).round();
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: Image.file(
-          File(playlist.coverPath!),
-          width: size,
-          height: size,
-          fit: BoxFit.cover,
-          cacheWidth: cacheWidth,
-        ),
-      );
-    }
     // Grid of up to 4 album arts
     final songs = playlist.songs.take(4).toList();
     if (songs.isEmpty) {
@@ -963,10 +944,8 @@ class _PlaylistHeader extends StatelessWidget {
       children: [
         // Background
         Container(decoration: BoxDecoration(gradient: c.backgroundGradient)),
-        // Cover image or generated mosaic
-        if (playlist.coverPath != null)
-          Image.file(File(playlist.coverPath!), fit: BoxFit.cover)
-        else if (playlist.songs.isNotEmpty)
+        // Generated mosaic from the first song's album art
+        if (playlist.songs.isNotEmpty)
           Opacity(
             opacity: 0.4,
             child: QueryArtworkWidget(

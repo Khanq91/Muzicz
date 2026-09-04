@@ -116,8 +116,6 @@ abstract final class AppStrings {
   // Thanh điều hướng dưới
   // ─────────────────────────────────────────────────────────────────────────
   static const tabHome = 'Trang chủ';
-  static const tabOnline = online;
-  static const tabLibrary = library;
 
   // ─────────────────────────────────────────────────────────────────────────
   // Welcome / Onboarding

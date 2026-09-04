@@ -142,23 +142,4 @@ class LyricsProvider extends ChangeNotifier {
 
     return result;
   }
-
-  // ── Reset khi đổi bài ─────────────────────────────────────────────────────
-
-  void reset() {
-    _state = LyricsState.idle;
-    notifyListeners();
-  }
-
-  // ── Cache utils ────────────────────────────────────────────────────────────
-
-  Future<void> clearCacheForCurrent() async {
-    final id = _state.songId;
-    if (id == null) return;
-    // Cần song object để clear — nếu caller có thể pass vào thì tốt hơn.
-    // Đây chỉ reset state, cache file tự expire theo logic bên LyricsService.
-    reset();
-  }
-
-  Future<void> clearAllCache() => _service.clearAllCache();
 }

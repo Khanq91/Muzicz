@@ -53,7 +53,7 @@ class _EditSongSheetState extends State<EditSongSheet> {
     if (t.isNotEmpty) {
       context.read<MusicProvider>().updateSongMeta(
         song.id,
-        t.isEmpty ? song.title : t,
+        t,
         a.isEmpty ? song.artist : a,
       );
     }

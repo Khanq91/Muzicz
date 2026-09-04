@@ -136,18 +136,6 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                           );
                         },
                       ),
-                      // const SizedBox(height: 14),
-                      // // Secondary CTA
-                      // _OutlinedButton(
-                      //   label: 'Tiếp tục mà không scan',
-                      //   onTap: () {
-                      //     Navigator.of(context).pushReplacement(
-                      //       MaterialPageRoute(
-                      //         builder: (_) => const HomeScreen(),
-                      //       ),
-                      //     );
-                      //   },
-                      // ),
                       const SizedBox(height: 40),
                     ],
                   ),
@@ -241,75 +229,6 @@ class _GradientButtonState extends State<_GradientButton>
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _OutlinedButton extends StatefulWidget {
-  const _OutlinedButton({required this.label, required this.onTap});
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  State<_OutlinedButton> createState() => _OutlinedButtonState();
-}
-
-class _OutlinedButtonState extends State<_OutlinedButton>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late final Animation<double> _scale;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 120),
-    );
-    _scale = Tween(
-      begin: 1.0,
-      end: 0.96,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.appColors;
-    return GestureDetector(
-      onTapDown: (_) => _ctrl.forward(),
-      onTapUp: (_) async {
-        await _ctrl.reverse();
-        widget.onTap();
-      },
-      onTapCancel: () => _ctrl.reverse(),
-      child: ScaleTransition(
-        scale: _scale,
-        child: Container(
-          width: double.infinity,
-          height: 56,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: c.border, width: 1),
-            color: c.glassBg,
-          ),
-          child: Center(
-            child: Text(
-              widget.label,
-              style: GoogleFonts.outfit(
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
-                color: c.textSecondary,
-              ),
-            ),
           ),
         ),
       ),

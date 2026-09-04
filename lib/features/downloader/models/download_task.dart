@@ -1,7 +1,3 @@
-// lib/models/download_task.dart
-
-import 'dart:io';
-
 /// Trạng thái của một tác vụ tải xuống
 enum DownloadStatus {
   /// Đang xếp hàng chờ (vượt quá maxConcurrentDownloads)
@@ -80,9 +76,6 @@ class DownloadTask {
   /// Thời điểm hoàn thành
   final DateTime? completedAt;
 
-  /// Process handle để cancel
-  final Process? process;
-
   const DownloadTask({
     required this.id,
     required this.title,
@@ -98,7 +91,6 @@ class DownloadTask {
     this.outputPath,
     this.startedAt,
     this.completedAt,
-    this.process,
   });
 
   // ── copyWith ───────────────────────────────────────────
@@ -112,7 +104,6 @@ class DownloadTask {
     String? outputPath,
     DateTime? startedAt,
     DateTime? completedAt,
-    Process? process,
   }) {
     return DownloadTask(
       id: id,
@@ -129,7 +120,6 @@ class DownloadTask {
       outputPath: outputPath ?? this.outputPath,
       startedAt: startedAt ?? this.startedAt,
       completedAt: completedAt ?? this.completedAt,
-      process: process ?? this.process,
     );
   }
 

@@ -14,10 +14,8 @@ class MusicListTile extends StatelessWidget {
     super.key,
     required this.song,
     required this.onTap,
-    this.showAlbumArt = true,
     this.trailing,
     this.isActive = false,
-    this.index,
     // ── Selection support ──────────────────────────────────────────────────
     this.isSelecting = false,
     this.isSelected = false,
@@ -26,10 +24,8 @@ class MusicListTile extends StatelessWidget {
 
   final SongItem song;
   final VoidCallback onTap;
-  final bool showAlbumArt;
   final Widget? trailing;
   final bool isActive;
-  final int? index;
   final bool isSelecting;
   final bool isSelected;
   final VoidCallback? onLongPress;
@@ -77,15 +73,13 @@ class MusicListTile extends StatelessWidget {
           ),
           child: Row(
             children: [
-              if (showAlbumArt) ...[
-                _AlbumArtWithCheckbox(
-                  albumId: song.albumId,
-                  isActive: isActive && !isSelecting,
-                  isSelecting: isSelecting,
-                  isSelected: isSelected,
-                ),
-                const SizedBox(width: 14),
-              ],
+              _AlbumArtWithCheckbox(
+                albumId: song.albumId,
+                isActive: isActive && !isSelecting,
+                isSelecting: isSelecting,
+                isSelected: isSelected,
+              ),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
