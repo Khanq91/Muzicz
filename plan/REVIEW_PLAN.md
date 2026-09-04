@@ -51,35 +51,35 @@ Trước khi xoá từng mục: grep lại symbol trong `lib/` + `test/` để c
 ```
 
 **Checklist A — file:**
-- [ ] `stray_file` — `promt.md` (root) — prompt lập kế hoạch cũ 27KB, không thuộc source; xoá (hoặc MOVE vào `plan/old_plan/` nếu t muốn giữ lịch sử).
-- [ ] `generated_output` — `audit/flutter_analyze.txt` — output của `scripts/flutter_analyze.bat`, cũ từ 2026-08-14, chứa tên máy; xoá và thêm `audit/` vào `.gitignore`.
-- [ ] `generated_output` — `.auditz/findings.sarif` — sinh từ `auditz.py`; xoá, thêm vào `.gitignore`. (`.auditz/report.md`: xem câu hỏi 5.)
-- [ ] `unused_asset` — `assets/screenshots/z7674788519808_a0bf243ef3e2faa0031fa0fe5e97694c.jpg` — README không dùng; xoá.
-- [ ] `dead_file` — `lib/theme/app_colors.dart` (172 dòng) — không file nào import; xoá cùng 2 dòng comment `AppColors.` ở `lib/screens/playlist_screen.dart:298-302`.
-- [ ] `dead_file` — `lib/features/downloader/services/audio_extract_service.dart` — 100% comment; xoá.
-- [ ] `dead_file` — `lib/features/downloader/utils/fake_progress.dart` — chỉ còn 2 dòng comment tham chiếu ở `download_provider.dart:156,387`; xoá cả file lẫn comment.
-- [ ] `placeholder_test` — `test/widget_test.dart` — chỉ `expect(true, isTrue)`; xoá.
+- [x] `stray_file` — `promt.md` (root) — prompt lập kế hoạch cũ 27KB, không thuộc source; xoá (hoặc MOVE vào `plan/old_plan/` nếu t muốn giữ lịch sử).
+- [x] `generated_output` — `audit/flutter_analyze.txt` — output của `scripts/flutter_analyze.bat`, cũ từ 2026-08-14, chứa tên máy; xoá và thêm `audit/` vào `.gitignore`.
+- [x] `generated_output` — `.auditz/findings.sarif` — sinh từ `auditz.py`; xoá, thêm vào `.gitignore`. (`.auditz/report.md`: xem câu hỏi 5.)
+- [x] `unused_asset` — `assets/screenshots/z7674788519808_a0bf243ef3e2faa0031fa0fe5e97694c.jpg` — README không dùng; xoá.
+- [x] `dead_file` — `lib/theme/app_colors.dart` (172 dòng) — không file nào import; xoá cùng 2 dòng comment `AppColors.` ở `lib/screens/playlist_screen.dart:298-302`.
+- [x] `dead_file` — `lib/features/downloader/services/audio_extract_service.dart` — 100% comment; xoá.
+- [x] `dead_file` — `lib/features/downloader/utils/fake_progress.dart` — chỉ còn 2 dòng comment tham chiếu ở `download_provider.dart:156,387`; xoá cả file lẫn comment.
+- [x] `placeholder_test` — `test/widget_test.dart` — chỉ `expect(true, isTrue)`; xoá.
 
 **Checklist B — code chết (đã xác minh không có caller ngoài file khai báo):**
-- [ ] `lib/services/audio_handler.dart:9,139-140` — `typedef VoidCallback` (che VoidCallback của Flutter), `seekToNext`, `seekToPrevious`.
-- [ ] `lib/services/audio_handler.dart` `setShuffleModeEnabled` + `PlayerAudioGateway.setShuffleModeEnabled` — tham số bị bỏ qua (luôn false), shuffle làm ở Dart; bỏ khỏi gateway, bỏ lời gọi trong `PlayerProvider.toggleShuffle` (`player_provider.dart:270`) và 4 fake gateway trong `test/`.
-- [ ] `lib/providers/music_provider.dart:47-48,80,118` — `scanCount`/`_lastNotifiedCount`/`onProgress` (scanner chỉ gọi 1 lần cuối), `searchQuery`, `setSearchQuery` (`searchQuery` xuất hiện 4 lần trong lib — grep kỹ trước khi xoá).
-- [ ] `lib/services/storage_service.dart:146-154` — `removeMetaOverride`.
-- [ ] `lib/services/music_scanner.dart:48-56,118-134` — `checkPermission`, `scanAlbums`, `scanArtists`.
-- [ ] `lib/providers/lyrics_provider.dart` — `reset`, `clearCacheForCurrent` (tính `id` rồi không dùng), `clearAllCache`; `lib/services/lyrics_service.dart` — `clearCache`, `clearAllCache`, `LyricsResult.isPlain` (:38), `errorMessage` (:35, gán nhưng không đọc); `lib/models/lyric_line.dart:13,16` — `isSynced`, `toString`.
-- [ ] `lib/providers/theme_provider.dart:65-66,118-122` — `isSwitching`, `cycleTheme`.
-- [ ] `lib/models/playlist_item.dart:7,32-36` — `coverPath` (không nơi nào gán → nhánh `Image.file` ở `playlist_screen.dart:222-237,972-973` không bao giờ chạy), `reorder`.
-- [ ] `lib/models/song_item.dart:13-14` — `size`, `track` chỉ được copy trong `_applyOverride`, không đọc. Kiểm tra `fromAudioQuery`/JSON trước khi bỏ.
-- [ ] `lib/screens/welcome_screen.dart:139-150,251-318` — khối comment + `_OutlinedButton`/`_OutlinedButtonState`.
-- [ ] `lib/screens/library_screen.dart:248-256,360-367` và `lib/screens/online_screen.dart:24-33` — nhánh `isEmbedded == false` (chỉ được dựng với `isEmbedded: true` ở `home_screen.dart:36-37`); bỏ tham số luôn.
-- [ ] `lib/widgets/music_list_tile.dart:20,32` — tham số `index` không đọc; `showAlbumArt` không bao giờ truyền false.
-- [ ] `lib/screens/profile_screen.dart:286-289,642-643` — comment cũ, `Opacity(opacity: 1.0)` vô nghĩa; `lib/widgets/now_playing/sheets/edit_song_sheet.dart:56` — ternary chết `t.isEmpty ? song.title : t` trong `if (t.isNotEmpty)`.
-- [ ] `lib/features/downloader/providers/download_provider.dart:386-395,420-455,477-555` — khối legacy comment; `isOnlineProvider`, `activeDownloadCountProvider` (0 widget dùng — `downloadTaskProvider` GIỮ vì có test + dự định dùng khi tách download_screen).
-- [ ] `lib/features/downloader/models/download_task.dart:3,83-84,101,132,164-224` — field `Process` kéo `dart:io` vào model, `applyLogLine` không dùng; `core/constants/app_constants.dart` — chỉ `defaultDownloadFolder`/`maxConcurrentDownloads` được dùng, comment "libytdlp.so" cũ; `core/app_router.dart:14-18,58-59` — nhánh `VideoInfo` legacy không tới được; `download_screen.dart:23,44` — `_sub` không bao giờ gán.
-- [ ] `lib/core/app_strings.dart:119-120` — `tabOnline`, `tabLibrary` không dùng. (`paste`/`clear`/`retryAll` KHÔNG xoá: Phase 12 nối vào downloader.)
+- [x] `lib/services/audio_handler.dart:9,139-140` — `typedef VoidCallback` (che VoidCallback của Flutter), `seekToNext`, `seekToPrevious`.
+- [x] `lib/services/audio_handler.dart` `setShuffleModeEnabled` + `PlayerAudioGateway.setShuffleModeEnabled` — tham số bị bỏ qua (luôn false), shuffle làm ở Dart; bỏ khỏi gateway, bỏ lời gọi trong `PlayerProvider.toggleShuffle` (`player_provider.dart:270`) và 4 fake gateway trong `test/`.
+- [x] `lib/providers/music_provider.dart:47-48,80,118` — `scanCount`/`_lastNotifiedCount`/`onProgress` (scanner chỉ gọi 1 lần cuối), `searchQuery`, `setSearchQuery` (`searchQuery` xuất hiện 4 lần trong lib — grep kỹ trước khi xoá).
+- [x] `lib/services/storage_service.dart:146-154` — `removeMetaOverride`.
+- [x] `lib/services/music_scanner.dart:48-56,118-134` — `checkPermission`, `scanAlbums`, `scanArtists`.
+- [x] `lib/providers/lyrics_provider.dart` — `reset`, `clearCacheForCurrent` (tính `id` rồi không dùng), `clearAllCache`; `lib/services/lyrics_service.dart` — `clearCache`, `clearAllCache`, `LyricsResult.isPlain` (:38), `errorMessage` (:35, gán nhưng không đọc); `lib/models/lyric_line.dart:13,16` — `isSynced`, `toString`.
+- [x] `lib/providers/theme_provider.dart:65-66,118-122` — `isSwitching`, `cycleTheme`.
+- [x] `lib/models/playlist_item.dart:7,32-36` — `coverPath` (không nơi nào gán → nhánh `Image.file` ở `playlist_screen.dart:222-237,972-973` không bao giờ chạy), `reorder`.
+- [x] `lib/models/song_item.dart:13-14` — `size`, `track` chỉ được copy trong `_applyOverride`, không đọc. Kiểm tra `fromAudioQuery`/JSON trước khi bỏ.
+- [x] `lib/screens/welcome_screen.dart:139-150,251-318` — khối comment + `_OutlinedButton`/`_OutlinedButtonState`.
+- [x] `lib/screens/library_screen.dart:248-256,360-367` và `lib/screens/online_screen.dart:24-33` — nhánh `isEmbedded == false` (chỉ được dựng với `isEmbedded: true` ở `home_screen.dart:36-37`); bỏ tham số luôn.
+- [x] `lib/widgets/music_list_tile.dart:20,32` — tham số `index` không đọc; `showAlbumArt` không bao giờ truyền false.
+- [x] `lib/screens/profile_screen.dart:286-289,642-643` — comment cũ, `Opacity(opacity: 1.0)` vô nghĩa; `lib/widgets/now_playing/sheets/edit_song_sheet.dart:56` — ternary chết `t.isEmpty ? song.title : t` trong `if (t.isNotEmpty)`.
+- [x] `lib/features/downloader/providers/download_provider.dart:386-395,420-455,477-555` — khối legacy comment; `isOnlineProvider`, `activeDownloadCountProvider` (0 widget dùng — `downloadTaskProvider` GIỮ vì có test + dự định dùng khi tách download_screen).
+- [x] `lib/features/downloader/models/download_task.dart:3,83-84,101,132,164-224` — field `Process` kéo `dart:io` vào model, `applyLogLine` không dùng; `core/constants/app_constants.dart` — chỉ `defaultDownloadFolder`/`maxConcurrentDownloads` được dùng, comment "libytdlp.so" cũ; `core/app_router.dart:14-18,58-59` — nhánh `VideoInfo` legacy không tới được; `download_screen.dart:23,44` — `_sub` không bao giờ gán.
+- [x] `lib/core/app_strings.dart:119-120` — `tabOnline`, `tabLibrary` không dùng. (`paste`/`clear`/`retryAll` KHÔNG xoá: Phase 12 nối vào downloader.)
 
 **Checklist C — pubspec:**
-- [ ] `unused_dependency` — `pubspec.yaml` — `cupertino_icons` (0 import), dòng comment `#  just_audio_background: ^0.0.1-beta.11`, `description: "A new Flutter project."` (đổi thành mô tả thật; cả `web/manifest.json`).
+- [x] `unused_dependency` — `pubspec.yaml` — `cupertino_icons` (0 import), dòng comment `#  just_audio_background: ^0.0.1-beta.11`, `description: "A new Flutter project."` (đổi thành mô tả thật; cả `web/manifest.json`).
 
 ## Phase 10 — Player & điều hướng
 **Effort: M — 1 session**
@@ -228,3 +228,6 @@ Chỉ tạo widget chung cho các bản copy giống hệt; mỗi nhóm một co
 - (Phase 8, 2026-09-03) Kiểm chứng: `dart analyze` sạch; `flutter test` 87/87 (84 cũ + 3 mới trong `test/services/position_data_feed_test.dart`). CHƯA chạy trên máy thật/emulator trong session này — cần check tay theo mục "Check tay" của Phase 8 (phát → mở Now Playing → đóng → X → phát bài khác, lặp 2-3 lần; để ý cả lyrics sync và waveform ở chế độ Fancy).
 - (Phase 8, 2026-09-03) `positionDataStream` giờ giữ 1 subscription cố định tới 3 stream just_audio từ lần truy cập đầu (trước đây refCount huỷ khi hết listener). Không thêm timer: `AudioPlayer.positionStream` của just_audio vốn là BehaviorSubject + `addStream(createPositionStream(...))` sống suốt đời player. `PositionDataFeed.dispose()` có sẵn nhưng `MuzicAudioHandler` chưa có `dispose()` (main.dart tạo 1 handler cho cả app) — nếu sau này thêm thì gọi `_positionFeed.dispose()` rồi `_player.dispose()`.
 - (Phase 8, 2026-09-03) Không đụng file khác. `audio_handler.dart` vẫn chưa qua `dart format` ở HEAD (ghi chú Phase 3 AUDIT_PLAN) nên chỉ format tay phần code mới, không format cả file.
+- (Phase 9, 2026-09-04) Kiểm chứng: `flutter analyze` sạch; `flutter test` 86/86 (87 trước đó trừ `test/widget_test.dart` placeholder đã xoá ở commit 0f8812f). Không chạy emulator cho phase này: chỉ xoá code chết/file rác, không đổi hành vi. Mỗi symbol đã grep lại trong `lib/` + `test/` trước khi xoá.
+- (Phase 9, 2026-09-04) `theme_provider`: bỏ `_isSwitching`/`isSwitching`/`cycleTheme` nhưng vẫn giữ 2 `notifyListeners()` + delay 16ms/320ms quanh chỗ đổi theme để không đổi timing — Phase 11 `theme_persist_delay` dọn nốt.
+- (Phase 9, 2026-09-04) `LyricsResult.error()` không còn tham số message (chỗ ném lỗi đã `debugPrint`). `LibraryScreen`/`OnlineScreen` bỏ tham số `isEmbedded` → chỉ còn dạng nhúng trong Home (không back button, không MiniPlayer riêng). `download_screen._sub` xoá được vì `ref.listenManual` trong ConsumerState tự đóng khi unmount (flutter_riverpod `consumer.dart:96`). Playlist JSON cũ còn key `size`/`track`/`coverPath` vẫn parse được (`fromJson` bỏ qua key thừa).
