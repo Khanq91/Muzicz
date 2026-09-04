@@ -5,7 +5,6 @@ import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
 import '../models/song_item.dart';
-import '../providers/music_provider.dart';
 import '../providers/player_provider.dart';
 import '../widgets/music_list_tile.dart';
 import 'now_playing_screen.dart';
@@ -27,7 +26,6 @@ class ArtistDetailScreen extends StatelessWidget {
     // their state, so a notify (play/pause, onSongPlayed) must not regroup
     // the albums. The active tile subscribes on its own below.
     final player = context.read<PlayerProvider>();
-    final music = context.read<MusicProvider>();
     final c = context.appColors;
     // Group songs by album
     final albumMap = <String, List<SongItem>>{};
@@ -80,7 +78,6 @@ class ArtistDetailScreen extends StatelessWidget {
                       primary: true,
                       onTap: () {
                         player.playSongs(songs);
-                        music.onSongPlayed(songs.first.id);
                         Navigator.of(context).push(_playerRoute());
                       },
                     ),
@@ -310,7 +307,6 @@ class ArtistDetailScreen extends StatelessWidget {
                       isActive: activeId == song.id,
                       onTap: () {
                         player.playSongs(songs, specificSong: song);
-                        music.onSongPlayed(song.id);
                         Navigator.of(context).push(_playerRoute());
                       },
                     ),

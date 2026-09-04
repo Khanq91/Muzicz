@@ -67,7 +67,17 @@ class MuzicApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => MusicProvider()),
-        ChangeNotifierProvider(create: (_) => PlayerProvider(audioHandler)),
+        ChangeNotifierProvider(
+          create:
+              (context) => PlayerProvider(
+                audioHandler,
+                // Play counts / recently played are recorded here, once per
+                // started song, instead of by every screen that taps a song.
+                onSongPlayed:
+                    (song) =>
+                        context.read<MusicProvider>().onSongPlayed(song.id),
+              ),
+        ),
         ChangeNotifierProvider(create: (_) => LyricsProvider()),
         ChangeNotifierProvider(create: (_) => VisualModeProvider()),
       ],

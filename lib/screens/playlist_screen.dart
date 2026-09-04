@@ -647,7 +647,6 @@ class PlaylistDetailScreen extends StatelessWidget {
                         isActive: activeId == song.id,
                         onTap: () {
                           player.playSongs(playlist.songs, specificSong: song);
-                          music.onSongPlayed(song.id);
                           Navigator.of(context).push(
                             PageRouteBuilder(
                               pageBuilder:

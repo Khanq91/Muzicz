@@ -4,7 +4,6 @@ import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
 import '../models/song_item.dart';
-import '../providers/music_provider.dart';
 import '../providers/player_provider.dart';
 import '../widgets/music_list_tile.dart';
 import 'now_playing_screen.dart';
@@ -23,7 +22,6 @@ class AlbumDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final player = context.watch<PlayerProvider>();
-    final music = context.watch<MusicProvider>();
 
     final albumId = songs.isNotEmpty ? songs.first.albumId : 0;
     final artistName = songs.isNotEmpty ? songs.first.artist : '';
@@ -72,7 +70,6 @@ class AlbumDetailScreen extends StatelessWidget {
                       primary: true,
                       onTap: () {
                         player.playSongs(songs);
-                        music.onSongPlayed(songs.first.id);
                         Navigator.of(context).push(_playerRoute());
                       },
                     ),
@@ -216,7 +213,6 @@ class AlbumDetailScreen extends StatelessWidget {
                 isActive: player.currentSong?.id == song.id,
                 onTap: () {
                   player.playSongs(songs, specificSong: song);
-                  music.onSongPlayed(song.id);
                   Navigator.of(context).push(_playerRoute());
                 },
               );

@@ -78,7 +78,6 @@ class SongsTab extends StatelessWidget {
                         songs,
                         specificSong: song,
                       );
-                      context.read<MusicProvider>().onSongPlayed(song.id);
                       Navigator.of(context).push(playerRoute());
                     },
             onLongPress:

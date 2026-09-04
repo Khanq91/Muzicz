@@ -259,6 +259,62 @@ void main() {
     expect(gateway.log, isEmpty);
   });
 
+  group('onSongPlayed', () {
+    late List<int> played;
+    late PlayerProvider counting;
+
+    setUp(() {
+      played = [];
+      counting = PlayerProvider(gateway, onSongPlayed: (s) => played.add(s.id));
+      addTearDown(counting.dispose);
+    });
+
+    test('reports every started song once, not queue reshapes', () async {
+      await counting.playSongs([_song(1), _song(2), _song(3)]);
+      await counting.skipToNext();
+      gateway.emitCurrentIndex(2); // engine auto-advanced
+      gateway.emitCurrentIndex(2);
+      await _settle();
+      await counting.skipToPrevious();
+      await counting.toggleShuffle();
+      await counting.reorderQueue(2, 0);
+      await counting.playSongs([_song(1), _song(2)]);
+
+      expect(played, [1, 2, 3, 2, 1]);
+    });
+
+    test('counts the song the engine moves to after removing the current one', () async {
+      await counting.playSongs([_song(1), _song(2), _song(3)], initialIndex: 1);
+      played.clear();
+
+      await counting.removeFromQueue(0);
+      await counting.removeFromQueue(0);
+
+      expect(played, [3]);
+    });
+
+    test('the paused rewind at the end of the queue is not a play', () async {
+      await counting.playSongs([_song(1), _song(2)], initialIndex: 1);
+      played.clear();
+
+      gateway.emitProcessingState(ProcessingState.completed);
+      await _settle();
+
+      expect(counting.currentSong?.id, 1);
+      expect(played, isEmpty);
+    });
+
+    test('shuffle loop restart counts its first song', () async {
+      await counting.enableShuffleLoop([_song(1), _song(2), _song(3)]);
+      played.clear();
+
+      gateway.emitProcessingState(ProcessingState.completed);
+      await _settle();
+
+      expect(played, [counting.currentSong!.id]);
+    });
+  });
+
   group('play next', () {
     test('inserts right after the current song in provider and engine', () async {
       await provider.playSongs([_song(1), _song(2), _song(3)], initialIndex: 1);

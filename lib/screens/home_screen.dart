@@ -223,7 +223,6 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
 
   void _playSong(List<SongItem> songs, SongItem song) {
     context.read<PlayerProvider>().playSongs(songs, specificSong: song);
-    context.read<MusicProvider>().onSongPlayed(song.id);
     Navigator.of(context).push(
       PageRouteBuilder(
         pageBuilder: (_, animation, __) => const NowPlayingScreen(),
@@ -577,10 +576,7 @@ class _QuickCardState extends State<_QuickCard>
         await _ctrl.reverse();
         if (!context.mounted) return;
         if (s.songs.isEmpty) return;
-        final player = context.read<PlayerProvider>();
-        final music = context.read<MusicProvider>();
-        player.playSongs(s.songs);
-        music.onSongPlayed(s.songs.first.id);
+        context.read<PlayerProvider>().playSongs(s.songs);
       },
       onTapCancel: () => _ctrl.reverse(),
       child: ScaleTransition(

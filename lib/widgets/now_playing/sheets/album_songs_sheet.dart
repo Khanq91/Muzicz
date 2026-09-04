@@ -42,7 +42,6 @@ class AlbumSongsSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
-    final music = context.read<MusicProvider>();
     return DraggableScrollableSheet(
       initialChildSize: 0.6,
       maxChildSize: 0.92,
@@ -162,7 +161,6 @@ class AlbumSongsSheet extends StatelessWidget {
                       onTap: () {
                         final player = context.read<PlayerProvider>();
                         player.playSongs(albumSongs, specificSong: s);
-                        music.onSongPlayed(s.id);
                         Navigator.pop(context);
                       },
                     );

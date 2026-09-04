@@ -10,7 +10,12 @@ enum RepeatMode { none, one, shuffleLoop }
 class PlayerProvider extends ChangeNotifier {
   final PlayerAudioGateway _handler;
 
-  PlayerProvider(this._handler) {
+  /// Called once each time a song starts: tap, next/previous, queue
+  /// auto-advance, shuffle loop restart. Play counts and "recently played"
+  /// live in MusicProvider; main.dart wires the two together.
+  final void Function(SongItem song)? onSongPlayed;
+
+  PlayerProvider(this._handler, {this.onSongPlayed}) {
     _listenToHandler();
   }
 
@@ -140,7 +145,7 @@ class PlayerProvider extends ChangeNotifier {
         case RepeatMode.one:
           return; // the engine loops the track itself
         case RepeatMode.shuffleLoop:
-          _reshuffleFromRandomStart();
+          _reshuffleFromRandomStart(played: true);
           if (await _loadQueueToHandler(0)) await _handler.play();
         case RepeatMode.none:
           await _rewindToQueueStart();
@@ -151,12 +156,12 @@ class PlayerProvider extends ChangeNotifier {
   }
 
   /// New random order over the whole list; its first song becomes current.
-  void _reshuffleFromRandomStart() {
+  void _reshuffleFromRandomStart({required bool played}) {
     _buildShuffledQueueTrueRandom(
       startIndex: Random().nextInt(_originalQueue.length),
     );
     _currentPlayIndex = 0;
-    _currentSong = _playQueue[0];
+    _setCurrentSong(_playQueue[0], played: played);
     _historyStack.clear();
     notifyListeners();
   }
@@ -172,10 +177,10 @@ class PlayerProvider extends ChangeNotifier {
     // A newer play request arrived while pausing; it owns the engine now.
     if (generation != _loadGeneration) return;
     if (_shuffleEnabled) {
-      _reshuffleFromRandomStart();
+      _reshuffleFromRandomStart(played: false);
       await _loadQueueToHandler(0);
     } else {
-      await _seekToIndex(0, recordHistory: false);
+      await _seekToIndex(0, recordHistory: false, played: false);
       _historyStack.clear();
     }
   }
@@ -205,7 +210,7 @@ class PlayerProvider extends ChangeNotifier {
       _currentPlayIndex = startIndex;
     }
 
-    _currentSong = _playQueue[_currentPlayIndex];
+    _setCurrentSong(_playQueue[_currentPlayIndex]);
     notifyListeners();
 
     if (loopModeDirty) await _handler.setLoopMode(LoopMode.off);
@@ -224,7 +229,7 @@ class PlayerProvider extends ChangeNotifier {
     final randomStart = Random().nextInt(songs.length);
     _buildShuffledQueueTrueRandom(startIndex: randomStart);
     _currentPlayIndex = 0;
-    _currentSong = _playQueue[0];
+    _setCurrentSong(_playQueue[0]);
     notifyListeners();
 
     if (loopModeDirty) await _handler.setLoopMode(LoopMode.off);
@@ -429,7 +434,13 @@ class PlayerProvider extends ChangeNotifier {
         } else if (_currentPlayIndex >= _playQueue.length) {
           _currentPlayIndex = _playQueue.length - 1;
         }
-        _currentSong = _playQueue[_currentPlayIndex];
+        // Removing the playing song makes the engine start the next one.
+        final next = _playQueue[_currentPlayIndex];
+        if (removedId == _currentSong?.id) {
+          _setCurrentSong(next);
+        } else {
+          _currentSong = next;
+        }
       }
 
       _historyStack.clear();
@@ -527,17 +538,25 @@ class PlayerProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _seekToIndex(int index, {bool recordHistory = true}) async {
+  Future<void> _seekToIndex(
+    int index, {
+    bool recordHistory = true,
+    bool played = true,
+  }) async {
     _isChangingTrack = true;
     try {
       await _handler.seekToIndex(index);
-      _applyCurrentIndex(index, recordHistory: recordHistory);
+      _applyCurrentIndex(index, recordHistory: recordHistory, played: played);
     } finally {
       _isChangingTrack = false;
     }
   }
 
-  void _applyCurrentIndex(int index, {bool recordHistory = true}) {
+  void _applyCurrentIndex(
+    int index, {
+    bool recordHistory = true,
+    bool played = true,
+  }) {
     if (index < 0 || index >= _playQueue.length) return;
     if (_playQueue[index].id == _currentSong?.id) return;
 
@@ -545,8 +564,15 @@ class PlayerProvider extends ChangeNotifier {
       _historyStack.add(_currentPlayIndex);
     }
     _currentPlayIndex = index;
-    _currentSong = _playQueue[index];
+    _setCurrentSong(_playQueue[index], played: played);
     notifyListeners();
+  }
+
+  /// Makes [song] current. [played] reports it to [onSongPlayed]; the paused
+  /// rewind at the end of the queue passes false because nothing starts.
+  void _setCurrentSong(SongItem song, {bool played = true}) {
+    _currentSong = song;
+    if (played) onSongPlayed?.call(song);
   }
 
   @override
