@@ -383,6 +383,27 @@ class PlayerProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// "Play next": [song] follows the current one instead of going last, in
+  /// both the play order and the unshuffled list. With nothing playing it
+  /// simply starts a queue of one, like tapping the song.
+  Future<void> insertNext(SongItem song) async {
+    final current = _currentSong;
+    if (current == null || _playQueue.isEmpty) {
+      await playSongs([song]);
+      return;
+    }
+    final at = _currentPlayIndex + 1;
+    await _handler.insertSongAt(at, song);
+    _playQueue.insert(at, song);
+    final originalIndex = _originalQueue.indexWhere((s) => s.id == current.id);
+    if (originalIndex < 0) {
+      _originalQueue.add(song);
+    } else {
+      _originalQueue.insert(originalIndex + 1, song);
+    }
+    notifyListeners();
+  }
+
   Future<void> seekTo(Duration position) => _handler.seek(position);
 
   // ── Queue management ──────────────────────────────────────────────────────

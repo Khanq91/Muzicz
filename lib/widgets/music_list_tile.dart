@@ -355,31 +355,13 @@ class _SongContextMenu extends StatelessWidget {
           _ContextMenuItem(
             icon: Icons.queue_music_rounded,
             label: AppStrings.playNext,
-            onTap: () {
-              final player = parentContext.read<PlayerProvider>();
-              if (player.currentSong == null) {
-                player.playSongs([song]);
-              } else {
-                player.addToQueue(song);
-                ScaffoldMessenger.of(parentContext).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      AppStrings.addedToQueue(song.title),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    duration: const Duration(seconds: 2),
-                    backgroundColor: c.surfaceElevated,
-                    behavior: SnackBarBehavior.floating,
-                    margin: const EdgeInsets.fromLTRB(16, 0, 16, 80),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                );
-              }
-              Navigator.pop(context);
-            },
+            onTap: () => _enqueue(context, next: true),
+          ),
+
+          _ContextMenuItem(
+            icon: Icons.queue_rounded,
+            label: AppStrings.addToQueue,
+            onTap: () => _enqueue(context, next: false),
           ),
 
           _ContextMenuItem(
@@ -391,6 +373,36 @@ class _SongContextMenu extends StatelessWidget {
             },
           ),
         ],
+      ),
+    );
+  }
+
+  /// [next] inserts right after the current song, otherwise appends. With
+  /// nothing playing both simply start the song.
+  void _enqueue(BuildContext context, {required bool next}) {
+    final player = parentContext.read<PlayerProvider>();
+    if (player.currentSong == null) {
+      player.playSongs([song]);
+    } else if (next) {
+      player.insertNext(song);
+      _showQueueSnack(AppStrings.willPlayNext(song.title));
+    } else {
+      player.addToQueue(song);
+      _showQueueSnack(AppStrings.addedToQueue(song.title));
+    }
+    Navigator.pop(context);
+  }
+
+  void _showQueueSnack(String message) {
+    final c = parentContext.appColors;
+    ScaffoldMessenger.of(parentContext).showSnackBar(
+      SnackBar(
+        content: Text(message, maxLines: 1, overflow: TextOverflow.ellipsis),
+        duration: const Duration(seconds: 2),
+        backgroundColor: c.surfaceElevated,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 80),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }

@@ -12,6 +12,7 @@ abstract class PlayerAudioGateway {
   Future<void> moveSong(int oldIndex, int newIndex);
   Future<void> removeSongAt(int index);
   Future<void> addSongToQueue(SongItem song);
+  Future<void> insertSongAt(int index, SongItem song);
   Future<void> play();
   Future<void> pause();
   Future<void> stop();
@@ -47,21 +48,7 @@ class MuzicAudioHandler implements PlayerAudioGateway {
   Future<void> loadSongs(List<SongItem> songs, {int initialIndex = 0}) async {
     _currentSongs = List.from(songs);
     await _playlist.clear();
-    await _playlist.addAll(
-      songs.map((s) => AudioSource.uri(
-        Uri.file(s.data),
-        tag: MediaItem(
-          id: s.id.toString(),
-          title: s.title,
-          artist: s.artist,
-          album: s.album,
-          duration: Duration(milliseconds: s.duration),
-          artUri: Uri.parse(
-            'content://media/external/audio/albumart/${s.albumId}',
-          ),
-        ),
-      )).toList(),
-    );
+    await _playlist.addAll(songs.map(_sourceFor).toList());
     await _player.seek(Duration.zero, index: initialIndex);
   }
 
@@ -110,20 +97,27 @@ class MuzicAudioHandler implements PlayerAudioGateway {
   @override
   Future<void> addSongToQueue(SongItem song) async {
     _currentSongs.add(song);
-    await _playlist.add(AudioSource.uri(
-      Uri.file(song.data),
-      tag: MediaItem(
-        id: song.id.toString(),
-        title: song.title,
-        artist: song.artist,
-        album: song.album,
-        duration: Duration(milliseconds: song.duration),
-        artUri: Uri.parse(
-          'content://media/external/audio/albumart/${song.albumId}',
-        ),
-      ),
-    ));
+    await _playlist.add(_sourceFor(song));
   }
+
+  @override
+  Future<void> insertSongAt(int index, SongItem song) async {
+    final at = index.clamp(0, _currentSongs.length);
+    _currentSongs.insert(at, song);
+    await _playlist.insert(at, _sourceFor(song));
+  }
+
+  AudioSource _sourceFor(SongItem s) => AudioSource.uri(
+    Uri.file(s.data),
+    tag: MediaItem(
+      id: s.id.toString(),
+      title: s.title,
+      artist: s.artist,
+      album: s.album,
+      duration: Duration(milliseconds: s.duration),
+      artUri: Uri.parse('content://media/external/audio/albumart/${s.albumId}'),
+    ),
+  );
 
   @override
   Future<void> play()                  => _player.play();

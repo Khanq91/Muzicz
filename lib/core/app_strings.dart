@@ -56,6 +56,7 @@ abstract final class AppStrings {
   static const repeat = 'Lặp lại';
   static const repeatOne = 'Lặp lại một bài';
   static const playNext = 'Phát tiếp theo';
+  static const addToQueue = 'Thêm vào hàng chờ';
 
   static const favorites = 'Yêu thích';
   static const unfavorite = 'Bỏ yêu thích';
@@ -233,6 +234,7 @@ abstract final class AppStrings {
   static const collapseQueue = 'Thu gọn hàng chờ';
   static const removeFromQueue = 'Xóa khỏi hàng chờ';
   static String addedToQueue(String title) => 'Đã thêm "$title" vào hàng chờ';
+  static String willPlayNext(String title) => 'Sẽ phát tiếp theo: "$title"';
   static const playbackSpeed = 'Tốc độ phát';
   static const speedNormal = 'Bình thường';
   static String speedMultiplier(String speed) => '$speed×';

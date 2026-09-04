@@ -259,6 +259,53 @@ void main() {
     expect(gateway.log, isEmpty);
   });
 
+  group('play next', () {
+    test('inserts right after the current song in provider and engine', () async {
+      await provider.playSongs([_song(1), _song(2), _song(3)], initialIndex: 1);
+
+      await provider.insertNext(_song(9));
+
+      expect(provider.queue.map((s) => s.id), [1, 2, 9, 3]);
+      expect(gateway.queue.map((s) => s.id), [1, 2, 9, 3]);
+      expect(gateway.insertCalls, [(2, 9)]);
+      expect(provider.currentSong?.id, 2);
+
+      await provider.skipToNext();
+      expect(provider.currentSong?.id, 9);
+    });
+
+    test('also follows the current song in the unshuffled order', () async {
+      await provider.playSongs([_song(1), _song(2), _song(3)], initialIndex: 1);
+      await provider.toggleShuffle();
+
+      await provider.insertNext(_song(9));
+
+      final current = provider.queue.indexWhere((s) => s.id == 2);
+      expect(provider.queue[current + 1].id, 9);
+      await provider.toggleShuffle();
+      expect(provider.queue.map((s) => s.id), [1, 2, 9, 3]);
+    });
+
+    test('starts a queue of one when nothing is playing', () async {
+      await provider.insertNext(_song(5));
+
+      expect(provider.currentSong?.id, 5);
+      expect(gateway.queue.map((s) => s.id), [5]);
+      expect(gateway.insertCalls, isEmpty);
+      expect(gateway.playCalls, 1);
+    });
+
+    test('add to queue still appends at the end', () async {
+      await provider.playSongs([_song(1), _song(2), _song(3)], initialIndex: 1);
+
+      await provider.addToQueue(_song(9));
+
+      expect(provider.queue.map((s) => s.id), [1, 2, 3, 9]);
+      expect(gateway.queue.map((s) => s.id), [1, 2, 3, 9]);
+      expect(gateway.insertCalls, isEmpty);
+    });
+  });
+
   group('queue end with repeat off', () {
     test('pauses first, then rewinds to the first song without playing', () async {
       await provider.playSongs([_song(1), _song(2), _song(3)], initialIndex: 2);
@@ -360,6 +407,7 @@ SongItem _song(int id) => SongItem(
 class _FakePlayerAudioGateway implements PlayerAudioGateway {
   final List<SongItem> queue = [];
   final List<int> seekToIndexCalls = [];
+  final List<(int index, int songId)> insertCalls = [];
   final List<Duration> seekCalls = [];
   final _playingController = StreamController<bool>.broadcast();
   final _currentIndexController = StreamController<int?>.broadcast();
@@ -461,6 +509,12 @@ class _FakePlayerAudioGateway implements PlayerAudioGateway {
 
   @override
   Future<void> addSongToQueue(SongItem song) async => queue.add(song);
+
+  @override
+  Future<void> insertSongAt(int index, SongItem song) async {
+    insertCalls.add((index, song.id));
+    queue.insert(index, song);
+  }
 
   @override
   Future<void> pause() async {

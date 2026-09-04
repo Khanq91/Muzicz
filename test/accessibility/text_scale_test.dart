@@ -119,6 +119,9 @@ class _FakePlayerAudioGateway implements PlayerAudioGateway {
   Future<void> addSongToQueue(SongItem song) async {}
 
   @override
+  Future<void> insertSongAt(int index, SongItem song) async {}
+
+  @override
   Stream<int?> get currentIndexStream => _currentIndexController.stream;
 
   @override
