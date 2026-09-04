@@ -131,7 +131,10 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                         onTap: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) => const OnboardingScreen(),
+                              builder:
+                                  (_) => const OnboardingScreen(
+                                    isFirstRun: true,
+                                  ),
                             ),
                           );
                         },

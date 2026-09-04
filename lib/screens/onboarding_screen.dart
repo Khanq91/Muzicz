@@ -12,7 +12,11 @@ import 'package:muziczz/core/app_strings.dart';
 const _randomTexts = AppStrings.onboardingQuotes;
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key});
+  const OnboardingScreen({super.key, this.isFirstRun = false});
+
+  /// First launch (pushed from Welcome): the finished scan replaces the
+  /// whole stack with Home. A rescan pops back to the screen that asked.
+  final bool isFirstRun;
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -97,24 +101,34 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       );
       if (!mounted || musicProvider.status != LibraryStatus.done) return;
       _resultCtrl.forward();
-      _navigationTimer = Timer(const Duration(seconds: 2), _navigateHome);
+      _navigationTimer = Timer(const Duration(seconds: 2), _leaveOnboarding);
     } else {
       _progressCtrl.stop();
     }
   }
 
-  void _navigateHome() {
+  void _leaveOnboarding() {
     if (!mounted ||
         context.read<MusicProvider>().status != LibraryStatus.done) {
       return;
     }
-    Navigator.of(context).pushReplacement(
+    final navigator = Navigator.of(context);
+    // Rescan: every caller push()es this screen, so go back to it instead
+    // of stacking a second Home on top.
+    if (!widget.isFirstRun && navigator.canPop()) {
+      navigator.pop();
+      return;
+    }
+    // First run: [Welcome, Onboarding] becomes [Home]; back must exit the
+    // app rather than return to Welcome.
+    navigator.pushAndRemoveUntil(
       PageRouteBuilder(
         pageBuilder: (_, anim, __) => const HomeScreen(),
         transitionDuration: const Duration(milliseconds: 500),
         transitionsBuilder:
             (_, anim, __, child) => FadeTransition(opacity: anim, child: child),
       ),
+      (_) => false,
     );
   }
 
