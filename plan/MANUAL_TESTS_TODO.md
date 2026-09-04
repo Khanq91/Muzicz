@@ -33,7 +33,7 @@ _Tạo 2026-09-03 trong session review. Mỗi mục: làm theo bước, ghi kế
 
 **Ghi kết quả:** …
 
-## 3. Sau Phase 10 (chưa làm): hết hàng chờ + Phát tiếp theo
+## 3. Sau Phase 10 (đã làm 2026-09-04, chưa test máy): hết hàng chờ + Phát tiếp theo
 - [ ] Phát playlist ngắn 2-3 bài, repeat tắt, để chạy hết: nút về "play", thanh về 0:00 ở bài đầu; shuffle bật thì bài đầu là bài ngẫu nhiên mới; bấm play nghe từ đó.
 - [ ] Menu bài hát: "Phát tiếp theo" → bài đó đứng ngay sau bài đang phát trong hàng chờ; "Thêm vào hàng chờ" → đứng cuối.
 
