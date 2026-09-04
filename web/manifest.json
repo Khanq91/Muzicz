@@ -5,7 +5,7 @@
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Trình phát nhạc offline cho Android: quét thư viện, lời bài hát đồng bộ, tải nhạc từ URL (yt-dlp).",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
