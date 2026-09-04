@@ -11,6 +11,12 @@ import 'package:muziczz/core/app_strings.dart';
 
 const _randomTexts = AppStrings.onboardingQuotes;
 
+/// First scan: the quote screen stays up at least this long.
+const _firstRunIntro = Duration(seconds: 5);
+
+/// Rescan / retry: just enough for the progress bar not to flash.
+const _rescanMinimum = Duration(seconds: 1);
+
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key, this.isFirstRun = false});
 
@@ -83,9 +89,15 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       _progressCtrl.animateTo(0.3, duration: const Duration(milliseconds: 800)),
     );
 
-    if (showIntroDelay) await Future.delayed(const Duration(seconds: 5));
-    if (!mounted) return;
-    await musicProvider.scanMusic();
+    // The scan starts right away; the delay only sets a floor on how soon
+    // the result may replace the scanning copy (like AppStartupService's
+    // minimum splash). The 5 s intro is for the first scan only.
+    final minimum = Future<void>.delayed(
+      showIntroDelay && !musicProvider.hasScannedOnce
+          ? _firstRunIntro
+          : _rescanMinimum,
+    );
+    await Future.wait([minimum, musicProvider.scanMusic()]);
     if (!mounted) return;
 
     _scanInFlight = false;
