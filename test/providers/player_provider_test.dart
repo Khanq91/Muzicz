@@ -228,6 +228,85 @@ void main() {
     expect(gateway.seekToIndexCalls, isEmpty);
     expect(gateway.seekCalls, [Duration.zero]);
   });
+
+  group('queue end with repeat off', () {
+    test('pauses first, then rewinds to the first song without playing', () async {
+      await provider.playSongs([_song(1), _song(2), _song(3)], initialIndex: 2);
+      await _settle();
+      expect(provider.isPlaying, isTrue);
+      gateway.log.clear();
+
+      gateway.emitProcessingState(ProcessingState.completed);
+      await _settle();
+
+      expect(gateway.log, ['pause', 'seekToIndex']);
+      expect(gateway.seekToIndexCalls, [0]);
+      expect(provider.currentSong?.id, 1);
+      expect(gateway.currentSong?.id, 1);
+      expect(provider.isPlaying, isFalse);
+      expect(gateway.playCalls, 1);
+
+      // Previous must not walk back into the finished run.
+      await provider.skipToPrevious();
+      expect(gateway.seekToIndexCalls, [0]);
+      expect(gateway.seekCalls, [Duration.zero]);
+    });
+
+    test('reshuffles and reloads the queue, paused, when shuffle is on', () async {
+      final songs = List.generate(6, (i) => _song(i + 1));
+      await provider.playSongsShuffled(songs);
+      await _settle();
+      gateway.log.clear();
+
+      gateway.emitProcessingState(ProcessingState.completed);
+      await _settle();
+
+      expect(gateway.log, ['pause', 'load']);
+      expect(provider.queue.map((s) => s.id).toSet(), {1, 2, 3, 4, 5, 6});
+      expect(gateway.queue.map((s) => s.id), provider.queue.map((s) => s.id));
+      expect(provider.currentSong, provider.queue.first);
+      expect(gateway.currentIndex, 0);
+      expect(provider.isPlaying, isFalse);
+      expect(gateway.playCalls, 1);
+    });
+
+    test('a play request that arrives during the pause wins', () async {
+      await provider.playSongs([_song(1), _song(2)]);
+      gateway.blockPause = true;
+
+      gateway.emitProcessingState(ProcessingState.completed);
+      await _settle();
+      expect(gateway.pendingPauses, hasLength(1));
+
+      final play = provider.playSongs([_song(9)]);
+      await _settle();
+      gateway.pendingPauses.removeAt(0).complete();
+      await play;
+      await _settle();
+
+      expect(provider.queue.map((s) => s.id), [9]);
+      expect(provider.currentSong?.id, 9);
+      expect(gateway.queue.map((s) => s.id), [9]);
+      expect(gateway.seekToIndexCalls, isEmpty);
+      expect(gateway.playCalls, 2);
+    });
+
+    test('shuffle loop still reshuffles and keeps playing', () async {
+      final songs = List.generate(6, (i) => _song(i + 1));
+      await provider.enableShuffleLoop(songs);
+      await _settle();
+      gateway.log.clear();
+
+      gateway.emitProcessingState(ProcessingState.completed);
+      await _settle();
+
+      expect(gateway.log, ['load', 'play']);
+      expect(gateway.pauseCalls, 0);
+      expect(provider.repeatMode, RepeatMode.shuffleLoop);
+      expect(provider.currentSong, provider.queue.first);
+      expect(provider.isPlaying, isTrue);
+    });
+  });
 }
 
 /// Drains chained microtasks so awaiting code reaches its next suspension.
@@ -257,6 +336,11 @@ class _FakePlayerAudioGateway implements PlayerAudioGateway {
   final _processingStateController =
       StreamController<ProcessingState>.broadcast();
   int? currentIndex;
+  /// Engine calls in order (load / play / pause / seekToIndex).
+  final List<String> log = [];
+  int pauseCalls = 0;
+  bool blockPause = false;
+  final List<Completer<void>> pendingPauses = [];
   bool failMove = false;
   bool failRemove = false;
   bool emitIndexOnSeek = false;
@@ -282,6 +366,9 @@ class _FakePlayerAudioGateway implements PlayerAudioGateway {
     _currentIndexController.add(index);
   }
 
+  void emitProcessingState(ProcessingState state) =>
+      _processingStateController.add(state);
+
   Future<void> dispose() async {
     await Future.wait([
       _playingController.close(),
@@ -295,6 +382,7 @@ class _FakePlayerAudioGateway implements PlayerAudioGateway {
 
   @override
   Future<void> loadSongs(List<SongItem> songs, {int initialIndex = 0}) async {
+    log.add('load');
     queue.clear();
     if (blockLoads) {
       final gate = Completer<void>();
@@ -345,16 +433,30 @@ class _FakePlayerAudioGateway implements PlayerAudioGateway {
   Future<void> addSongToQueue(SongItem song) async => queue.add(song);
 
   @override
-  Future<void> pause() async {}
+  Future<void> pause() async {
+    log.add('pause');
+    pauseCalls++;
+    if (blockPause) {
+      final gate = Completer<void>();
+      pendingPauses.add(gate);
+      await gate.future;
+    }
+    _playingController.add(false);
+  }
 
   @override
-  Future<void> play() async => playCalls++;
+  Future<void> play() async {
+    log.add('play');
+    playCalls++;
+    _playingController.add(true);
+  }
 
   @override
   Future<void> seek(Duration position) async => seekCalls.add(position);
 
   @override
   Future<void> seekToIndex(int index) async {
+    log.add('seekToIndex');
     seekToIndexCalls.add(index);
     currentIndex = index;
     if (emitIndexOnSeek) _currentIndexController.add(index);

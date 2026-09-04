@@ -134,20 +134,49 @@ class PlayerProvider extends ChangeNotifier {
   }
 
   Future<void> _onPlaylistEnded() async {
-    if (_repeatMode != RepeatMode.shuffleLoop || _originalQueue.isEmpty) {
-      return;
+    if (_originalQueue.isEmpty) return;
+    try {
+      switch (_repeatMode) {
+        case RepeatMode.one:
+          return; // the engine loops the track itself
+        case RepeatMode.shuffleLoop:
+          _reshuffleFromRandomStart();
+          if (await _loadQueueToHandler(0)) await _handler.play();
+        case RepeatMode.none:
+          await _rewindToQueueStart();
+      }
+    } catch (e) {
+      debugPrint('[PlayerProvider] queue end handling failed: $e');
     }
+  }
+
+  /// New random order over the whole list; its first song becomes current.
+  void _reshuffleFromRandomStart() {
     _buildShuffledQueueTrueRandom(
       startIndex: Random().nextInt(_originalQueue.length),
     );
     _currentPlayIndex = 0;
     _currentSong = _playQueue[0];
+    _historyStack.clear();
     notifyListeners();
-    try {
-      final loaded = await _loadQueueToHandler(0);
-      if (loaded) await _handler.play();
-    } catch (e) {
-      debugPrint('[PlayerProvider] shuffleLoop reload failed: $e');
+  }
+
+  /// Repeat off: just_audio keeps `playing == true` at `completed`, so the
+  /// UI showed a pause icon and play() did nothing. Pause first (a load or
+  /// seek while `playing` is true would start playback on its own), then
+  /// rewind to the first song - a fresh shuffle order when shuffle is on -
+  /// and wait for the user to press play.
+  Future<void> _rewindToQueueStart() async {
+    final generation = _loadGeneration;
+    await _handler.pause();
+    // A newer play request arrived while pausing; it owns the engine now.
+    if (generation != _loadGeneration) return;
+    if (_shuffleEnabled) {
+      _reshuffleFromRandomStart();
+      await _loadQueueToHandler(0);
+    } else {
+      await _seekToIndex(0, recordHistory: false);
+      _historyStack.clear();
     }
   }
 
