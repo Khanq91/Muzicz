@@ -140,10 +140,12 @@ class _NormalBottomNavigation extends StatelessWidget {
           ],
         ),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        child: Row(
-          children: [
-            Expanded(
-              child: Center(
+        child: SizedBox(
+          height: 70,
+          child: Stack(
+            children: [
+              Align(
+                alignment: Alignment.centerLeft,
                 child: _NormalNavItem(
                   icon: Icons.library_music_rounded,
                   label: AppStrings.library,
@@ -151,9 +153,7 @@ class _NormalBottomNavigation extends StatelessWidget {
                   onTap: () => onTap(0),
                 ),
               ),
-            ),
-            Expanded(
-              child: Center(
+              Center(
                 child: _NormalNavItem(
                   icon: Icons.home_rounded,
                   label: AppStrings.tabHome,
@@ -162,9 +162,8 @@ class _NormalBottomNavigation extends StatelessWidget {
                   emphasize: true,
                 ),
               ),
-            ),
-            Expanded(
-              child: Center(
+              Align(
+                alignment: Alignment.centerRight,
                 child: _NormalNavItem(
                   icon: Icons.settings_rounded,
                   label: AppStrings.settings,
@@ -172,8 +171,8 @@ class _NormalBottomNavigation extends StatelessWidget {
                   onTap: () => onTap(2),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
