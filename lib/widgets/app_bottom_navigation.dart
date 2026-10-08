@@ -214,7 +214,7 @@ class _NormalNavItem extends StatelessWidget {
                     : active
                     ? 12
                     : 10,
-            vertical: emphasize ? 4 : 10,
+            vertical: emphasize ? 3 : 10,
           ),
           decoration: BoxDecoration(
             color:

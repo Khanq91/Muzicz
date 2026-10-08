@@ -160,13 +160,25 @@ void main() {
 
     await _pumpNowPlaying(tester, player);
 
-    await tester.tap(find.byIcon(Icons.more_horiz_rounded));
+    final optionsButton =
+        find.bySemanticsLabel(AppStrings.playbackOptions).hitTestable();
+    expect(optionsButton, findsOneWidget);
+    await tester.tap(optionsButton);
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 350));
-    await tester.tap(find.byIcon(Icons.queue_music_rounded));
+
+    expect(find.bySemanticsLabel(AppStrings.collapseOptions), findsOneWidget);
+    final queueButton = find.bySemanticsLabel(AppStrings.queue).hitTestable();
+    expect(queueButton, findsOneWidget);
+    await tester.tap(queueButton);
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 600));
 
-    expect(find.bySemanticsLabel('Xóa khỏi hàng chờ'), findsOneWidget);
-    expect(find.byTooltip('Thu gọn hàng chờ'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Xóa khỏi hàng chờ').hitTestable(),
+      findsOneWidget,
+    );
+    expect(find.byTooltip('Thu gọn hàng chờ').hitTestable(), findsOneWidget);
     handle.dispose();
   });
 }
