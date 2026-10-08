@@ -16,14 +16,9 @@ class LibraryTabBar extends StatelessWidget {
       isScrollable: true,
       tabAlignment: TabAlignment.start,
       tabs: [
-        _CountTab(label: AppStrings.songs, count: music.allSongs.length),
         _CountTab(
           label: AppStrings.tabPlaylistsShort,
-          count: music.playlists.length,
-        ),
-        _CountTab(
-          label: AppStrings.album,
-          count: music.sortedAlbumGroups.length,
+          count: music.playlists.length + 1,
         ),
         _CountTab(
           label: AppStrings.artist,

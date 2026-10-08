@@ -19,52 +19,32 @@ class PlaylistsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final music = context.watch<MusicProvider>();
-    final playlists = music.playlists;
-    final c = context.appColors;
+    final playlists = [music.favoritesPlaylist, ...music.playlists];
     return Stack(
       children: [
-        playlists.isEmpty
-            ? Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.playlist_play_rounded,
-                    color: c.textDisabled,
-                    size: 52,
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    AppStrings.noPlaylistsCreateHint,
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.outfit(
-                      color: c.textTertiary,
-                      fontSize: 14,
-                      height: 1.6,
+        ListView.builder(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: 80),
+          itemCount: playlists.length,
+          itemBuilder: (_, i) {
+            final pl = playlists[i];
+            final isSystemPlaylist = pl.id == MusicProvider.favoritesPlaylistId;
+            return _PlaylistTile(
+              playlist: pl,
+              isSystemPlaylist: isSystemPlaylist,
+              onTap:
+                  () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => PlaylistDetailScreen(playlistId: pl.id),
                     ),
                   ),
-                ],
-              ),
-            )
-            : ListView.builder(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.only(bottom: 80),
-              itemCount: playlists.length,
-              itemBuilder: (_, i) {
-                final pl = playlists[i];
-                return _PlaylistTile(
-                  playlist: pl,
-                  onTap:
-                      () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder:
-                              (_) => PlaylistDetailScreen(playlistId: pl.id),
-                        ),
-                      ),
-                  onDelete: () => _confirmDelete(context, music, pl),
-                );
-              },
-            ),
+              onDelete:
+                  isSystemPlaylist
+                      ? null
+                      : () => _confirmDelete(context, music, pl),
+            );
+          },
+        ),
         // FAB: create new playlist
         Positioned(bottom: 16, right: 16, child: _CreatePlaylistFab()),
       ],
@@ -145,12 +125,14 @@ class PlaylistsTab extends StatelessWidget {
 class _PlaylistTile extends StatelessWidget {
   const _PlaylistTile({
     required this.playlist,
+    required this.isSystemPlaylist,
     required this.onTap,
     required this.onDelete,
   });
   final PlaylistItem playlist;
+  final bool isSystemPlaylist;
   final VoidCallback onTap;
-  final VoidCallback onDelete;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -173,36 +155,43 @@ class _PlaylistTile extends StatelessWidget {
         ),
         style: GoogleFonts.outfit(fontSize: 12, color: c.textTertiary),
       ),
-      trailing: PopupMenuButton<String>(
-        color: c.card,
-        icon: Icon(Icons.more_vert_rounded, color: c.textTertiary, size: 20),
-        onSelected: (val) {
-          if (val == 'delete') onDelete();
-        },
-        itemBuilder:
-            (_) => [
-              PopupMenuItem(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.delete_outline_rounded,
-                      color: c.tertiary,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      AppStrings.delete,
-                      style: GoogleFonts.outfit(
-                        color: c.tertiary,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
+      trailing:
+          isSystemPlaylist
+              ? Icon(Icons.favorite_rounded, color: c.tertiary, size: 20)
+              : PopupMenuButton<String>(
+                color: c.card,
+                icon: Icon(
+                  Icons.more_vert_rounded,
+                  color: c.textTertiary,
+                  size: 20,
                 ),
+                onSelected: (val) {
+                  if (val == 'delete') onDelete?.call();
+                },
+                itemBuilder:
+                    (_) => [
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.delete_outline_rounded,
+                              color: c.tertiary,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              AppStrings.delete,
+                              style: GoogleFonts.outfit(
+                                color: c.tertiary,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
               ),
-            ],
-      ),
       onTap: onTap,
     );
   }
@@ -218,6 +207,17 @@ class _PlaylistCover extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
+    if (playlist.id == MusicProvider.favoritesPlaylistId) {
+      return Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          gradient: c.favoritesGradient,
+        ),
+        child: Icon(Icons.favorite_rounded, color: c.onPlayer, size: size * .5),
+      );
+    }
     // Grid of up to 4 album arts
     final songs = playlist.songs.take(4).toList();
     if (songs.isEmpty) {
@@ -392,11 +392,15 @@ class PlaylistDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final music = context.watch<MusicProvider>();
+    final isSystemPlaylist = playlistId == MusicProvider.favoritesPlaylistId;
     // Player state is only rendered per tile (isActive); read it here so a
     // play/pause, track change or sleep-timer tick does not rebuild the
     // SliverAppBar, header image, buttons and the whole list.
     final player = context.read<PlayerProvider>();
-    final playlist = music.playlists.firstWhere((p) => p.id == playlistId);
+    final playlist =
+        isSystemPlaylist
+            ? music.favoritesPlaylist
+            : music.playlists.firstWhere((p) => p.id == playlistId);
     final c = context.appColors;
     return Scaffold(
       backgroundColor: c.background,
@@ -418,11 +422,12 @@ class PlaylistDetailScreen extends StatelessWidget {
               onPressed: () => Navigator.pop(context),
             ),
             actions: [
-              IconButton(
-                tooltip: AppStrings.rename,
-                icon: Icon(Icons.edit_rounded, color: c.onPlayer, size: 22),
-                onPressed: () => _showEditDialog(context, music, playlist),
-              ),
+              if (!isSystemPlaylist)
+                IconButton(
+                  tooltip: AppStrings.rename,
+                  icon: Icon(Icons.edit_rounded, color: c.onPlayer, size: 22),
+                  onPressed: () => _showEditDialog(context, music, playlist),
+                ),
             ],
             flexibleSpace: FlexibleSpaceBar(
               background: _PlaylistHeader(playlist: playlist),
@@ -591,21 +596,22 @@ class PlaylistDetailScreen extends StatelessWidget {
                       fontSize: 13,
                     ),
                   ),
-                  TextButton.icon(
-                    onPressed:
-                        () => _showAddSongsSheet(context, music, playlist),
-                    style: TextButton.styleFrom(
-                      foregroundColor: c.primary,
-                      minimumSize: const Size(44, 44),
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      textStyle: GoogleFonts.outfit(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
+                  if (!isSystemPlaylist)
+                    TextButton.icon(
+                      onPressed:
+                          () => _showAddSongsSheet(context, music, playlist),
+                      style: TextButton.styleFrom(
+                        foregroundColor: c.primary,
+                        minimumSize: const Size(44, 44),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        textStyle: GoogleFonts.outfit(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
+                      icon: const Icon(Icons.add_rounded, size: 18),
+                      label: const Text(AppStrings.addSongs),
                     ),
-                    icon: const Icon(Icons.add_rounded, size: 18),
-                    label: const Text(AppStrings.addSongs),
-                  ),
                 ],
               ),
             ),
@@ -623,7 +629,9 @@ class PlaylistDetailScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      AppStrings.emptyPlaylistHint,
+                      isSystemPlaylist
+                          ? AppStrings.emptyFavoritesHint
+                          : AppStrings.emptyPlaylistHint,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.outfit(
                         color: c.textTertiary,
@@ -671,17 +679,22 @@ class PlaylistDetailScreen extends StatelessWidget {
                           );
                         },
                         // IconButton: 48dp target + tooltip/semantics label.
-                        trailing: IconButton(
-                          tooltip: AppStrings.removeFromPlaylist,
-                          onPressed:
-                              () =>
-                                  music.removeFromPlaylist(playlistId, song.id),
-                          icon: Icon(
-                            Icons.remove_circle_outline_rounded,
-                            color: c.textDisabled,
-                            size: 20,
-                          ),
-                        ),
+                        trailing:
+                            isSystemPlaylist
+                                ? null
+                                : IconButton(
+                                  tooltip: AppStrings.removeFromPlaylist,
+                                  onPressed:
+                                      () => music.removeFromPlaylist(
+                                        playlistId,
+                                        song.id,
+                                      ),
+                                  icon: Icon(
+                                    Icons.remove_circle_outline_rounded,
+                                    color: c.textDisabled,
+                                    size: 20,
+                                  ),
+                                ),
                       ),
                 );
               }, childCount: playlist.songs.length),

@@ -77,7 +77,7 @@ void main() {
         theme: AppTheme.buildTheme(AppColorPresets.dark),
         home: Scaffold(
           bottomNavigationBar: AppBottomNavigation(
-            currentIndex: 0,
+            currentIndex: 1,
             onTap: (_) {},
             style: BottomNavStyle.normal,
           ),
@@ -90,7 +90,7 @@ void main() {
       isSemantics(isButton: true, hasTapAction: true, isSelected: true),
     );
     expect(
-      tester.getSemantics(find.bySemanticsLabel('Trực tuyến')),
+      tester.getSemantics(find.bySemanticsLabel(AppStrings.settings)),
       isSemantics(isButton: true, hasTapAction: true, isSelected: false),
     );
     expect(

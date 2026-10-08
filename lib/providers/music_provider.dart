@@ -5,12 +5,15 @@ import '../models/song_item.dart';
 import '../models/playlist_item.dart';
 import '../services/music_scanner.dart';
 import '../services/storage_service.dart';
+import '../core/app_strings.dart';
 
 enum LibraryStatus { idle, scanning, done, error, permissionDenied }
 
 enum LibrarySongSort { title, recentlyAdded, duration }
 
 class MusicProvider extends ChangeNotifier {
+  static const favoritesPlaylistId = 'system_favorites';
+
   MusicProvider({MusicScanner? scanner, StorageService? storage})
     : _scanner = scanner ?? MusicScanner(),
       _storage = storage ?? StorageService();
@@ -61,6 +64,7 @@ class MusicProvider extends ChangeNotifier {
   String? _libraryFilterCacheQuery;
   int _libraryFilterCacheRevision = -1;
   List<SongItem>? _libraryFilterCache;
+  final Map<LibrarySongSort, List<SongItem>> _homeSortCache = {};
   final Map<LibrarySongSort, List<SongItem>> _librarySortCache = {};
 
   List<SongItem>? _recentlyAddedCache;
@@ -142,6 +146,25 @@ class MusicProvider extends ChangeNotifier {
         .toList();
   }
 
+  List<SongItem> homeSongsSortedBy(LibrarySongSort sort) {
+    return _homeSortCache.putIfAbsent(sort, () {
+      final songs = [...filteredSongs];
+      switch (sort) {
+        case LibrarySongSort.title:
+          songs.sort((a, b) => a.title.compareTo(b.title));
+        case LibrarySongSort.recentlyAdded:
+          songs.sort(
+            (a, b) => (b.dateAdded ?? DateTime(0)).compareTo(
+              a.dateAdded ?? DateTime(0),
+            ),
+          );
+        case LibrarySongSort.duration:
+          songs.sort((a, b) => b.duration.compareTo(a.duration));
+      }
+      return List.unmodifiable(songs);
+    });
+  }
+
   List<SongItem> librarySongsSortedBy(LibrarySongSort sort) {
     return _librarySortCache.putIfAbsent(sort, () {
       final songs = [...libraryFilteredSongs];
@@ -168,7 +191,10 @@ class MusicProvider extends ChangeNotifier {
 
   Future<void> init() async {
     await _storage.init();
-    _playlists = _storage.playlists;
+    _playlists =
+        _storage.playlists
+            .where((playlist) => playlist.id != favoritesPlaylistId)
+            .toList();
     _invalidateSmartListCaches();
     notifyListeners();
   }
@@ -266,6 +292,13 @@ class MusicProvider extends ChangeNotifier {
     );
   }
 
+  PlaylistItem get favoritesPlaylist => PlaylistItem(
+    id: favoritesPlaylistId,
+    name: AppStrings.favorites,
+    songs: favorites,
+    createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+  );
+
   List<SongItem> get neverPlayed {
     final cached = _neverPlayedCache;
     if (cached != null) return cached;
@@ -306,12 +339,14 @@ class MusicProvider extends ChangeNotifier {
   }
 
   Future<void> deletePlaylist(String id) async {
+    if (id == favoritesPlaylistId) return;
     _playlists.removeWhere((p) => p.id == id);
     notifyListeners();
     await _persistPlaylists();
   }
 
   Future<void> addToPlaylist(String playlistId, SongItem song) async {
+    if (playlistId == favoritesPlaylistId) return;
     final pl = _playlists.firstWhere((p) => p.id == playlistId);
     pl.addSong(song);
     notifyListeners();
@@ -319,6 +354,7 @@ class MusicProvider extends ChangeNotifier {
   }
 
   Future<void> removeFromPlaylist(String playlistId, int songId) async {
+    if (playlistId == favoritesPlaylistId) return;
     final pl = _playlists.firstWhere((p) => p.id == playlistId);
     pl.removeSong(songId);
     notifyListeners();
@@ -326,6 +362,7 @@ class MusicProvider extends ChangeNotifier {
   }
 
   Future<void> renamePlaylist(String playlistId, String newName) async {
+    if (playlistId == favoritesPlaylistId) return;
     final pl = _playlists.firstWhere((p) => p.id == playlistId);
     pl.name = newName;
     notifyListeners();
@@ -412,6 +449,7 @@ class MusicProvider extends ChangeNotifier {
     String playlistId,
     List<SongItem> songs,
   ) async {
+    if (playlistId == favoritesPlaylistId) return;
     final pl = _playlists.firstWhere((p) => p.id == playlistId);
     for (final song in songs) {
       pl.addSong(song);
@@ -424,6 +462,7 @@ class MusicProvider extends ChangeNotifier {
     _homeSearchQuery = query;
     _homeFilterCache = null;
     _homeFilterCacheQuery = null;
+    _homeSortCache.clear();
     notifyListeners();
   }
 
@@ -446,6 +485,7 @@ class MusicProvider extends ChangeNotifier {
     };
     _homeFilterCache = null;
     _libraryFilterCache = null;
+    _homeSortCache.clear();
     _librarySortCache.clear();
     _invalidateSmartListCaches();
     await _rebuildLibraryGroups();

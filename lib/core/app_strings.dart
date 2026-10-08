@@ -59,6 +59,9 @@ abstract final class AppStrings {
   static const addToQueue = 'Thêm vào hàng chờ';
 
   static const favorites = 'Yêu thích';
+  static const random = 'Random';
+  static const emptyFavoritesHint =
+      'Những bài hát bạn thả tim sẽ xuất hiện ở đây.';
   static const unfavorite = 'Bỏ yêu thích';
   static const addToFavorites = 'Thêm vào yêu thích';
   static const addToPlaylist = 'Thêm vào danh sách phát';
@@ -80,7 +83,6 @@ abstract final class AppStrings {
   static const playlist = 'Playlist';
   static const folders = 'Thư mục';
   static const library = 'Thư viện';
-  static const online = 'Trực tuyến';
   static const profile = 'Hồ sơ';
   static const settings = 'Cài đặt';
   static const appearance = 'Giao diện';
@@ -287,20 +289,6 @@ abstract final class AppStrings {
   static const createAndAdd = 'Tạo & Thêm';
   static String createdPlaylistAndAdded(String name) =>
       'Đã tạo "$name" và thêm bài hát';
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Online
-  // ─────────────────────────────────────────────────────────────────────────
-  static const onlineComingBody =
-      'Tính năng phát nhạc trực tuyến đang được\nxây dựng. Cảm ơn bạn đã chờ đợi!';
-  static const onlineDownloadSubtitle =
-      'TikTok, YouTube, SoundCloud và hơn thế nữa';
-  static const onlineRadio = 'Radio trực tuyến';
-  static const onlineRadioSubtitle = 'Nghe các kênh radio từ khắp nơi';
-  static const onlineSearch = 'Tìm kiếm trực tuyến';
-  static const onlineSearchSubtitle = 'Tìm và phát nhạc trực tiếp từ web';
-  static const playlistSync = 'Đồng bộ danh sách phát';
-  static const playlistSyncSubtitle = 'Đồng bộ playlist với các nền tảng khác';
 
   // ─────────────────────────────────────────────────────────────────────────
   // Profile / Settings

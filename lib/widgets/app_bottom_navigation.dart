@@ -70,21 +70,22 @@ class _PremiumGlassBottomNavigation extends StatelessWidget {
       tabs: [
         _glassTab(
           index: 0,
-          icon: Icons.home_rounded,
-          label: AppStrings.tabHome,
-          glowColor: c.primary,
-        ),
-        _glassTab(
-          index: 1,
-          icon: Icons.language_rounded,
-          label: AppStrings.online,
-          glowColor: c.secondary,
-        ),
-        _glassTab(
-          index: 2,
           icon: Icons.library_music_rounded,
           label: AppStrings.library,
           glowColor: c.tertiary,
+        ),
+        _glassTab(
+          index: 1,
+          icon: Icons.home_rounded,
+          label: AppStrings.tabHome,
+          glowColor: c.primary,
+          iconSize: 28,
+        ),
+        _glassTab(
+          index: 2,
+          icon: Icons.settings_rounded,
+          label: AppStrings.settings,
+          glowColor: c.secondary,
         ),
       ],
     );
@@ -95,8 +96,9 @@ class _PremiumGlassBottomNavigation extends StatelessWidget {
     required IconData icon,
     required String label,
     required Color glowColor,
+    double iconSize = 23,
   }) => GlassTab(
-    icon: Icon(icon),
+    icon: Icon(icon, size: iconSize),
     label: currentIndex == index ? label : null,
     semanticLabel: label,
     glowColor: glowColor,
@@ -139,25 +141,37 @@ class _NormalBottomNavigation extends StatelessWidget {
         ),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _NormalNavItem(
-              icon: Icons.home_rounded,
-              label: AppStrings.tabHome,
-              active: currentIndex == 0,
-              onTap: () => onTap(0),
+            Expanded(
+              child: Center(
+                child: _NormalNavItem(
+                  icon: Icons.library_music_rounded,
+                  label: AppStrings.library,
+                  active: currentIndex == 0,
+                  onTap: () => onTap(0),
+                ),
+              ),
             ),
-            _NormalNavItem(
-              icon: Icons.language_rounded,
-              label: AppStrings.online,
-              active: currentIndex == 1,
-              onTap: () => onTap(1),
+            Expanded(
+              child: Center(
+                child: _NormalNavItem(
+                  icon: Icons.home_rounded,
+                  label: AppStrings.tabHome,
+                  active: currentIndex == 1,
+                  onTap: () => onTap(1),
+                  emphasize: true,
+                ),
+              ),
             ),
-            _NormalNavItem(
-              icon: Icons.library_music_rounded,
-              label: AppStrings.library,
-              active: currentIndex == 2,
-              onTap: () => onTap(2),
+            Expanded(
+              child: Center(
+                child: _NormalNavItem(
+                  icon: Icons.settings_rounded,
+                  label: AppStrings.settings,
+                  active: currentIndex == 2,
+                  onTap: () => onTap(2),
+                ),
+              ),
             ),
           ],
         ),
@@ -172,12 +186,14 @@ class _NormalNavItem extends StatelessWidget {
     required this.label,
     required this.active,
     required this.onTap,
+    this.emphasize = false,
   });
 
   final IconData icon;
   final String label;
   final bool active;
   final VoidCallback onTap;
+  final bool emphasize;
 
   @override
   Widget build(BuildContext context) {
@@ -193,49 +209,113 @@ class _NormalNavItem extends StatelessWidget {
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOutCubic,
           padding: EdgeInsets.symmetric(
-            horizontal: active ? 16 : 14,
-            vertical: 10,
+            horizontal:
+                emphasize
+                    ? 8
+                    : active
+                    ? 12
+                    : 10,
+            vertical: emphasize ? 4 : 10,
           ),
           decoration: BoxDecoration(
             color:
-                active ? c.primary.withValues(alpha: 0.14) : Colors.transparent,
+                active && !emphasize
+                    ? c.primary.withValues(alpha: 0.14)
+                    : Colors.transparent,
             borderRadius: BorderRadius.circular(18),
+            border:
+                active && !emphasize
+                    ? Border.all(color: c.primary.withValues(alpha: 0.35))
+                    : null,
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedScale(
-                scale: active ? 1.08 : 1.0,
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeOutBack,
-                child: Icon(
-                  icon,
-                  color: active ? c.primary : c.textTertiary,
-                  size: 22,
-                ),
-              ),
-              AnimatedSize(
-                duration: const Duration(milliseconds: 260),
-                curve: Curves.easeOutCubic,
-                child:
-                    active
-                        ? Padding(
-                          padding: const EdgeInsets.only(left: 7),
-                          child: ExcludeSemantics(
-                            child: Text(
-                              label,
-                              style: GoogleFonts.outfit(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: c.primary,
-                              ),
-                            ),
+          child:
+              emphasize
+                  ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AnimatedScale(
+                        scale: active ? 1.08 : 1.0,
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeOutBack,
+                        child: Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: active ? c.primaryGradient : null,
+                            color: active ? null : c.surfaceElevated,
+                            border:
+                                active
+                                    ? null
+                                    : Border.all(color: c.border, width: 0.5),
+                            boxShadow:
+                                active
+                                    ? [
+                                      BoxShadow(
+                                        color: c.primary.withValues(
+                                          alpha: 0.28,
+                                        ),
+                                        blurRadius: 14,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ]
+                                    : const [],
                           ),
-                        )
-                        : const SizedBox.shrink(),
-              ),
-            ],
-          ),
+                          child: Icon(
+                            icon,
+                            color: active ? Colors.white : c.primary,
+                            size: 24,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      ExcludeSemantics(
+                        child: Text(
+                          label,
+                          style: GoogleFonts.outfit(
+                            fontSize: active ? 13 : 11,
+                            fontWeight: FontWeight.w600,
+                            color: active ? c.primary : c.textTertiary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                  : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AnimatedScale(
+                        scale: active ? 1.08 : 1.0,
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeOutBack,
+                        child: Icon(
+                          icon,
+                          color: active ? c.primary : c.textTertiary,
+                          size: 22,
+                        ),
+                      ),
+                      AnimatedSize(
+                        duration: const Duration(milliseconds: 260),
+                        curve: Curves.easeOutCubic,
+                        child:
+                            active
+                                ? Padding(
+                                  padding: const EdgeInsets.only(left: 7),
+                                  child: ExcludeSemantics(
+                                    child: Text(
+                                      label,
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: c.primary,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                : const SizedBox.shrink(),
+                      ),
+                    ],
+                  ),
         ),
       ),
     );

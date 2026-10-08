@@ -8,7 +8,7 @@ import 'package:muziczz/widgets/app_bottom_navigation.dart';
 import 'package:muziczz/core/app_strings.dart';
 
 void main() {
-  testWidgets('normal style keeps the existing navigation behavior', (
+  testWidgets('normal style centers and emphasizes the Home tab', (
     tester,
   ) async {
     int? selectedIndex;
@@ -18,7 +18,7 @@ void main() {
         theme: AppTheme.buildTheme(AppColorPresets.dark),
         home: Scaffold(
           bottomNavigationBar: AppBottomNavigation(
-            currentIndex: 0,
+            currentIndex: 1,
             onTap: (index) => selectedIndex = index,
             style: BottomNavStyle.normal,
           ),
@@ -29,9 +29,12 @@ void main() {
     expect(find.byKey(const ValueKey('normal-bottom-navigation')), findsOne);
     expect(find.text(AppStrings.tabHome), findsOneWidget);
     expect(find.text('Trực tuyến'), findsNothing);
+    expect(find.byIcon(Icons.home_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.library_music_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.settings_rounded), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.language_rounded));
-    expect(selectedIndex, 1);
+    await tester.tap(find.byIcon(Icons.settings_rounded));
+    expect(selectedIndex, 2);
   });
 
   testWidgets('fancy style uses the premium liquid glass tab bar', (
@@ -58,7 +61,7 @@ void main() {
     expect(glassTabBar.quality, GlassQuality.premium);
     expect(glassTabBar.maskingQuality, MaskingQuality.high);
     expect(glassTabBar.tabs[0].label, isNull);
-    expect(glassTabBar.tabs[1].label, 'Trực tuyến');
+    expect(glassTabBar.tabs[1].label, AppStrings.tabHome);
     expect(glassTabBar.tabs[2].label, isNull);
   });
 }

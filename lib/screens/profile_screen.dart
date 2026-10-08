@@ -18,7 +18,9 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:muziczz/core/app_strings.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({super.key, this.embeddedInHome = false});
+
+  final bool embeddedInHome;
 
   /// Đọc một lần cho cả vòng đời app — build() có thể chạy lại nhiều lần.
   static final Future<PackageInfo> _packageInfo = PackageInfo.fromPlatform();
@@ -27,7 +29,9 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.appColors;
     final music = context.watch<MusicProvider>();
-    final player = context.watch<PlayerProvider>();
+    final hasPlayingSong = context.select<PlayerProvider, bool>(
+      (player) => player.currentSong != null,
+    );
 
     final totalSongs = music.allSongs.length;
     final totalArtists = music.artistMap.length;
@@ -41,7 +45,12 @@ class ProfileScreen extends StatelessWidget {
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(),
               slivers: [
-                SliverToBoxAdapter(child: _ProfileHeader(colors: c)),
+                SliverToBoxAdapter(
+                  child: _ProfileHeader(
+                    colors: c,
+                    embeddedInHome: embeddedInHome,
+                  ),
+                ),
                 // Stats row
                 SliverToBoxAdapter(
                   child: Padding(
@@ -150,7 +159,7 @@ class ProfileScreen extends StatelessWidget {
               ],
             ),
           ),
-          if (player.currentSong != null) const MiniPlayer(),
+          if (!embeddedInHome && hasPlayingSong) const MiniPlayer(),
         ],
       ),
     );
@@ -463,8 +472,9 @@ class _SettingsTappableRow extends StatelessWidget {
 // ── Profile header ─────────────────────────────────────────────────────────
 
 class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({required this.colors});
+  const _ProfileHeader({required this.colors, required this.embeddedInHome});
   final AppColorsData colors;
+  final bool embeddedInHome;
 
   @override
   Widget build(BuildContext context) {
@@ -497,15 +507,28 @@ class _ProfileHeader extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    IconButton(
-                      tooltip: AppStrings.back,
-                      icon: Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        size: 20,
-                        color: c.textPrimary,
+                    if (embeddedInHome)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 12),
+                        child: Text(
+                          AppStrings.settings,
+                          style: GoogleFonts.outfit(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: c.textPrimary,
+                          ),
+                        ),
+                      )
+                    else
+                      IconButton(
+                        tooltip: AppStrings.back,
+                        icon: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          size: 20,
+                          color: c.textPrimary,
+                        ),
+                        onPressed: () => Navigator.pop(context),
                       ),
-                      onPressed: () => Navigator.pop(context),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -643,10 +666,7 @@ class _ActionTile extends StatelessWidget {
         border: Border.all(color: c.border, width: 0.5),
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 4,
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         leading: Container(
           width: 42,
           height: 42,
