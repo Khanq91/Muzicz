@@ -46,6 +46,8 @@ class MuzicAudioHandler implements PlayerAudioGateway {
 
   @override
   Future<void> loadSongs(List<SongItem> songs, {int initialIndex = 0}) async {
+    // Rebuilding a playing playlist can briefly complete or play index zero.
+    await _player.pause();
     _currentSongs = List.from(songs);
     await _playlist.clear();
     await _playlist.addAll(songs.map(_sourceFor).toList());

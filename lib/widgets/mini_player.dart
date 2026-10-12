@@ -113,10 +113,9 @@ class MiniPlayer extends StatelessWidget {
                   // UX 4: Controls with loading state
                   if (embeddedInDock)
                     _SmartPlayPauseButton(player: player)
-                  else ...[
+                  else
                     _MiniControls(player: player),
-                    _CloseButton(player: player),
-                  ],
+                  _CloseButton(player: player),
                 ],
               ),
             ),
@@ -207,12 +206,12 @@ class _CloseButton extends StatelessWidget {
       child: GestureDetector(
         onTap: () {
           HapticFeedback.lightImpact();
-          _confirmStop(context);
+          player.stopAndClear();
         },
         behavior: HitTestBehavior.opaque,
         child: SizedBox(
           width: 48,
-          height: 68,
+          height: 48,
           child: Center(
             child: Container(
               width: 24,
@@ -227,58 +226,6 @@ class _CloseButton extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-
-  void _confirmStop(BuildContext context) {
-    if (!context.read<PlayerProvider>().isPlaying) {
-      context.read<PlayerProvider>().stopAndClear();
-      return;
-    }
-    final c = context.appColors;
-    showDialog(
-      context: context,
-      builder:
-          (ctx) => AlertDialog(
-            backgroundColor: c.card,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: Text(
-              AppStrings.stopPlaybackTitle,
-              style: TextStyle(
-                color: c.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            content: Text(
-              AppStrings.stopPlaybackBody,
-              style: TextStyle(color: c.textTertiary, fontSize: 14),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: Text(
-                  AppStrings.cancel,
-                  style: TextStyle(color: c.textTertiary),
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  context.read<PlayerProvider>().stopAndClear();
-                },
-                child: Text(
-                  AppStrings.stop,
-                  style: TextStyle(
-                    color: c.tertiary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
     );
   }
 }

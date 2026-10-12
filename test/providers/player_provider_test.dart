@@ -21,6 +21,65 @@ void main() {
   });
 
   test(
+    'completion during queue replacement does not rewind selected song',
+    () async {
+      final songs = [_song(1), _song(2), _song(3)];
+      await provider.playSongs(songs, specificSong: songs[1]);
+      gateway.blockLoads = true;
+      final replacement = provider.playSongs(songs, specificSong: songs[2]);
+      await _settle();
+      gateway.emitProcessingState(ProcessingState.completed);
+      await _settle();
+      gateway.pendingLoads.removeAt(0).complete();
+      await replacement;
+      await _settle();
+      expect(provider.currentSong?.id, 3);
+      expect(gateway.currentSong?.id, 3);
+      expect(gateway.seekToIndexCalls, isEmpty);
+    },
+  );
+
+  test(
+    'close during load cancels playback and permits a later selection',
+    () async {
+      gateway.blockLoads = true;
+      final loading = provider.playSongs([_song(1), _song(2)], initialIndex: 1);
+      await _settle();
+      final closing = provider.stopAndClear();
+      expect(provider.currentSong, isNull);
+      expect(provider.queue, isEmpty);
+      gateway.emitProcessingState(ProcessingState.completed);
+      gateway.emitCurrentIndex(0);
+      gateway.pendingLoads.removeAt(0).complete();
+      await Future.wait([loading, closing]);
+      await _settle();
+      expect(gateway.playCalls, 0);
+      expect(provider.isPlaying, isFalse);
+      expect(provider.currentSong, isNull);
+      gateway.blockLoads = false;
+      await provider.playSongs([_song(3)]);
+      expect(provider.currentSong?.id, 3);
+      expect(gateway.playCalls, 1);
+    },
+  );
+
+  test('selection made while closing waits for stop to finish', () async {
+    gateway.blockLoads = true;
+    final loading = provider.playSongs([_song(1)]);
+    await _settle();
+    final closing = provider.stopAndClear();
+    final next = provider.playSongs([_song(2)]);
+    gateway.blockLoads = false;
+    gateway.pendingLoads.removeAt(0).complete();
+    await Future.wait([loading, closing, next]);
+    await _settle();
+    expect(provider.currentSong?.id, 2);
+    expect(gateway.currentSong?.id, 2);
+    expect(provider.isPlaying, isTrue);
+    expect(gateway.playCalls, 1);
+  });
+
+  test(
     'removing a queued song keeps provider and audio engine aligned',
     () async {
       final songs = [_song(1), _song(2), _song(3)];
@@ -153,63 +212,70 @@ void main() {
     expect(gateway.seekCalls, [Duration.zero]);
   });
 
-  test('a play request issued mid-load waits, then replaces the queue', () async {
-    gateway.blockLoads = true;
+  test(
+    'a play request issued mid-load waits, then replaces the queue',
+    () async {
+      gateway.blockLoads = true;
 
-    final first = provider.playSongs([_song(1), _song(2)]);
-    await _settle();
-    expect(gateway.pendingLoads, hasLength(1));
-
-    final second = provider.playSongs([_song(3), _song(4)]);
-    await _settle();
-    // The second request must wait instead of racing the in-flight load.
-    expect(gateway.pendingLoads, hasLength(1));
-
-    gateway.pendingLoads.removeAt(0).complete();
-    await _settle();
-    expect(gateway.pendingLoads, hasLength(1));
-    // The superseded request must not start playback of its stale queue.
-    expect(gateway.playCalls, 0);
-
-    gateway.pendingLoads.removeAt(0).complete();
-    await Future.wait([first, second]);
-
-    expect(gateway.queue.map((song) => song.id), [3, 4]);
-    expect(provider.queue.map((song) => song.id), [3, 4]);
-    expect(provider.currentSong?.id, 3);
-    expect(gateway.currentSong?.id, 3);
-    expect(gateway.playCalls, 1);
-  });
-
-  test('near-simultaneous play requests never interleave engine loads', () async {
-    gateway.blockLoads = true;
-
-    final first = provider.playSongs([_song(1), _song(2)]);
-    final second = provider.playSongs([_song(3), _song(4)]);
-    await _settle();
-
-    // Release loads one by one; at no point may two be in flight.
-    while (gateway.pendingLoads.isNotEmpty) {
+      final first = provider.playSongs([_song(1), _song(2)]);
+      await _settle();
       expect(gateway.pendingLoads, hasLength(1));
+
+      final second = provider.playSongs([_song(3), _song(4)]);
+      await _settle();
+      // The second request must wait instead of racing the in-flight load.
+      expect(gateway.pendingLoads, hasLength(1));
+
       gateway.pendingLoads.removeAt(0).complete();
       await _settle();
-    }
-    await Future.wait([first, second]);
+      expect(gateway.pendingLoads, hasLength(1));
+      // The superseded request must not start playback of its stale queue.
+      expect(gateway.playCalls, 0);
 
-    expect(gateway.queue.map((song) => song.id), [3, 4]);
-    expect(provider.queue.map((song) => song.id), [3, 4]);
-    expect(provider.currentSong?.id, 3);
-    expect(gateway.currentSong?.id, 3);
-    expect(gateway.playCalls, 1);
-  });
+      gateway.pendingLoads.removeAt(0).complete();
+      await Future.wait([first, second]);
+
+      expect(gateway.queue.map((song) => song.id), [3, 4]);
+      expect(provider.queue.map((song) => song.id), [3, 4]);
+      expect(provider.currentSong?.id, 3);
+      expect(gateway.currentSong?.id, 3);
+      expect(gateway.playCalls, 1);
+    },
+  );
+
+  test(
+    'near-simultaneous play requests never interleave engine loads',
+    () async {
+      gateway.blockLoads = true;
+
+      final first = provider.playSongs([_song(1), _song(2)]);
+      final second = provider.playSongs([_song(3), _song(4)]);
+      await _settle();
+
+      // Release loads one by one; at no point may two be in flight.
+      while (gateway.pendingLoads.isNotEmpty) {
+        expect(gateway.pendingLoads, hasLength(1));
+        gateway.pendingLoads.removeAt(0).complete();
+        await _settle();
+      }
+      await Future.wait([first, second]);
+
+      expect(gateway.queue.map((song) => song.id), [3, 4]);
+      expect(provider.queue.map((song) => song.id), [3, 4]);
+      expect(provider.currentSong?.id, 3);
+      expect(gateway.currentSong?.id, 3);
+      expect(gateway.playCalls, 1);
+    },
+  );
 
   test('index events emitted while loading do not change the song', () async {
     gateway.blockLoads = true;
 
-    final play = provider.playSongs(
-      [_song(1), _song(2), _song(3)],
-      initialIndex: 2,
-    );
+    final play = provider.playSongs([
+      _song(1),
+      _song(2),
+      _song(3),
+    ], initialIndex: 2);
     await _settle();
     expect(provider.currentSong?.id, 3);
 
@@ -259,22 +325,25 @@ void main() {
     expect(gateway.log, isEmpty);
   });
 
-  test('next during a queue load waits for the load, then seeks inside it', () async {
-    gateway.blockLoads = true;
-    final play = provider.playSongs([_song(1), _song(2), _song(3)]);
-    await _settle();
+  test(
+    'next during a queue load waits for the load, then seeks inside it',
+    () async {
+      gateway.blockLoads = true;
+      final play = provider.playSongs([_song(1), _song(2), _song(3)]);
+      await _settle();
 
-    final next = provider.skipToNext();
-    await _settle();
-    expect(gateway.seekToIndexCalls, isEmpty);
+      final next = provider.skipToNext();
+      await _settle();
+      expect(gateway.seekToIndexCalls, isEmpty);
 
-    gateway.pendingLoads.removeAt(0).complete();
-    await Future.wait([play, next]);
+      gateway.pendingLoads.removeAt(0).complete();
+      await Future.wait([play, next]);
 
-    expect(gateway.seekToIndexCalls, [1]);
-    expect(provider.currentSong?.id, 2);
-    expect(gateway.currentSong?.id, 2);
-  });
+      expect(gateway.seekToIndexCalls, [1]);
+      expect(provider.currentSong?.id, 2);
+      expect(gateway.currentSong?.id, 2);
+    },
+  );
 
   test('a skip issued before a newer play request is dropped', () async {
     gateway.blockLoads = true;
@@ -319,15 +388,22 @@ void main() {
       expect(played, [1, 2, 3, 2, 1]);
     });
 
-    test('counts the song the engine moves to after removing the current one', () async {
-      await counting.playSongs([_song(1), _song(2), _song(3)], initialIndex: 1);
-      played.clear();
+    test(
+      'counts the song the engine moves to after removing the current one',
+      () async {
+        await counting.playSongs([
+          _song(1),
+          _song(2),
+          _song(3),
+        ], initialIndex: 1);
+        played.clear();
 
-      await counting.removeFromQueue(0);
-      await counting.removeFromQueue(0);
+        await counting.removeFromQueue(0);
+        await counting.removeFromQueue(0);
 
-      expect(played, [3]);
-    });
+        expect(played, [3]);
+      },
+    );
 
     test('the paused rewind at the end of the queue is not a play', () async {
       await counting.playSongs([_song(1), _song(2)], initialIndex: 1);
@@ -352,19 +428,26 @@ void main() {
   });
 
   group('play next', () {
-    test('inserts right after the current song in provider and engine', () async {
-      await provider.playSongs([_song(1), _song(2), _song(3)], initialIndex: 1);
+    test(
+      'inserts right after the current song in provider and engine',
+      () async {
+        await provider.playSongs([
+          _song(1),
+          _song(2),
+          _song(3),
+        ], initialIndex: 1);
 
-      await provider.insertNext(_song(9));
+        await provider.insertNext(_song(9));
 
-      expect(provider.queue.map((s) => s.id), [1, 2, 9, 3]);
-      expect(gateway.queue.map((s) => s.id), [1, 2, 9, 3]);
-      expect(gateway.insertCalls, [(2, 9)]);
-      expect(provider.currentSong?.id, 2);
+        expect(provider.queue.map((s) => s.id), [1, 2, 9, 3]);
+        expect(gateway.queue.map((s) => s.id), [1, 2, 9, 3]);
+        expect(gateway.insertCalls, [(2, 9)]);
+        expect(provider.currentSong?.id, 2);
 
-      await provider.skipToNext();
-      expect(provider.currentSong?.id, 9);
-    });
+        await provider.skipToNext();
+        expect(provider.currentSong?.id, 9);
+      },
+    );
 
     test('also follows the current song in the unshuffled order', () async {
       await provider.playSongs([_song(1), _song(2), _song(3)], initialIndex: 1);
@@ -399,45 +482,55 @@ void main() {
   });
 
   group('queue end with repeat off', () {
-    test('pauses first, then rewinds to the first song without playing', () async {
-      await provider.playSongs([_song(1), _song(2), _song(3)], initialIndex: 2);
-      await _settle();
-      expect(provider.isPlaying, isTrue);
-      gateway.log.clear();
+    test(
+      'pauses first, then rewinds to the first song without playing',
+      () async {
+        await provider.playSongs([
+          _song(1),
+          _song(2),
+          _song(3),
+        ], initialIndex: 2);
+        await _settle();
+        expect(provider.isPlaying, isTrue);
+        gateway.log.clear();
 
-      gateway.emitProcessingState(ProcessingState.completed);
-      await _settle();
+        gateway.emitProcessingState(ProcessingState.completed);
+        await _settle();
 
-      expect(gateway.log, ['pause', 'seekToIndex']);
-      expect(gateway.seekToIndexCalls, [0]);
-      expect(provider.currentSong?.id, 1);
-      expect(gateway.currentSong?.id, 1);
-      expect(provider.isPlaying, isFalse);
-      expect(gateway.playCalls, 1);
+        expect(gateway.log, ['pause', 'seekToIndex']);
+        expect(gateway.seekToIndexCalls, [0]);
+        expect(provider.currentSong?.id, 1);
+        expect(gateway.currentSong?.id, 1);
+        expect(provider.isPlaying, isFalse);
+        expect(gateway.playCalls, 1);
 
-      // Previous must not walk back into the finished run.
-      await provider.skipToPrevious();
-      expect(gateway.seekToIndexCalls, [0]);
-      expect(gateway.seekCalls, [Duration.zero]);
-    });
+        // Previous must not walk back into the finished run.
+        await provider.skipToPrevious();
+        expect(gateway.seekToIndexCalls, [0]);
+        expect(gateway.seekCalls, [Duration.zero]);
+      },
+    );
 
-    test('reshuffles and reloads the queue, paused, when shuffle is on', () async {
-      final songs = List.generate(6, (i) => _song(i + 1));
-      await provider.playSongsShuffled(songs);
-      await _settle();
-      gateway.log.clear();
+    test(
+      'reshuffles and reloads the queue, paused, when shuffle is on',
+      () async {
+        final songs = List.generate(6, (i) => _song(i + 1));
+        await provider.playSongsShuffled(songs);
+        await _settle();
+        gateway.log.clear();
 
-      gateway.emitProcessingState(ProcessingState.completed);
-      await _settle();
+        gateway.emitProcessingState(ProcessingState.completed);
+        await _settle();
 
-      expect(gateway.log, ['pause', 'load']);
-      expect(provider.queue.map((s) => s.id).toSet(), {1, 2, 3, 4, 5, 6});
-      expect(gateway.queue.map((s) => s.id), provider.queue.map((s) => s.id));
-      expect(provider.currentSong, provider.queue.first);
-      expect(gateway.currentIndex, 0);
-      expect(provider.isPlaying, isFalse);
-      expect(gateway.playCalls, 1);
-    });
+        expect(gateway.log, ['pause', 'load']);
+        expect(provider.queue.map((s) => s.id).toSet(), {1, 2, 3, 4, 5, 6});
+        expect(gateway.queue.map((s) => s.id), provider.queue.map((s) => s.id));
+        expect(provider.currentSong, provider.queue.first);
+        expect(gateway.currentIndex, 0);
+        expect(provider.isPlaying, isFalse);
+        expect(gateway.playCalls, 1);
+      },
+    );
 
     test('a play request that arrives during the pause wins', () async {
       await provider.playSongs([_song(1), _song(2)]);
@@ -506,6 +599,7 @@ class _FakePlayerAudioGateway implements PlayerAudioGateway {
   final _processingStateController =
       StreamController<ProcessingState>.broadcast();
   int? currentIndex;
+
   /// Engine calls in order (load / play / pause / seekToIndex).
   final List<String> log = [];
   int pauseCalls = 0;

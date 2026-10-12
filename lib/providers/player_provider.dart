@@ -132,7 +132,9 @@ class PlayerProvider extends ChangeNotifier {
     _processingStateSubscription = _handler.processingStateStream.listen((
       state,
     ) {
-      if (state == ProcessingState.completed) {
+      if (state == ProcessingState.completed &&
+          !_isChangingTrack &&
+          !_isReordering) {
         _onPlaylistEnded();
       }
     });
@@ -188,10 +190,11 @@ class PlayerProvider extends ChangeNotifier {
   // ── Load & Play ────────────────────────────────────────────────────────────
 
   Future<void> playSongs(
-      List<SongItem> songs, {
-        int initialIndex = 0,
-        SongItem? specificSong,
-      }) async {
+    List<SongItem> songs, {
+    int initialIndex = 0,
+    SongItem? specificSong,
+  }) async {
+    if (songs.isEmpty) return;
     final loopModeDirty = _dropRepeatOne();
     _originalQueue = List.from(songs);
     _historyStack.clear();
@@ -213,8 +216,12 @@ class PlayerProvider extends ChangeNotifier {
     _setCurrentSong(_playQueue[_currentPlayIndex]);
     notifyListeners();
 
-    if (loopModeDirty) await _handler.setLoopMode(LoopMode.off);
-    if (!await _loadQueueToHandler(_currentPlayIndex)) return;
+    if (!await _loadQueueToHandler(
+      _currentPlayIndex,
+      resetLoopMode: loopModeDirty,
+    )) {
+      return;
+    }
     await _handler.play();
   }
 
@@ -232,8 +239,7 @@ class PlayerProvider extends ChangeNotifier {
     _setCurrentSong(_playQueue[0]);
     notifyListeners();
 
-    if (loopModeDirty) await _handler.setLoopMode(LoopMode.off);
-    if (!await _loadQueueToHandler(0)) return;
+    if (!await _loadQueueToHandler(0, resetLoopMode: loopModeDirty)) return;
     await _handler.play();
   }
 
@@ -276,7 +282,7 @@ class PlayerProvider extends ChangeNotifier {
 
     if (nextIndex >= _playQueue.length) return;
 
-    await _seekToIndex(nextIndex);
+    if (!await _seekToIndex(nextIndex)) return;
     await _handler.play();
   }
 
@@ -285,7 +291,7 @@ class PlayerProvider extends ChangeNotifier {
 
     if (_historyStack.isNotEmpty) {
       final prevIndex = _historyStack.last;
-      await _seekToIndex(prevIndex, recordHistory: false);
+      if (!await _seekToIndex(prevIndex, recordHistory: false)) return;
       _historyStack.removeLast();
       await _handler.play();
     } else {
@@ -295,7 +301,7 @@ class PlayerProvider extends ChangeNotifier {
 
   Future<void> skipToIndex(int index) async {
     if (index < 0 || index >= _playQueue.length) return;
-    await _seekToIndex(index);
+    if (!await _seekToIndex(index)) return;
     await _handler.play();
   }
 
@@ -312,18 +318,21 @@ class PlayerProvider extends ChangeNotifier {
 
     if (_shuffleEnabled) {
       final currentSongId = _currentSong?.id;
-      final anchorInOriginal = currentSongId != null
-          ? _originalQueue.indexWhere((s) => s.id == currentSongId)
-          : 0;
+      final anchorInOriginal =
+          currentSongId != null
+              ? _originalQueue.indexWhere((s) => s.id == currentSongId)
+              : 0;
       _buildShuffledQueue(
-          anchorIndex: anchorInOriginal < 0 ? 0 : anchorInOriginal);
+        anchorIndex: anchorInOriginal < 0 ? 0 : anchorInOriginal,
+      );
       _currentPlayIndex = 0;
     } else {
       _playQueue = List.from(_originalQueue);
       final currentSongId = _currentSong?.id;
-      _currentPlayIndex = currentSongId != null
-          ? _originalQueue.indexWhere((s) => s.id == currentSongId)
-          : 0;
+      _currentPlayIndex =
+          currentSongId != null
+              ? _originalQueue.indexWhere((s) => s.id == currentSongId)
+              : 0;
       if (_currentPlayIndex < 0) _currentPlayIndex = 0;
     }
 
@@ -371,14 +380,27 @@ class PlayerProvider extends ChangeNotifier {
   }
 
   Future<void> stopAndClear() async {
+    ++_loadGeneration;
+    final previous = _loadChain;
+    final completer = Completer<void>();
+    _loadChain = completer.future;
     cancelSleepTimer();
-    await _handler.stop();
     _currentSong = null;
     _playQueue = [];
     _originalQueue = [];
     _historyStack.clear();
+    _currentPlayIndex = 0;
     _isPlaying = false;
     notifyListeners();
+    try {
+      // Stop immediately, then stop again after any in-flight load settles.
+      // New play requests wait behind this operation.
+      await _handler.stop();
+      await previous;
+      await _handler.stop();
+    } finally {
+      completer.complete();
+    }
   }
 
   Future<void> addToQueue(SongItem song) async {
@@ -515,8 +537,12 @@ class PlayerProvider extends ChangeNotifier {
   /// superseded this one while it was queued or loading; the caller must
   /// then skip playback because the engine now holds (or will hold) the
   /// newer queue.
-  Future<bool> _loadQueueToHandler(int startIndex) async {
+  Future<bool> _loadQueueToHandler(
+    int startIndex, {
+    bool resetLoopMode = false,
+  }) async {
     final generation = ++_loadGeneration;
+    final songs = List<SongItem>.from(_playQueue);
     final previous = _loadChain;
     final completer = Completer<void>();
     _loadChain = completer.future;
@@ -528,7 +554,9 @@ class PlayerProvider extends ChangeNotifier {
       // half-built queue; ignore them until the load has settled.
       _isChangingTrack = true;
       try {
-        await _handler.loadSongs(_playQueue, initialIndex: startIndex);
+        if (resetLoopMode) await _handler.setLoopMode(LoopMode.off);
+        if (generation != _loadGeneration) return false;
+        await _handler.loadSongs(songs, initialIndex: startIndex);
       } finally {
         _isChangingTrack = false;
       }
@@ -538,7 +566,7 @@ class PlayerProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _seekToIndex(
+  Future<bool> _seekToIndex(
     int index, {
     bool recordHistory = true,
     bool played = true,
@@ -547,11 +575,13 @@ class PlayerProvider extends ChangeNotifier {
     // play request lands meanwhile, this skip belongs to the old queue.
     final generation = _loadGeneration;
     await _loadChain;
-    if (generation != _loadGeneration) return;
+    if (generation != _loadGeneration) return false;
     _isChangingTrack = true;
     try {
       await _handler.seekToIndex(index);
+      if (generation != _loadGeneration) return false;
       _applyCurrentIndex(index, recordHistory: recordHistory, played: played);
+      return true;
     } finally {
       _isChangingTrack = false;
     }
