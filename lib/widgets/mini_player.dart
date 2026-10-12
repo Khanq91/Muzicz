@@ -12,7 +12,9 @@ import '../screens/now_playing_screen.dart';
 import 'package:muziczz/core/app_strings.dart';
 
 class MiniPlayer extends StatelessWidget {
-  const MiniPlayer({super.key});
+  const MiniPlayer({super.key, this.embeddedInDock = false});
+
+  final bool embeddedInDock;
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +56,7 @@ class MiniPlayer extends StatelessWidget {
       },
       child: _MiniPlayerSurface(
         useLiquidGlass: useLiquidGlass,
+        embeddedInDock: embeddedInDock,
         child: Stack(
           children: [
             // ── Progress line at bottom ─────────────────────────────
@@ -73,8 +76,11 @@ class MiniPlayer extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  _AlbumArt(albumId: song.albumId),
-                  const SizedBox(width: 12),
+                  _AlbumArt(
+                    albumId: song.albumId,
+                    size: embeddedInDock ? 36 : 44,
+                  ),
+                  SizedBox(width: embeddedInDock ? 8 : 12),
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -105,8 +111,12 @@ class MiniPlayer extends StatelessWidget {
                     ),
                   ),
                   // UX 4: Controls with loading state
-                  _MiniControls(player: player),
-                  _CloseButton(player: player),
+                  if (embeddedInDock)
+                    _SmartPlayPauseButton(player: player)
+                  else ...[
+                    _MiniControls(player: player),
+                    _CloseButton(player: player),
+                  ],
                 ],
               ),
             ),
@@ -120,14 +130,23 @@ class MiniPlayer extends StatelessWidget {
 // ── Close button ──────────────────────────────────────────────────────────────
 
 class _MiniPlayerSurface extends StatelessWidget {
-  const _MiniPlayerSurface({required this.useLiquidGlass, required this.child});
+  const _MiniPlayerSurface({
+    required this.useLiquidGlass,
+    required this.embeddedInDock,
+    required this.child,
+  });
 
   final bool useLiquidGlass;
+  final bool embeddedInDock;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
+    if (embeddedInDock) {
+      return SizedBox(height: 56, child: child);
+    }
+
     if (useLiquidGlass) {
       return GlassCard(
         key: const ValueKey('mini-player-glass-card'),
@@ -267,15 +286,16 @@ class _CloseButton extends StatelessWidget {
 // ── Album art ─────────────────────────────────────────────────────────────────
 
 class _AlbumArt extends StatelessWidget {
-  const _AlbumArt({required this.albumId});
+  const _AlbumArt({required this.albumId, this.size = 44});
   final int albumId;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
     return Container(
-      width: 44,
-      height: 44,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
         color: c.surface,

@@ -319,7 +319,7 @@ abstract final class AppStrings {
 
   // Bottom-nav style sheet
   static const bottomNavStyleSubtitle = 'Chọn phong cách thanh điều hướng dưới';
-  static const bottomNavFancyDesc = 'Kính mờ với hiệu ứng nổi bật';
+  static const bottomNavFancyDesc = 'Liquid Glass với khúc xạ ánh sáng';
   static const bottomNavNormalDesc = 'Tối giản, nền trong suốt';
 
   // Music visual sheet

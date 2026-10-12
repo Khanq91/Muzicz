@@ -52,6 +52,7 @@ class _LibraryScreenState extends State<LibraryScreen>
     return Scaffold(
       backgroundColor: c.background,
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             Padding(

@@ -52,27 +52,22 @@ class _HomeScreenState extends State<HomeScreen> {
           Positioned.fill(
             child: IndexedStack(index: _currentIndex, children: _tabs),
           ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: AppBottomNavigation.miniPlayerBottom(context),
-            child: Consumer<PlayerProvider>(
-              builder:
-                  (_, player, __) =>
-                      player.currentSong != null
-                          ? const RepaintBoundary(child: MiniPlayer())
-                          : const SizedBox.shrink(),
-            ),
-          ),
         ],
       ),
-      bottomNavigationBar: AppBottomNavigation(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          if (index != 1) _homeTabKey.currentState?.clearSelection();
-          setState(() => _currentIndex = index);
-        },
-        style: bottomNavStyle,
+      bottomNavigationBar: Consumer<PlayerProvider>(
+        builder:
+            (_, player, __) => AppBottomNavigation(
+              currentIndex: _currentIndex,
+              onTap: (index) {
+                if (index != 1) _homeTabKey.currentState?.clearSelection();
+                setState(() => _currentIndex = index);
+              },
+              style: bottomNavStyle,
+              miniPlayer:
+                  player.currentSong != null
+                      ? const MiniPlayer(embeddedInDock: true)
+                      : null,
+            ),
       ),
     );
   }

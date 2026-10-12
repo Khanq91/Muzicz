@@ -56,6 +56,7 @@ void main() {
       find.byKey(const ValueKey('premium-glass-bottom-navigation')),
       findsOne,
     );
+    expect(find.byKey(const ValueKey('liquid-glass-bottom-dock')), findsOne);
     expect(find.text(AppStrings.tabHome), findsNothing);
     expect(find.byIcon(Icons.home_rounded), findsOneWidget);
     expect(find.byIcon(Icons.library_music_rounded), findsOneWidget);
