@@ -10,6 +10,7 @@ import '../providers/player_provider.dart';
 import '../theme/app_colors_data.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/mini_player.dart';
+import '../widgets/app_bottom_navigation.dart';
 import '../widgets/bottom_nav_style_selector_sheet.dart';
 import '../widgets/theme_selector_sheet.dart';
 import 'hidden_songs_screen.dart';
@@ -155,7 +156,17 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SliverToBoxAdapter(child: SizedBox(height: 120)),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height:
+                        embeddedInHome
+                            ? AppBottomNavigation.scrollBottomPadding(
+                              context,
+                              hasMiniPlayer: hasPlayingSong,
+                            )
+                            : 120,
+                  ),
+                ),
               ],
             ),
           ),

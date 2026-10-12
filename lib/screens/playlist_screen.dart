@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../models/playlist_item.dart';
 import '../providers/music_provider.dart';
 import '../providers/player_provider.dart';
+import '../widgets/app_bottom_navigation.dart';
 import '../widgets/music_list_tile.dart';
 import 'now_playing_screen.dart';
 import 'package:muziczz/core/app_strings.dart';
@@ -19,12 +20,20 @@ class PlaylistsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final music = context.watch<MusicProvider>();
+    final hasMiniPlayer = context.select<PlayerProvider, bool>(
+      (player) => player.currentSong != null,
+    );
     final playlists = [music.favoritesPlaylist, ...music.playlists];
     return Stack(
       children: [
         ListView.builder(
           physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.only(bottom: 80),
+          padding: EdgeInsets.only(
+            bottom: AppBottomNavigation.scrollBottomPadding(
+              context,
+              hasMiniPlayer: hasMiniPlayer,
+            ),
+          ),
           itemCount: playlists.length,
           itemBuilder: (_, i) {
             final pl = playlists[i];
@@ -46,7 +55,14 @@ class PlaylistsTab extends StatelessWidget {
           },
         ),
         // FAB: create new playlist
-        Positioned(bottom: 16, right: 16, child: _CreatePlaylistFab()),
+        Positioned(
+          bottom: AppBottomNavigation.floatingActionBottom(
+            context,
+            hasMiniPlayer: hasMiniPlayer,
+          ),
+          right: 16,
+          child: _CreatePlaylistFab(),
+        ),
       ],
     );
   }

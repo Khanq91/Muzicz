@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:muziczz/providers/theme_provider.dart';
 import 'package:muziczz/theme/app_theme.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
@@ -8,7 +7,7 @@ import 'package:muziczz/widgets/app_bottom_navigation.dart';
 import 'package:muziczz/core/app_strings.dart';
 
 void main() {
-  testWidgets('normal style centers and emphasizes the Home tab', (
+  testWidgets('normal style shows an icon-only floating navigation', (
     tester,
   ) async {
     int? selectedIndex;
@@ -27,7 +26,7 @@ void main() {
     );
 
     expect(find.byKey(const ValueKey('normal-bottom-navigation')), findsOne);
-    expect(find.text(AppStrings.tabHome), findsOneWidget);
+    expect(find.text(AppStrings.tabHome), findsNothing);
     expect(find.text('Trực tuyến'), findsNothing);
     expect(find.byIcon(Icons.home_rounded), findsOneWidget);
     expect(find.byIcon(Icons.library_music_rounded), findsOneWidget);
@@ -37,7 +36,7 @@ void main() {
     expect(selectedIndex, 2);
   });
 
-  testWidgets('fancy style uses the premium liquid glass tab bar', (
+  testWidgets('fancy style shows the same icon-only navigation', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -53,16 +52,14 @@ void main() {
       ),
     );
 
-    final glassTabBar = tester.widget<GlassTabBar>(find.byType(GlassTabBar));
     expect(
       find.byKey(const ValueKey('premium-glass-bottom-navigation')),
       findsOne,
     );
-    expect(glassTabBar.quality, GlassQuality.premium);
-    expect(glassTabBar.maskingQuality, MaskingQuality.high);
-    expect(glassTabBar.tabs[0].label, isNull);
-    expect(glassTabBar.tabs[1].label, AppStrings.tabHome);
-    expect(glassTabBar.tabs[2].label, isNull);
+    expect(find.text(AppStrings.tabHome), findsNothing);
+    expect(find.byIcon(Icons.home_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.library_music_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.settings_rounded), findsOneWidget);
   });
 }
 

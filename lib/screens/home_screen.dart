@@ -46,41 +46,26 @@ class _HomeScreenState extends State<HomeScreen> {
     final bottomNavStyle = context.watch<ThemeProvider>().bottomNavStyle;
     return Scaffold(
       backgroundColor: c.background,
-      body:
-          bottomNavStyle.usesLiquidGlass
-              ? Stack(
-                children: [
-                  Positioned.fill(
-                    child: IndexedStack(index: _currentIndex, children: _tabs),
-                  ),
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: Consumer<PlayerProvider>(
-                      builder:
-                          (_, player, __) =>
-                              player.currentSong != null
-                                  ? const MiniPlayer()
-                                  : const SizedBox.shrink(),
-                    ),
-                  ),
-                ],
-              )
-              : Column(
-                children: [
-                  Expanded(
-                    child: IndexedStack(index: _currentIndex, children: _tabs),
-                  ),
-                  Consumer<PlayerProvider>(
-                    builder:
-                        (_, player, __) =>
-                            player.currentSong != null
-                                ? const RepaintBoundary(child: MiniPlayer())
-                                : const SizedBox.shrink(),
-                  ),
-                ],
-              ),
+      extendBody: true,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: IndexedStack(index: _currentIndex, children: _tabs),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: AppBottomNavigation.miniPlayerBottom(context),
+            child: Consumer<PlayerProvider>(
+              builder:
+                  (_, player, __) =>
+                      player.currentSong != null
+                          ? const RepaintBoundary(child: MiniPlayer())
+                          : const SizedBox.shrink(),
+            ),
+          ),
+        ],
+      ),
       bottomNavigationBar: AppBottomNavigation(
         currentIndex: _currentIndex,
         onTap: (index) {
@@ -300,9 +285,6 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
     final currentSongId = context.select<PlayerProvider, int?>(
       (player) => player.currentSong?.id,
     );
-    final usesGlassNavigation = context.select<ThemeProvider, bool>(
-      (theme) => theme.bottomNavStyle.usesLiquidGlass,
-    );
     final displayedSongs = music.homeSongsSortedBy(switch (_sortType) {
       SortType.az => LibrarySongSort.title,
       SortType.recentlyAdded => LibrarySongSort.recentlyAdded,
@@ -434,21 +416,34 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
                         );
                       }, childCount: displayedSongs.length),
                     ),
-                    const SliverToBoxAdapter(child: SizedBox(height: 120)),
+                    SliverToBoxAdapter(
+                      child: SizedBox(
+                        height: AppBottomNavigation.scrollBottomPadding(
+                          context,
+                          hasMiniPlayer: currentSongId != null,
+                        ),
+                      ),
+                    ),
                   ],
                 ],
               ),
             ),
           ),
           if (_isSelecting)
-            SelectionActionBar(
-              count: _selectedIds.length,
-              onAddToPlaylist: () => _showBulkPlaylistSheet(music),
-              onFavorite: () => _bulkFavorite(music),
-              onHide: () => _bulkHide(music),
+            Padding(
+              padding: EdgeInsets.only(
+                bottom: AppBottomNavigation.scrollBottomPadding(
+                  context,
+                  hasMiniPlayer: currentSongId != null,
+                ),
+              ),
+              child: SelectionActionBar(
+                count: _selectedIds.length,
+                onAddToPlaylist: () => _showBulkPlaylistSheet(music),
+                onFavorite: () => _bulkFavorite(music),
+                onHide: () => _bulkHide(music),
+              ),
             ),
-          if (_isSelecting && currentSongId != null && usesGlassNavigation)
-            const SizedBox(height: 80),
         ],
       ),
     );

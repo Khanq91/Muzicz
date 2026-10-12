@@ -4,7 +4,9 @@ import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
 import '../../providers/music_provider.dart';
+import '../../providers/player_provider.dart';
 import '../../screens/artist_detail_screen.dart';
+import '../app_bottom_navigation.dart';
 import 'package:muziczz/core/app_strings.dart';
 import 'library_empty_state.dart';
 
@@ -15,6 +17,9 @@ class ArtistsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final music = context.watch<MusicProvider>();
+    final hasMiniPlayer = context.select<PlayerProvider, bool>(
+      (player) => player.currentSong != null,
+    );
     final artists = music.sortedArtistGroups;
     final c = context.appColors;
     if (artists.isEmpty) {
@@ -27,7 +32,12 @@ class ArtistsTab extends StatelessWidget {
 
     return ListView.builder(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(
+        bottom: AppBottomNavigation.scrollBottomPadding(
+          context,
+          hasMiniPlayer: hasMiniPlayer,
+        ),
+      ),
       itemCount: artists.length,
       itemBuilder: (_, i) {
         final entry = artists[i];

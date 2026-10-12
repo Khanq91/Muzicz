@@ -1,6 +1,6 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 import '../providers/theme_provider.dart';
 import '../theme/app_colors_data.dart';
@@ -14,164 +14,67 @@ class AppBottomNavigation extends StatelessWidget {
     required this.style,
   });
 
+  static const double _barHeight = 64;
+  static const double _bottomMargin = 12;
+  static const double _topMargin = 8;
+  static const double _miniPlayerHeight = 80;
+
   final int currentIndex;
   final ValueChanged<int> onTap;
   final BottomNavStyle style;
 
-  @override
-  Widget build(BuildContext context) => switch (style) {
-    BottomNavStyle.normal => _NormalBottomNavigation(
-      currentIndex: currentIndex,
-      onTap: onTap,
-    ),
-    BottomNavStyle.fancy => _PremiumGlassBottomNavigation(
-      currentIndex: currentIndex,
-      onTap: onTap,
-    ),
-  };
-}
+  /// Space from the bottom of the body to the top of the floating navigation.
+  static double bottomOverlayExtent(BuildContext context) =>
+      MediaQuery.viewPaddingOf(context).bottom +
+      _bottomMargin +
+      _barHeight +
+      _topMargin;
 
-class _PremiumGlassBottomNavigation extends StatelessWidget {
-  const _PremiumGlassBottomNavigation({
-    required this.currentIndex,
-    required this.onTap,
-  });
-
-  final int currentIndex;
-  final ValueChanged<int> onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.appColors;
-    final selectedStyle = GoogleFonts.outfit(
-      fontSize: 13,
-      fontWeight: FontWeight.w600,
-    );
-
-    return GlassTabBar.bottom(
-      key: const ValueKey('premium-glass-bottom-navigation'),
-      selectedIndex: currentIndex,
-      onTabSelected: onTap,
-      quality: GlassQuality.premium,
-      maskingQuality: MaskingQuality.high,
-      horizontalPadding: 20,
-      verticalPadding: 12,
-      barHeight: 64,
-      barBorderRadius: 26,
-      iconLabelSpacing: 7,
-      selectedIconColor: c.primary,
-      unselectedIconColor: c.textTertiary,
-      selectedLabelColor: c.primary,
-      unselectedLabelColor: c.textTertiary,
-      selectedLabelStyle: selectedStyle,
-      unselectedLabelStyle: selectedStyle,
-      indicatorColor: c.primary.withValues(alpha: 0.14),
-      interactionGlowColor: c.primary,
-      tabs: [
-        _glassTab(
-          index: 0,
-          icon: Icons.library_music_rounded,
-          label: AppStrings.library,
-          glowColor: c.tertiary,
-        ),
-        _glassTab(
-          index: 1,
-          icon: Icons.home_rounded,
-          label: AppStrings.tabHome,
-          glowColor: c.primary,
-          iconSize: 28,
-        ),
-        _glassTab(
-          index: 2,
-          icon: Icons.settings_rounded,
-          label: AppStrings.settings,
-          glowColor: c.secondary,
-        ),
-      ],
-    );
+  /// Scroll space needed to bring the last row above the navigation and player.
+  static double scrollBottomPadding(
+    BuildContext context, {
+    bool hasMiniPlayer = false,
+  }) {
+    final overlayExtent = bottomOverlayExtent(context);
+    return hasMiniPlayer
+        ? overlayExtent + 8 + _miniPlayerHeight + 12
+        : overlayExtent + 12;
   }
 
-  GlassTab _glassTab({
-    required int index,
-    required IconData icon,
-    required String label,
-    required Color glowColor,
-    double iconSize = 23,
-  }) => GlassTab(
-    icon: Icon(icon, size: iconSize),
-    label: currentIndex == index ? label : null,
-    semanticLabel: label,
-    glowColor: glowColor,
-  );
-}
+  static double miniPlayerBottom(BuildContext context) =>
+      bottomOverlayExtent(context) + 8;
 
-class _NormalBottomNavigation extends StatelessWidget {
-  const _NormalBottomNavigation({
-    required this.currentIndex,
-    required this.onTap,
-  });
-
-  final int currentIndex;
-  final ValueChanged<int> onTap;
+  static double floatingActionBottom(
+    BuildContext context, {
+    bool hasMiniPlayer = false,
+  }) => scrollBottomPadding(context, hasMiniPlayer: hasMiniPlayer) + 12;
 
   @override
   Widget build(BuildContext context) {
-    final bottomPadding = MediaQuery.paddingOf(context).bottom;
-    final c = context.appColors;
+    final isFancy = style == BottomNavStyle.fancy;
     return Padding(
-      key: const ValueKey('normal-bottom-navigation'),
-      padding: EdgeInsets.fromLTRB(20, 0, 20, 12 + bottomPadding),
-      child: Container(
-        decoration: BoxDecoration(
-          color: c.card,
-          borderRadius: BorderRadius.circular(26),
-          border: Border.all(color: c.border, width: 0.5),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.30),
-              blurRadius: 24,
-              offset: const Offset(0, 6),
+      key: ValueKey(
+        isFancy
+            ? 'premium-glass-bottom-navigation'
+            : 'normal-bottom-navigation',
+      ),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        _topMargin,
+        16,
+        _bottomMargin + MediaQuery.viewPaddingOf(context).bottom,
+      ),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 232),
+          child: SizedBox(
+            width: double.infinity,
+            height: _barHeight,
+            child: _FloatingNavigationPill(
+              currentIndex: currentIndex,
+              onTap: onTap,
+              isFancy: isFancy,
             ),
-            BoxShadow(
-              color: c.primary.withValues(alpha: 0.06),
-              blurRadius: 32,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        child: SizedBox(
-          height: 70,
-          child: Stack(
-            children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: _NormalNavItem(
-                  icon: Icons.library_music_rounded,
-                  label: AppStrings.library,
-                  active: currentIndex == 0,
-                  onTap: () => onTap(0),
-                ),
-              ),
-              Center(
-                child: _NormalNavItem(
-                  icon: Icons.home_rounded,
-                  label: AppStrings.tabHome,
-                  active: currentIndex == 1,
-                  onTap: () => onTap(1),
-                  emphasize: true,
-                ),
-              ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: _NormalNavItem(
-                  icon: Icons.settings_rounded,
-                  label: AppStrings.settings,
-                  active: currentIndex == 2,
-                  onTap: () => onTap(2),
-                ),
-              ),
-            ],
           ),
         ),
       ),
@@ -179,20 +82,95 @@ class _NormalBottomNavigation extends StatelessWidget {
   }
 }
 
-class _NormalNavItem extends StatelessWidget {
-  const _NormalNavItem({
+class _FloatingNavigationPill extends StatelessWidget {
+  const _FloatingNavigationPill({
+    required this.currentIndex,
+    required this.onTap,
+    required this.isFancy,
+  });
+
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+  final bool isFancy;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.appColors;
+    final borderRadius = BorderRadius.circular(32);
+    final tabs = [
+      (Icons.library_music_rounded, AppStrings.library),
+      (Icons.home_rounded, AppStrings.tabHome),
+      (Icons.settings_rounded, AppStrings.settings),
+    ];
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: borderRadius,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isFancy ? 0.24 : 0.18),
+            blurRadius: isFancy ? 26 : 20,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: c.primary.withValues(alpha: isFancy ? 0.10 : 0.06),
+            blurRadius: 22,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: borderRadius,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(
+            sigmaX: isFancy ? 18 : 12,
+            sigmaY: isFancy ? 18 : 12,
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              color: c.card.withValues(alpha: isFancy ? 0.48 : 0.62),
+              borderRadius: borderRadius,
+              border: Border.all(
+                color: c.glassBorder.withValues(alpha: isFancy ? 0.72 : 0.48),
+                width: 0.7,
+              ),
+            ),
+            padding: const EdgeInsets.all(5),
+            child: Row(
+              children: [
+                for (var i = 0; i < tabs.length; i++)
+                  Expanded(
+                    child: _NavigationItem(
+                      icon: tabs[i].$1,
+                      label: tabs[i].$2,
+                      active: currentIndex == i,
+                      isFancy: isFancy,
+                      onTap: () => onTap(i),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavigationItem extends StatelessWidget {
+  const _NavigationItem({
     required this.icon,
     required this.label,
     required this.active,
+    required this.isFancy,
     required this.onTap,
-    this.emphasize = false,
   });
 
   final IconData icon;
   final String label;
   final bool active;
+  final bool isFancy;
   final VoidCallback onTap;
-  final bool emphasize;
 
   @override
   Widget build(BuildContext context) {
@@ -201,120 +179,38 @@ class _NormalNavItem extends StatelessWidget {
       button: true,
       selected: active,
       label: label,
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOutCubic,
-          padding: EdgeInsets.symmetric(
-            horizontal:
-                emphasize
-                    ? 8
-                    : active
-                    ? 12
-                    : 10,
-            vertical: emphasize ? 3 : 10,
-          ),
-          decoration: BoxDecoration(
-            color:
-                active && !emphasize
-                    ? c.primary.withValues(alpha: 0.14)
-                    : Colors.transparent,
-            borderRadius: BorderRadius.circular(18),
-            border:
-                active && !emphasize
-                    ? Border.all(color: c.primary.withValues(alpha: 0.35))
-                    : null,
-          ),
-          child:
-              emphasize
-                  ? Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      AnimatedScale(
-                        scale: active ? 1.08 : 1.0,
-                        duration: const Duration(milliseconds: 250),
-                        curve: Curves.easeOutBack,
-                        child: Container(
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: active ? c.primaryGradient : null,
-                            color: active ? null : c.surfaceElevated,
-                            border:
-                                active
-                                    ? null
-                                    : Border.all(color: c.border, width: 0.5),
-                            boxShadow:
-                                active
-                                    ? [
-                                      BoxShadow(
-                                        color: c.primary.withValues(
-                                          alpha: 0.28,
-                                        ),
-                                        blurRadius: 14,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ]
-                                    : const [],
-                          ),
-                          child: Icon(
-                            icon,
-                            color: active ? Colors.white : c.primary,
-                            size: 24,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      ExcludeSemantics(
-                        child: Text(
-                          label,
-                          style: GoogleFonts.outfit(
-                            fontSize: active ? 13 : 11,
-                            fontWeight: FontWeight.w600,
-                            color: active ? c.primary : c.textTertiary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  )
-                  : Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      AnimatedScale(
-                        scale: active ? 1.08 : 1.0,
-                        duration: const Duration(milliseconds: 250),
-                        curve: Curves.easeOutBack,
-                        child: Icon(
-                          icon,
-                          color: active ? c.primary : c.textTertiary,
-                          size: 22,
-                        ),
-                      ),
-                      AnimatedSize(
-                        duration: const Duration(milliseconds: 260),
-                        curve: Curves.easeOutCubic,
-                        child:
-                            active
-                                ? Padding(
-                                  padding: const EdgeInsets.only(left: 7),
-                                  child: ExcludeSemantics(
-                                    child: Text(
-                                      label,
-                                      style: GoogleFonts.outfit(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: c.primary,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                                : const SizedBox.shrink(),
-                      ),
-                    ],
+      child: Tooltip(
+        message: label,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            customBorder: const StadiumBorder(),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              height: 52,
+              decoration: BoxDecoration(
+                color:
+                    active
+                        ? c.textPrimary.withValues(alpha: isFancy ? 0.17 : 0.13)
+                        : Colors.transparent,
+                borderRadius: BorderRadius.circular(28),
+              ),
+              child: Center(
+                child: AnimatedScale(
+                  scale: active ? 1.08 : 1,
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutBack,
+                  child: Icon(
+                    icon,
+                    size: active ? 25 : 23,
+                    color: active ? c.textPrimary : c.textTertiary,
                   ),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
