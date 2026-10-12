@@ -58,7 +58,11 @@ class AppBottomNavigation extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (miniPlayer != null) ...[
-          SizedBox(height: _miniPlayerHeight, child: miniPlayer),
+          SizedBox(
+            width: double.infinity,
+            height: _miniPlayerHeight,
+            child: miniPlayer,
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14),
             child: Container(
@@ -69,10 +73,19 @@ class AppBottomNavigation extends StatelessWidget {
         ],
         SizedBox(
           height: _barHeight,
-          child: _FloatingNavigationPill(
-            currentIndex: currentIndex,
-            onTap: onTap,
-            isFancy: isFancy,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 232),
+              child: SizedBox(
+                width: double.infinity,
+                height: _barHeight,
+                child: _FloatingNavigationPill(
+                  currentIndex: currentIndex,
+                  onTap: onTap,
+                  isFancy: isFancy,
+                ),
+              ),
+            ),
           ),
         ),
       ],
@@ -93,17 +106,25 @@ class AppBottomNavigation extends StatelessWidget {
           _bottomMargin + MediaQuery.viewPaddingOf(context).bottom,
         ),
         child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 232),
-            child: SizedBox(
-              width: double.infinity,
-              height: dockHeight,
-              child: _DockSurface(
-                isFancy: isFancy,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final collapsedWidth =
+                  constraints.maxWidth.clamp(0.0, 232.0).toDouble();
+              final dockWidth = hasMiniPlayer
+                  ? constraints.maxWidth
+                  : collapsedWidth;
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 500),
+                curve: const Cubic(0.34, 1.56, 0.64, 1),
+                width: dockWidth,
                 height: dockHeight,
-                child: dock,
-              ),
-            ),
+                child: _DockSurface(
+                  isFancy: isFancy,
+                  height: dockHeight,
+                  child: dock,
+                ),
+              );
+            },
           ),
         ),
       ),

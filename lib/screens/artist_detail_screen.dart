@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import '../models/song_item.dart';
 import '../providers/player_provider.dart';
 import '../widgets/music_list_tile.dart';
-import 'now_playing_screen.dart';
+import '../widgets/reveal_list/reveal_list.dart';
 import 'package:muziczz/core/app_strings.dart';
 
 class ArtistDetailScreen extends StatelessWidget {
@@ -78,7 +78,6 @@ class ArtistDetailScreen extends StatelessWidget {
                       primary: true,
                       onTap: () {
                         player.playSongs(songs);
-                        Navigator.of(context).push(_playerRoute());
                       },
                     ),
                   ),
@@ -90,7 +89,6 @@ class ArtistDetailScreen extends StatelessWidget {
                       primary: false,
                       onTap: () {
                         player.playSongsShuffled(songs);
-                        Navigator.of(context).push(_playerRoute());
                       },
                     ),
                   ),
@@ -110,7 +108,6 @@ class ArtistDetailScreen extends StatelessWidget {
                       primary: false,
                       onTap: () {
                         player.enableShuffleLoop(songs);
-                        Navigator.of(context).push(_playerRoute());
                       },
                     ),
                   ),
@@ -223,7 +220,6 @@ class ArtistDetailScreen extends StatelessWidget {
                     return GestureDetector(
                       onTap: () {
                         player.playSongs(entry.value);
-                        Navigator.of(context).push(_playerRoute());
                       },
                       child: Container(
                         width: 120,
@@ -296,8 +292,10 @@ class ArtistDetailScreen extends StatelessWidget {
               ),
             ),
           ),
-          SliverList(
-            delegate: SliverChildBuilderDelegate((_, i) {
+          RevealListSliver(
+            itemCount: songs.length,
+            itemKeyBuilder: (i) => ValueKey('artist_song_${songs[i].id}'),
+            itemBuilder: (_, i, __) {
               final song = songs[i];
               return Selector<PlayerProvider, int?>(
                 selector: (_, p) => p.currentSong?.id,
@@ -307,11 +305,10 @@ class ArtistDetailScreen extends StatelessWidget {
                       isActive: activeId == song.id,
                       onTap: () {
                         player.playSongs(songs, specificSong: song);
-                        Navigator.of(context).push(_playerRoute());
                       },
                     ),
               );
-            }, childCount: songs.length),
+            },
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 40)),
         ],
@@ -490,16 +487,3 @@ class _ActionButton extends StatelessWidget {
     );
   }
 }
-
-PageRouteBuilder _playerRoute() => PageRouteBuilder(
-  pageBuilder: (_, anim, __) => const NowPlayingScreen(),
-  transitionDuration: const Duration(milliseconds: 400),
-  transitionsBuilder:
-      (_, anim, __, child) => SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 1),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
-        child: child,
-      ),
-);

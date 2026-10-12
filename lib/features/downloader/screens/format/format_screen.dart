@@ -21,6 +21,7 @@ import '../../widgets/format/playlist_preset_list.dart';
 import '../../widgets/format/synthetic_formats.dart';
 import '../../widgets/format/video_preview_card.dart';
 import '../../widgets/gradient_background.dart';
+import 'package:muziczz/widgets/reveal_list/reveal_list.dart';
 
 // ── Screen ─────────────────────────────────────────────────
 
@@ -288,7 +289,9 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
                         ]
                         : [
                           // ── Audio tab ──
-                          ListView(
+                          RevealList.children(
+                            itemSpacing: 0,
+                            showEdgeFades: false,
                             padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
                             children:
                                 _isMuxedOnly
@@ -332,7 +335,9 @@ class _FormatScreenState extends ConsumerState<FormatScreen>
                                         .toList(),
                           ),
                           // ── Video tab ──
-                          ListView(
+                          RevealList.children(
+                            itemSpacing: 0,
+                            showEdgeFades: false,
                             padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
                             children:
                                 _videoFormats.isEmpty

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
+import 'package:muziczz/widgets/reveal_list/reveal_list.dart';
 import 'playlist_preset.dart';
 
 class PlaylistPresetList extends StatelessWidget {
@@ -16,18 +17,20 @@ class PlaylistPresetList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
+    return RevealList(
+      itemSpacing: 0,
+      showEdgeFades: false,
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-      children:
-          presets
-              .map(
-                (p) => _PresetTile(
-                  preset: p,
-                  isSelected: selected?.formatId == p.formatId,
-                  onTap: () => onSelect(p),
-                ),
-              )
-              .toList(),
+      itemCount: presets.length,
+      itemKeyBuilder: (i) => ValueKey(presets[i].formatId),
+      itemBuilder: (_, i, __) {
+        final preset = presets[i];
+        return _PresetTile(
+          preset: preset,
+          isSelected: selected?.formatId == preset.formatId,
+          onTap: () => onSelect(preset),
+        );
+      },
     );
   }
 }

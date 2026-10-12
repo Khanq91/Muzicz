@@ -172,7 +172,8 @@ void main() {
     expect(queueButton, findsOneWidget);
     await tester.tap(queueButton);
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 600));
+    // Opening the sheet rebuilds its blur layer and starts row reveals.
+    await tester.pumpAndSettle();
 
     expect(
       find.bySemanticsLabel('Xóa khỏi hàng chờ').hitTestable(),

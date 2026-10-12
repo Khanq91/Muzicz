@@ -7,6 +7,7 @@ import '../../providers/music_provider.dart';
 import '../../providers/player_provider.dart';
 import '../../screens/artist_detail_screen.dart';
 import '../app_bottom_navigation.dart';
+import '../reveal_list/reveal_list.dart';
 import 'package:muziczz/core/app_strings.dart';
 import 'library_empty_state.dart';
 
@@ -30,7 +31,9 @@ class ArtistsTab extends StatelessWidget {
       );
     }
 
-    return ListView.builder(
+    return RevealList(
+      itemSpacing: 0,
+      edgeFadeColor: c.background,
       physics: const BouncingScrollPhysics(),
       padding: EdgeInsets.only(
         bottom: AppBottomNavigation.scrollBottomPadding(
@@ -39,7 +42,8 @@ class ArtistsTab extends StatelessWidget {
         ),
       ),
       itemCount: artists.length,
-      itemBuilder: (_, i) {
+      itemKeyBuilder: (i) => ValueKey('artist_${artists[i].key}'),
+      itemBuilder: (_, i, __) {
         final entry = artists[i];
         final songs = entry.value;
         final artistId = songs.first.artistId;

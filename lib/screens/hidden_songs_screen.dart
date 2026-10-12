@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/music_provider.dart';
 import '../theme/app_colors_data.dart';
+import '../widgets/reveal_list/reveal_list.dart';
 import 'package:muziczz/core/app_strings.dart';
 
 class HiddenSongsScreen extends StatelessWidget {
@@ -40,10 +41,13 @@ class HiddenSongsScreen extends StatelessWidget {
       body:
           entries.isEmpty
               ? _EmptyState(c: c)
-              : ListView.builder(
+              : RevealList(
+                itemSpacing: 0,
+                edgeFadeColor: c.background,
                 padding: const EdgeInsets.only(top: 8, bottom: 40),
                 itemCount: entries.length,
-                itemBuilder: (_, i) {
+                itemKeyBuilder: (i) => ValueKey(entries[i].key),
+                itemBuilder: (_, i, __) {
                   final id = entries[i].key;
                   final meta = entries[i].value;
                   return _HiddenTile(

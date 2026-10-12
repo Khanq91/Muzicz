@@ -10,9 +10,9 @@ import '../providers/music_provider.dart';
 import '../providers/player_provider.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/app_bottom_navigation.dart';
+import '../widgets/reveal_list/reveal_list.dart';
 import '../widgets/library/bulk_playlist_sheet.dart';
 import '../widgets/library/library_empty_state.dart';
-import '../widgets/library/player_route.dart';
 import '../widgets/library/selection_action_bar.dart';
 import '../widgets/library/selection_header.dart';
 import '../widgets/library/sort_type.dart';
@@ -382,7 +382,6 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
                               context.read<PlayerProvider>().playSongsShuffled(
                                 allSongs,
                               );
-                              Navigator.of(context).push(playerRoute());
                             },
                           ),
                         ),
@@ -393,8 +392,11 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
                           title: AppStrings.allSongsWithCount(allSongs.length),
                         ),
                       ),
-                    SliverList(
-                      delegate: SliverChildBuilderDelegate((_, index) {
+                    RevealListSliver(
+                      itemCount: displayedSongs.length,
+                      itemKeyBuilder: (index) =>
+                          ValueKey('home_song_${displayedSongs[index].id}'),
+                      itemBuilder: (_, index, __) {
                         final song = displayedSongs[index];
                         return MusicListTile(
                           key: ValueKey('home_song_${song.id}'),
@@ -409,7 +411,7 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
                           onLongPress:
                               _isSelecting ? null : () => _enterSelecting(song),
                         );
-                      }, childCount: displayedSongs.length),
+                      },
                     ),
                     SliverToBoxAdapter(
                       child: SizedBox(
@@ -503,7 +505,6 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
 
   void _playSong(List<SongItem> songs, SongItem song) {
     context.read<PlayerProvider>().playSongs(songs, specificSong: song);
-    Navigator.of(context).push(playerRoute());
   }
 
   PopupMenuItem<SortType> _menuItem(SortType type, String label) {

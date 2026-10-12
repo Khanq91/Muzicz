@@ -7,6 +7,7 @@ import '../models/song_item.dart';
 import '../models/playlist_item.dart';
 import '../providers/music_provider.dart';
 import 'package:muziczz/core/app_strings.dart';
+import 'reveal_list/reveal_list.dart';
 
 /// Sheet thêm bài hát vào playlist — phong cách YouTube.
 /// Dùng được từ NowPlayingScreen, MusicListTile context menu, v.v.
@@ -211,11 +212,14 @@ class _AddToPlaylistSheetState extends State<AddToPlaylistSheet> {
                         style: GoogleFonts.outfit(color: c.textTertiary),
                       ),
                     )
-                    : ListView.builder(
+                    : RevealList(
+                      itemSpacing: 0,
+                      edgeFadeColor: c.card,
                       shrinkWrap: true,
                       padding: const EdgeInsets.only(bottom: 24),
                       itemCount: filtered.length,
-                      itemBuilder: (_, i) {
+                      itemKeyBuilder: (i) => ValueKey(filtered[i].id),
+                      itemBuilder: (_, i, __) {
                         final pl = filtered[i];
                         final inPlaylist = pl.songs.any(
                           (s) => s.id == widget.song.id,

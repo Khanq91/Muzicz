@@ -4,6 +4,7 @@ import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:provider/provider.dart';
 import '../../models/song_item.dart';
 import '../../providers/music_provider.dart';
+import '../reveal_list/reveal_list.dart';
 import 'package:muziczz/core/app_strings.dart';
 
 class BulkPlaylistSheet extends StatelessWidget {
@@ -95,10 +96,13 @@ class BulkPlaylistSheet extends StatelessWidget {
                 ),
               )
               : Flexible(
-                child: ListView.builder(
+                child: RevealList(
+                  itemSpacing: 0,
+                  edgeFadeColor: c.card,
                   padding: const EdgeInsets.only(bottom: 16),
                   itemCount: playlists.length,
-                  itemBuilder: (_, i) {
+                  itemKeyBuilder: (i) => ValueKey(playlists[i].id),
+                  itemBuilder: (_, i, __) {
                     final pl = playlists[i];
                     return ListTile(
                       contentPadding: const EdgeInsets.symmetric(

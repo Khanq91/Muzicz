@@ -3,6 +3,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:muziczz/widgets/reveal_list/reveal_list.dart';
 
 import '../../core/app_router.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
@@ -305,10 +306,13 @@ class _EntryList extends StatelessWidget {
     // Playlist without any usable video, or a search with no match — an empty
     // ListView looks like a hang, so say so explicitly.
     if (entries.isEmpty) return const _EmptyState();
-    return ListView.builder(
+    return RevealList(
+      itemSpacing: 0,
+      showEdgeFades: false,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
       itemCount: entries.length,
-      itemBuilder: (context, index) {
+      itemKeyBuilder: (index) => ValueKey(entries[index].id),
+      itemBuilder: (context, index, __) {
         return _EntryTile(
           entry: entries[index],
           index: index + 1,

@@ -5,6 +5,7 @@ import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/player_provider.dart';
+import '../../reveal_list/reveal_list.dart';
 import 'package:muziczz/core/app_strings.dart';
 
 class QueueSheet extends StatelessWidget {
@@ -66,11 +67,14 @@ class QueueSheet extends StatelessWidget {
           ),
           Divider(color: c.divider, height: 1),
           Expanded(
-            child: ReorderableListView.builder(
+            child: RevealList(
+              itemSpacing: 0,
+              edgeFadeColor: c.card,
               padding: const EdgeInsets.only(bottom: 20),
               itemCount: player.queue.length,
+              itemKeyBuilder: (i) => ValueKey(player.queue[i].id),
               onReorderItem: player.reorderQueue,
-              itemBuilder: (_, i) {
+              itemBuilder: (_, i, __) {
                 final song = player.queue[i];
                 final isActive = player.currentSong?.id == song.id;
                 return ListTile(
@@ -121,22 +125,21 @@ class QueueSheet extends StatelessWidget {
                             color: c.primary,
                             size: 20,
                           )
-                          : Semantics(
-                            button: true,
-                            label: AppStrings.removeFromQueue,
-                            child: GestureDetector(
-                              onTap: () => player.removeFromQueue(i),
-                              behavior: HitTestBehavior.opaque,
-                              child: SizedBox(
+                          : Tooltip(
+                            message: AppStrings.removeFromQueue,
+                            excludeFromSemantics: true,
+                            child: IconButton(
+                              constraints: const BoxConstraints.tightFor(
                                 width: 48,
                                 height: 48,
-                                child: Center(
-                                  child: Icon(
-                                    Icons.close_rounded,
-                                    color: c.textDisabled,
-                                    size: 18,
-                                  ),
-                                ),
+                              ),
+                              padding: EdgeInsets.zero,
+                              onPressed: () => player.removeFromQueue(i),
+                              icon: Icon(
+                                Icons.close_rounded,
+                                semanticLabel: AppStrings.removeFromQueue,
+                                color: c.textDisabled,
+                                size: 18,
                               ),
                             ),
                           ),

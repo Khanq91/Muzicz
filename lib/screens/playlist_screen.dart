@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../widgets/library/player_route.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:muziczz/utils/duration_format.dart';
@@ -10,7 +9,7 @@ import '../providers/music_provider.dart';
 import '../providers/player_provider.dart';
 import '../widgets/app_bottom_navigation.dart';
 import '../widgets/music_list_tile.dart';
-import 'now_playing_screen.dart';
+import '../widgets/reveal_list/reveal_list.dart';
 import 'package:muziczz/core/app_strings.dart';
 
 /// Tab content: list of all playlists
@@ -26,7 +25,9 @@ class PlaylistsTab extends StatelessWidget {
     final playlists = [music.favoritesPlaylist, ...music.playlists];
     return Stack(
       children: [
-        ListView.builder(
+        RevealList(
+          itemSpacing: 0,
+          edgeFadeColor: context.appColors.background,
           physics: const BouncingScrollPhysics(),
           padding: EdgeInsets.only(
             bottom: AppBottomNavigation.scrollBottomPadding(
@@ -35,7 +36,8 @@ class PlaylistsTab extends StatelessWidget {
             ),
           ),
           itemCount: playlists.length,
-          itemBuilder: (_, i) {
+          itemKeyBuilder: (i) => ValueKey(playlists[i].id),
+          itemBuilder: (_, i, __) {
             final pl = playlists[i];
             final isSystemPlaylist = pl.id == MusicProvider.favoritesPlaylistId;
             return _PlaylistTile(
@@ -462,28 +464,6 @@ class PlaylistDetailScreen extends StatelessWidget {
                         icon: Icons.play_arrow_rounded,
                         onTap: () {
                           player.playSongs(playlist.songs);
-                          Navigator.of(context).push(
-                            PageRouteBuilder(
-                              pageBuilder:
-                                  (_, anim, __) => const NowPlayingScreen(),
-                              transitionDuration: const Duration(
-                                milliseconds: 400,
-                              ),
-                              transitionsBuilder:
-                                  (_, anim, __, child) => SlideTransition(
-                                    position: Tween<Offset>(
-                                      begin: const Offset(0, 1),
-                                      end: Offset.zero,
-                                    ).animate(
-                                      CurvedAnimation(
-                                        parent: anim,
-                                        curve: Curves.easeOutCubic,
-                                      ),
-                                    ),
-                                    child: child,
-                                  ),
-                            ),
-                          );
                         },
                         primary: true,
                       ),
@@ -495,7 +475,6 @@ class PlaylistDetailScreen extends StatelessWidget {
                         icon: Icons.shuffle_rounded,
                         onTap: () {
                           player.playSongsShuffled(playlist.songs);
-                          Navigator.of(context).push(playerRoute());
                         },
                         primary: false,
                       ),
@@ -516,7 +495,6 @@ class PlaylistDetailScreen extends StatelessWidget {
                         icon: Icons.all_inclusive_rounded,
                         onTap: () {
                           player.enableShuffleLoop(playlist.songs);
-                          Navigator.of(context).push(playerRoute());
                         },
                         primary: false,
                       ),
@@ -660,8 +638,11 @@ class PlaylistDetailScreen extends StatelessWidget {
               ),
             )
           else
-            SliverList(
-              delegate: SliverChildBuilderDelegate((_, i) {
+            RevealListSliver(
+              itemCount: playlist.songs.length,
+              itemKeyBuilder: (i) =>
+                  ValueKey('playlist_song_${playlist.songs[i].id}'),
+              itemBuilder: (_, i, __) {
                 final song = playlist.songs[i];
                 return Selector<PlayerProvider, int?>(
                   selector: (_, p) => p.currentSong?.id,
@@ -671,28 +652,6 @@ class PlaylistDetailScreen extends StatelessWidget {
                         isActive: activeId == song.id,
                         onTap: () {
                           player.playSongs(playlist.songs, specificSong: song);
-                          Navigator.of(context).push(
-                            PageRouteBuilder(
-                              pageBuilder:
-                                  (_, anim, __) => const NowPlayingScreen(),
-                              transitionDuration: const Duration(
-                                milliseconds: 400,
-                              ),
-                              transitionsBuilder:
-                                  (_, anim, __, child) => SlideTransition(
-                                    position: Tween<Offset>(
-                                      begin: const Offset(0, 1),
-                                      end: Offset.zero,
-                                    ).animate(
-                                      CurvedAnimation(
-                                        parent: anim,
-                                        curve: Curves.easeOutCubic,
-                                      ),
-                                    ),
-                                    child: child,
-                                  ),
-                            ),
-                          );
                         },
                         // IconButton: 48dp target + tooltip/semantics label.
                         trailing:
@@ -713,7 +672,7 @@ class PlaylistDetailScreen extends StatelessWidget {
                                 ),
                       ),
                 );
-              }, childCount: playlist.songs.length),
+              },
             ),
           const SliverToBoxAdapter(child: SizedBox(height: 40)),
         ],
@@ -845,10 +804,14 @@ class PlaylistDetailScreen extends StatelessWidget {
                                   ),
                                 ),
                               )
-                              : ListView.builder(
+                              : RevealList(
+                                itemSpacing: 0,
+                                edgeFadeColor: c.card,
                                 controller: scrollCtrl,
                                 itemCount: available.length,
-                                itemBuilder: (ctx, i) {
+                                itemKeyBuilder: (i) =>
+                                    ValueKey(available[i].id),
+                                itemBuilder: (ctx, i, __) {
                                   final song = available[i];
                                   return ListTile(
                                     contentPadding: const EdgeInsets.symmetric(

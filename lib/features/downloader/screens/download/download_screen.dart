@@ -3,6 +3,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:muziczz/widgets/reveal_list/reveal_list.dart';
 
 import '../../core/app_router.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
@@ -84,10 +85,13 @@ class _DownloadScreenState extends ConsumerState<DownloadScreen> {
 
                     // Task list
                     Expanded(
-                      child: ListView.builder(
+                      child: RevealList(
+                        itemSpacing: 0,
+                        showEdgeFades: false,
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                         itemCount: dlState.tasks.length,
-                        itemBuilder: (ctx, i) {
+                        itemKeyBuilder: (i) => ValueKey(dlState.tasks[i].id),
+                        itemBuilder: (ctx, i, __) {
                           final task = dlState.tasks[i];
                           return _DownloadTaskCard(task: task);
                         },

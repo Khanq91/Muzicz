@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../models/song_item.dart';
 import '../../../providers/music_provider.dart';
 import '../../../providers/player_provider.dart';
+import '../../reveal_list/reveal_list.dart';
 import 'package:muziczz/core/app_strings.dart';
 
 /// Mở sheet liệt kê các bài cùng album với [song]. Không làm gì nếu album
@@ -114,10 +115,13 @@ class AlbumSongsSheet extends StatelessWidget {
               const SizedBox(height: 8),
               Divider(color: c.divider),
               Expanded(
-                child: ListView.builder(
+                child: RevealList(
+                  itemSpacing: 0,
+                  edgeFadeColor: c.card,
                   controller: scrollCtrl,
                   itemCount: albumSongs.length,
-                  itemBuilder: (_, i) {
+                  itemKeyBuilder: (i) => ValueKey(albumSongs[i].id),
+                  itemBuilder: (_, i, __) {
                     final s = albumSongs[i];
                     final isCurrentSong = s.id == song.id;
                     return ListTile(

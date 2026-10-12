@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../providers/lyrics_provider.dart';
 import '../../providers/player_provider.dart';
 import '../../services/audio_handler.dart';
+import '../reveal_list/reveal_list.dart';
 import 'package:muziczz/core/app_strings.dart';
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -183,7 +184,9 @@ class LyricsListView extends StatelessWidget {
     final currentIdx = lyricsProvider.currentIndex;
     final padding = circleSize * 0.18;
 
-    return ListView.builder(
+    return RevealList(
+      itemSpacing: 0,
+      showEdgeFades: false,
       controller: scrollCtrl,
       physics: const BouncingScrollPhysics(),
       padding: EdgeInsets.symmetric(
@@ -191,7 +194,8 @@ class LyricsListView extends StatelessWidget {
         vertical: circleSize * 0.25,
       ),
       itemCount: lines.length,
-      itemBuilder: (_, i) {
+      itemKeyBuilder: (i) => ValueKey('lyric_$i'),
+      itemBuilder: (_, i, __) {
         final line = lines[i];
         final isActive = lyricsProvider.isSynced && i == currentIdx;
         final isPast = lyricsProvider.isSynced && i < currentIdx;

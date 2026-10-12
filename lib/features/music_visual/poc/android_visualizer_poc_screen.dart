@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:muziczz/widgets/reveal_list/reveal_list.dart';
 
 import 'android_visualizer_poc_controller.dart';
 
@@ -67,7 +68,9 @@ class _AndroidVisualizerPocScreenState
         builder: (context, _) {
           final packet = _controller.lastPacket;
           final duration = _controller.duration;
-          return ListView(
+          return RevealList.children(
+            itemSpacing: 0,
+            edgeFadeColor: Theme.of(context).scaffoldBackgroundColor,
             padding: const EdgeInsets.all(16),
             children: [
               const Text(

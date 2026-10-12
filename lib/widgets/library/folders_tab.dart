@@ -5,9 +5,9 @@ import 'package:provider/provider.dart';
 import '../../providers/music_provider.dart';
 import '../../providers/player_provider.dart';
 import '../app_bottom_navigation.dart';
+import '../reveal_list/reveal_list.dart';
 import 'package:muziczz/core/app_strings.dart';
 import 'library_empty_state.dart';
-import 'player_route.dart';
 
 class FoldersTab extends StatelessWidget {
   const FoldersTab({super.key, required this.onScanTap});
@@ -30,7 +30,9 @@ class FoldersTab extends StatelessWidget {
       );
     }
 
-    return ListView.builder(
+    return RevealList(
+      itemSpacing: 0,
+      edgeFadeColor: c.background,
       physics: const BouncingScrollPhysics(),
       padding: EdgeInsets.only(
         bottom: AppBottomNavigation.scrollBottomPadding(
@@ -39,7 +41,8 @@ class FoldersTab extends StatelessWidget {
         ),
       ),
       itemCount: folders.length,
-      itemBuilder: (_, i) {
+      itemKeyBuilder: (i) => ValueKey('folder_${folders[i].key}'),
+      itemBuilder: (_, i, __) {
         final entry = folders[i];
         return ListTile(
           contentPadding: const EdgeInsets.symmetric(
@@ -69,7 +72,6 @@ class FoldersTab extends StatelessWidget {
           ),
           onTap: () {
             context.read<PlayerProvider>().playSongs(entry.value);
-            Navigator.of(context).push(playerRoute());
           },
         );
       },
