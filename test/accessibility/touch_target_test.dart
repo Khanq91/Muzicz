@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:muziczz/features/downloader/widgets/primary_icon_button.dart';
 import 'package:muziczz/features/music_visual/providers/visual_mode_provider.dart';
 import 'package:muziczz/models/song_item.dart';
 import 'package:muziczz/providers/lyrics_provider.dart';
@@ -118,27 +117,6 @@ void main() {
     handle.dispose();
   });
 
-  testWidgets('downloader primary icon button defaults to 48dp', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: Center(
-            child: PrimaryIconButton(
-              icon: Icons.folder_open_rounded,
-              semanticLabel: 'Chọn thư mục lưu',
-              onPressed: () {},
-            ),
-          ),
-        ),
-      ),
-    );
-
-    final size = tester.getSize(find.byType(PrimaryIconButton));
-    expect(size.width, greaterThanOrEqualTo(_kMinTapSize));
-    expect(size.height, greaterThanOrEqualTo(_kMinTapSize));
-  });
 }
 
 void _expectMinTapSize(WidgetTester tester, Finder finder) {

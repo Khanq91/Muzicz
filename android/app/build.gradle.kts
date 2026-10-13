@@ -1,7 +1,6 @@
 import org.gradle.api.JavaVersion
 plugins {
     id("com.android.application")
-    id("com.chaquo.python")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
@@ -49,16 +48,6 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
-        }
-    }
-}
-
-// ── Chaquopy: nhúng Python 3.13 + yt-dlp vào APK ──────────────────────────
-chaquopy {
-    defaultConfig {
-        version = "3.13"
-        pip {
-            install("yt-dlp")
         }
     }
 }

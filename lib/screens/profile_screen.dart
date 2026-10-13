@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../features/downloader/screens/downloader_gateway_screen.dart';
 import '../features/music_visual/core/visual_feature_flag.dart';
 import '../features/music_visual/providers/visual_mode_provider.dart';
 import '../features/music_visual/widgets/visual_mode_selector_sheet.dart';
@@ -112,20 +111,6 @@ class ProfileScreen extends StatelessWidget {
                               () => Navigator.of(context).push(
                                 MaterialPageRoute(
                                   builder: (_) => const OnboardingScreen(),
-                                ),
-                              ),
-                          colors: c,
-                        ),
-                        _ActionTile(
-                          icon: Icons.download_rounded,
-                          iconColor: c.secondary,
-                          title: AppStrings.downloadMusic,
-                          subtitle: AppStrings.downloadMusicSubtitle,
-                          onTap:
-                              () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder:
-                                      (_) => const DownloaderGatewayScreen(),
                                 ),
                               ),
                           colors: c,

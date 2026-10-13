@@ -8,7 +8,7 @@ extension DurationFormat on Duration {
       '${(inSeconds % 60).toString().padLeft(2, '0')}';
 
   /// `h:mm:ss` khi ≥ 1 giờ, ngược lại `m:ss` (3:05).
-  /// Dùng cho video / playlist entry của downloader.
+  /// Dùng để hiển thị thời lượng theo dạng đồng hồ.
   String get clock {
     final m = (inMinutes % 60).toString().padLeft(2, '0');
     final s = (inSeconds % 60).toString().padLeft(2, '0');

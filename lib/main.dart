@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'
-    hide ChangeNotifierProvider;
 import 'package:muziczz/providers/theme_provider.dart';
 import 'package:muziczz/widgets/theme_switch_wrapper.dart';
 import 'package:provider/provider.dart';
-import 'features/downloader/core/app_router.dart';
 import 'features/music_visual/providers/visual_mode_provider.dart';
 import 'providers/music_provider.dart';
 import 'providers/player_provider.dart';
@@ -46,11 +43,9 @@ Future<void> main() async {
   // runApp(MuzicApp(audioHandler: audioHandler));
   runApp(
     LiquidGlassWidgets.wrap(
-      child: ProviderScope(
-        child: ChangeNotifierProvider(
-          create: (_) => ThemeProvider(),
-          child: MuzicApp(audioHandler: audioHandler),
-        ),
+      child: ChangeNotifierProvider(
+        create: (_) => ThemeProvider(),
+        child: MuzicApp(audioHandler: audioHandler),
       ),
     ),
   );
@@ -87,13 +82,6 @@ class MuzicApp extends StatelessWidget {
         theme: themeProvider.themeData,
         themeAnimationDuration: const Duration(milliseconds: 300),
         themeAnimationCurve: Curves.easeInOut,
-        onGenerateRoute: (settings) {
-          // ytdlp routes
-          if (settings.name?.startsWith('/dl/') == true) {
-            return AppRouter.onGenerateRoute(settings);
-          }
-          return null;
-        },
         home: const SplashScreen(),
         builder: (context, child) => ThemeSwitchWrapper(child: child!),
       ),

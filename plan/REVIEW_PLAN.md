@@ -7,31 +7,26 @@ _Sinh từ session review toàn project ngày 2026-09-03 (Claude Code), sau khi 
 - `dart analyze` sạch và `flutter test` pass trước mỗi commit. Mỗi finding (hoặc mỗi nhóm cơ học cùng loại) một commit, message ghi tag trong checklist; commit đầu phase gắn `[phaseN-start]`, commit docs tick checklist gắn `[phaseN-end]`.
 - Xong phase: tick checklist trong file này, ghi "Kiểm chứng" (analyze/test/emulator) vào "Ghi chú ngoài phạm vi", báo tóm tắt và đưa checklist check tay trên máy thật.
 - Mục đánh dấu **[CHỜ QUYẾT ĐỊNH]** / **[CHỜ DUYỆT]**: hỏi t trước khi làm, không tự chọn.
-- Build local cần Python 3.13 cho Chaquopy (xem ghi chú Phase 3/4a trong AUDIT_PLAN.md).
 
 ## Quyết định đã chốt (2026-09-03)
 - Sửa bug thanh tiến trình đứng (Phase 8) ngay trong session review, 1 commit riêng + test hồi quy — ĐÃ XONG (commit e7e83e5), còn check tay trên máy thật.
 - Được xoá: nhóm file rác (Phase 9 A), code chết đã xác minh không có caller (Phase 9 B), `cupertino_icons` trong pubspec (Phase 9 C).
-- App KHÔNG lên Play Store → giữ `MANAGE_EXTERNAL_STORAGE`, chỉ sửa cách xin quyền (không bật màn cài đặt mỗi lần mở Analyze).
+- App KHÔNG lên Play Store → quyết định lịch sử giữ `MANAGE_EXTERNAL_STORAGE` đã được supersede khi downloader bị gỡ ngày 2026-10-13.
 - Keystore release: t nói "có vẻ là rồi" → Phase 13 hỏi vị trí file trước khi nối vào gradle (KHÔNG commit keystore).
 - Làm theo từng phase, mỗi phase một session, như AUDIT_PLAN.
 - (2026-09-03, đợt 2) Hết hàng chờ khi không bật lặp: tạm dừng và quay về bài đầu; nếu đang bật xáo trộn thì xáo trộn lại danh sách rồi về bài đầu của danh sách mới. Spec ở Phase 10 `queue_end_state`.
 - (2026-09-03, đợt 2) "Phát tiếp theo" chèn ngay sau bài đang phát, VÀ thêm nút "Thêm vào hàng chờ" (thêm cuối) trong menu bài hát. Spec ở Phase 10 `play_next_semantics`.
-- (2026-09-03, đợt 2) Preset video cần ffmpeg: TẠM BỎ QUA, chưa sửa. t test tay theo `plan/MANUAL_TESTS_TODO.md` mục 1 rồi quyết định sau.
+- (2026-09-03, đợt 2) Preset video cần ffmpeg: để lại sau test tay; mục này đã được supersede khi downloader bị gỡ ngày 2026-10-13.
 
 ## Câu hỏi còn mở (trả lời trước khi làm phase tương ứng)
 1. ~~Hết hàng chờ khi không bật lặp (Phase 10)~~ — **ĐÃ CHỐT 2026-09-03:** tạm dừng và quay về bài đầu hàng chờ; nếu đang bật xáo trộn thì xáo trộn lại danh sách rồi về bài đầu của danh sách mới. Spec: Phase 10 `queue_end_state`.
 2. ~~"Phát tiếp theo" trong menu bài hát (Phase 10)~~ — **ĐÃ CHỐT 2026-09-03:** "Phát tiếp theo" chèn ngay sau bài đang phát, VÀ thêm nút "Thêm vào hàng chờ" (thêm cuối). Spec: Phase 10 `play_next_semantics`.
-3. **Preset video của downloader cần ffmpeg (Phase 12) — ĐÃ TEST 2026-09-04, CHỜ t CHỐT.** Kết quả chi tiết ở `plan/MANUAL_TESTS_TODO.md` mục 1. Tóm tắt: tab Video chỉ có stream video-only (mp4 câm, Summary vẫn báo thành công); preset `bestvideo+bestaudio` không ffmpeg → 2 file rời (.mp4 video-only + .webm opus); yt-dlp không có JS runtime → YouTube không còn stream muxed nào → **B một mình = tab Video trống với YouTube**. Lựa chọn:
-   - A: đóng gói ffmpeg binary (arm64 + x86_64, +vài chục MB), đặt `ffmpeg_location` cho yt-dlp.
-   - B: chỉ lọc `vcodec != none && acodec != none` (`video_only_formats`) — vẫn nên làm, nhưng với YouTube sẽ không còn dòng nào.
-   - C (đề xuất): B + selector `bestvideo[ext=mp4][vcodec^=avc1]+bestaudio[ext=m4a]` (yt-dlp để lại `.fNNN.mp4` + `.fNNN.m4a`), rồi `DownloadForegroundService` ghép 2 file bằng `MediaMuxer` (tái dùng cách của `AudioExtractor.kt`), xoá 2 file rời. Không cần ffmpeg, không tăng dung lượng; giới hạn codec H.264/AAC để MediaMuxer chắc chắn ghép được.
-   - Rủi ro chung: yt-dlp đã deprecate extraction YouTube không JS runtime → tương lai có thể hỏng hẳn, không chỉ thiếu format; Chaquopy không có deno/node. Cần theo dõi ở Phase 12/13.
+3. ~~Preset video của downloader cần ffmpeg (Phase 12)~~ — **ĐÓNG 2026-10-13:** downloader đã được gỡ khỏi app; các lựa chọn A/B/C không còn áp dụng.
 4. **Keystore release (Phase 13).** File keystore đang ở đâu (đường dẫn local, KHÔNG đưa vào repo)? CI trên GitHub có cần ký bằng keystore đó không (phải thêm secrets), hay chỉ build local là đủ?
 5. **Chờ duyệt xoá/sửa thêm** (chưa nằm trong danh sách đã duyệt):
    - POC Visualizer (`lib/features/music_visual/poc/**`, `AndroidVisualizerPocPlugin.kt`, quyền `RECORD_AUDIO`): xoá hẳn, hay chỉ ẩn ở bản release (`kDebugMode`)?
    - `flutter_launcher_icons` chuyển sang `dev_dependencies` + xoá block placeholder `path/to/image.png` cho web/windows/macos.
-   - Manifest: bỏ `ACCESS_WIFI_STATE`, `RECEIVE_BOOT_COMPLETED` (không có consumer).
+   - Manifest: `ACCESS_WIFI_STATE` đã được gỡ cùng downloader; `RECEIVE_BOOT_COMPLETED` vẫn cần rà soát riêng.
    - `.auditz/report.md`: sinh lại được từ `findings.json` (có sẵn why/fix) nhưng AUDIT_PLAN Phase 4b/4c vẫn tham chiếu; xoá luôn hay giữ tới khi xong 4b/4c?
 
 ## Phase 8 — Bug thanh tiến trình đứng sau khi đóng mini player
@@ -138,8 +133,10 @@ Mỗi mục một commit; thêm test cho mục nào có logic thuần (storage, 
 
 **Test nên thêm:** `storage_service_test` (entry hỏng, `[1,"2"]` không throw, toggleFavorite chồng nhau), `lyrics_service_test` (parseLrc, cache key), `music_provider_scan_test` (updateSongMeta vào playlist, folder trùng tên, onSongPlayed khi auto-next), `theme_provider` (setTheme lưu ngay), `app_startup_service_test` (init throw không treo).
 
-## Phase 12 — Downloader
+## Phase 12 — Downloader (đã supersede)
 **Effort: M/L — 1 session, cần máy thật để test tải**
+
+> Downloader was removed on 2026-10-13. The checklist below is retained as a historical audit record; its findings and code references are no longer actionable.
 
 Mục `video_merge_no_ffmpeg` TẠM BỎ QUA (t test tay theo `plan/MANUAL_TESTS_TODO.md` mục 1 rồi mới chốt) — session Phase 12 làm các mục còn lại; riêng `video_only_formats` vẫn làm vì độc lập với ffmpeg. Nếu Phase 4b (tách `format_screen.dart` 1418 dòng) chưa làm thì sửa tại chỗ, không tách.
 
@@ -174,11 +171,9 @@ Mục `video_merge_no_ffmpeg` TẠM BỎ QUA (t test tay theo `plan/MANUAL_TESTS
 
 **Checklist:**
 - [ ] `release_debug_signing` **[CHỜ QUYẾT ĐỊNH – câu 4]** — `android/app/build.gradle.kts:47-53` + `.github/workflows/build-apk.yml:62-90` (high) — Release ký bằng `signingConfigs.getByName("debug")`, CI đẩy lên release "latest" với debug keystore mới mỗi lần chạy → bản sau không cài đè bản trước. `signingConfigs.create("release")` đọc `key.properties` (gitignore) / secrets CI; fail build release khi thiếu.
-- [ ] `chaquopy_build_python` — `android/app/build.gradle.kts:57-64` (low, ghi chú Phase 3 AUDIT_PLAN) — Không có `buildPython` → cần `python3.13` trên PATH (máy chỉ có 3.12). `buildPython("py", "-3.13")` hoặc ghi prerequisite README.
-- [ ] `readme_outdated` — `README.md` (medium) — Mô tả bản Provider local cũ: thiếu downloader (yt-dlp/Chaquopy, foreground service), lyrics đồng bộ (lrclib), sleep timer/tốc độ, 3 theme + bottom-nav style, Liquid Glass, Music Visual, tìm kiếm, playlist/ẩn bài/sửa meta; tech stack thiếu Riverpod, just_audio/audio_service, Kotlin + Python; thiếu prerequisites (Python 3.13, NDK 27.0.12077973, minSdk 24, arm64/x86_64, Android-only); "Future: Search" đã có. Viết lại.
+- [ ] `readme_outdated` — `README.md` (medium) — Mô tả bản Provider local cũ: thiếu lyrics đồng bộ (lrclib), sleep timer/tốc độ, 3 theme + bottom-nav style, Liquid Glass, Music Visual, tìm kiếm, playlist/ẩn bài/sửa meta; tech stack thiếu just_audio/audio_service; thiếu prerequisites (NDK 27.0.12077973, minSdk 24, arm64/x86_64, Android-only); "Future: Search" đã có. Viết lại.
 - [ ] `app_label` — `AndroidManifest.xml:38` + `lib/main.dart:23-24` + `app_strings.dart:15` (low) — Label launcher "muziczz", channel "Muziczz Audio", tên app "Muzicz Audio" — 3 cách viết. `@string/app_name` = "Muzicz", thống nhất channel (giữ `applicationId`).
 - [ ] `global_error_handlers` — `lib/main.dart:18-57` (low) — Không có `FlutterError.onError`/`PlatformDispatcher.instance.onError` → lỗi async (MissingPluginException, storage init) chỉ ra console. Cài handler trong `main()` (debugPrint + giữ hành vi mặc định).
-- [ ] `manifest_unused_perms` **[CHỜ DUYỆT – câu 5]** — `AndroidManifest.xml:8,32` (low) — `ACCESS_WIFI_STATE`, `RECEIVE_BOOT_COMPLETED` không có consumer.
 - [ ] `launcher_icons_dev_dep` **[CHỜ DUYỆT – câu 5]** — `pubspec.yaml:49,58-72` (medium) — `flutter_launcher_icons` ở dependencies chính, config web/windows/macos còn placeholder `path/to/image.png`/`#hexcode` (`dart run flutter_launcher_icons` sẽ fail).
 - [ ] `poc_in_release` **[CHỜ DUYỆT – câu 5]** — `lib/features/music_visual/widgets/visual_mode_selector_sheet.dart:145-160`, `core/visual_feature_flag.dart:3`, `AndroidManifest.xml:12` (medium) — POC Visualizer (AudioPlayer thứ 2 + `Permission.microphone`) vào được ở release qua Fancy → tile "science"; `RECORD_AUDIO` trong manifest production. Gate `kDebugMode`/flag riêng, chuyển `RECORD_AUDIO` sang `src/debug/AndroidManifest.xml`, hoặc xoá `poc/**` + `AndroidVisualizerPocPlugin.kt` + test POC.
 - [ ] `gradle_jvm_target` — `android/build.gradle.kts:26-36`, `app/build.gradle.kts:16-28`, `gradle.properties:9-11` (low, optional) — Ép jvmTarget 11 mọi subproject, `kotlin.jvm.target.validation.mode=warning` che lỗi package_info_plus; Kotlin 1.8.22, `enableJetifier=true`. Lên 17, bỏ override + flag, Kotlin 2.1.x, bỏ jetifier — làm riêng, build + chạy lại toàn bộ.

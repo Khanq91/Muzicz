@@ -4,8 +4,7 @@ The app has a token-based theme (`ThemeExtension`, accessed as `context.appColor
 three presets: **Dark (default)**, **AMOLED**, **Light**. Material 3 is enabled.
 
 > A legacy static color class hard-coded to the Dark palette still exists and is used by
-> the Library sort menu and the entire downloader feature — those areas do **not**
-> respond to theme changes. (Known issue.)
+> the Library sort menu, which does **not** respond to theme changes. (Known issue.)
 
 ## 1. Color tokens — all three themes
 
@@ -188,7 +187,6 @@ user decision — no minimal/standard tiers, no adaptive quality, no restart dia
 | Now Playing background | **40** | full-screen album art blur + black@55 % scrim |
 | Now Playing queue sheet | **10** | **deferred**: blur only activates after the slide-in finishes (solid @95 % while sliding → frosted @75 % once open) — the clearest deliberate blur-cost mitigation in the app |
 | Artist detail header | **20** | artwork blur + scrimLight tint |
-| Downloader glass cards | 12 | out of scope |
 
 ### 6.3 "Fake glass" (glass tokens as flat fills, no blur): 3 sites
 Selector-sheet icon chips (44×44, glassBg fill + glassBorder) ×2, and the Welcome

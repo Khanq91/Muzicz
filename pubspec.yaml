@@ -1,5 +1,5 @@
 name: muziczz
-description: "Trình phát nhạc offline cho Android: quét thư viện, lời bài hát đồng bộ, tải nhạc từ URL (yt-dlp)."
+description: "Trình phát nhạc offline cho Android: quét thư viện và lời bài hát đồng bộ."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -55,13 +55,9 @@ dependencies:
 
   flutter_launcher_icons: ^0.14.4
 
-  # --- YTDlp feature dependencies ---
-  flutter_riverpod: ^2.5.1        # State management cho ytdlp screens
-  connectivity_plus: ^6.0.3       # Network status (dùng trong GatewayScreen + ytdlp)
+  # --- Shared app dependencies ---
   path_provider: ^2.1.3           # Storage path
-  file_picker: ^8.1.2             # Chọn thư mục lưu file
-  cached_network_image: ^3.3.1    # Thumbnail video
-  uuid: ^4.4.0                    # Task ID generation
+  file_picker: ^8.1.2             # Android visualizer file picker
   liquid_glass_widgets: ^0.22.1
   package_info_plus: ^8.3.1
 

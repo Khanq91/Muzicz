@@ -57,7 +57,7 @@ class MusicScanner {
     );
 
     // set flag này cho tất cả audio files hợp lệ (nhạc tải về, copy thủ công,
-    // file từ yt-dlp, v.v.). Thay bằng kiểm tra extension + duration.
+    // v.v.). Thay bằng kiểm tra extension + duration.
     final audioExtensions = {
       'mp3',
       'flac',

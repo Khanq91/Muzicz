@@ -11,7 +11,6 @@ pluginManagement {
 
     repositories {
         google()
-        maven { url = uri("https://chaquo.com/maven") }
         mavenCentral()
         gradlePluginPortal()
     }
@@ -20,7 +19,6 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
-        maven { url = uri("https://chaquo.com/maven") }   // ← thêm
         google()
         mavenCentral()
         maven { url = uri("https://storage.googleapis.com/download.flutter.io") }
@@ -31,7 +29,6 @@ plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
     id("com.android.application") version "8.7.0" apply false
     id("org.jetbrains.kotlin.android") version "1.8.22" apply false
-    id("com.chaquo.python") version "17.0.0" apply false
 }
 
 include(":app")

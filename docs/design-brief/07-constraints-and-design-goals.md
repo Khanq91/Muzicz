@@ -6,8 +6,8 @@
 
 ### 1.1 Liquid glass scope is FROZEN at current usage
 Shipped glass = exactly two opt-in surfaces (bottom nav bar + mini player, "Xịn xò"
-style) plus four manual blurs (Now Playing background σ40, queue sheet σ10 deferred,
-artist header σ20, downloader σ12). That is the whole budget.
+style) plus three manual blurs (Now Playing background σ40, queue sheet σ10 deferred,
+artist header σ20). That is the whole budget.
 
 - You **may propose** new/changed glass usage, but every such proposal must be:
   (a) explicitly labeled **PROPOSAL — requires owner approval**,
@@ -39,7 +39,6 @@ violation:
   proposal must work in all three.
 - The Now Playing background is always blurred album art (white on-player text ladder
   is theme-independent by design).
-- Downloader feature is out of scope for redesign.
 - The system font-scale is currently clamped to 1.15× app-wide (accessibility debt —
   unclamping will expose overflows, especially Now Playing).
 
@@ -47,8 +46,8 @@ violation:
 
 ### Visual/theming bugs
 1. Light theme is broken in spots: Welcome title hard-coded white; Library sort menu
-   and the whole downloader use a static dark palette; status-bar icons hard-coded
-   light; playlist-detail back/edit icons white-on-white when collapsed.
+   uses a static dark palette; status-bar icons hard-coded light; playlist-detail
+   back/edit icons white-on-white when collapsed.
 2. Wordmark inconsistency: "Muzicz" (splash) vs "Muzic" (welcome); About dialog says
    "Muzizc Audio v1.0.0" (app is 2.0.0).
 3. Playlist FAB shadow uses fully-opaque primary (harsh halo); FAB and detail-screen

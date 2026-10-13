@@ -1,7 +1,11 @@
 # Muzicz — Việc cần test tay trên máy thật
 _Tạo 2026-09-03 trong session review. Mỗi mục: làm theo bước, ghi kết quả ngay dưới mục đó (hoặc báo cho Claude Code) để chốt việc tiếp theo trong `plan/REVIEW_PLAN.md`._
 
-## 1. Downloader: preset video có ra file có tiếng không? (chốt câu hỏi 3 của REVIEW_PLAN)
+## 1. Downloader — mục lịch sử, không còn áp dụng
+
+> Downloader was removed from the app on 2026-10-13. The notes below preserve the
+> 2026-09-04 investigation; its manual steps and code references are no longer actionable.
+
 **Tại sao phải test:** các preset "Tốt nhất / 1080p / 720p / 480p" dùng selector `bestvideo+bestaudio` (`lib/features/downloader/screens/format/format_screen.dart:63-96`). yt-dlp sẽ tải hình và tiếng thành 2 file rồi cần ffmpeg để ghép, nhưng APK chỉ cài yt-dlp (`android/app/build.gradle.kts`, khối chaquopy pip). Dự đoán: ra `Tên video.f137.mp4` (không tiếng) + `Tên video.f140.m4a` rời, hoặc app báo lỗi. Ngoài ra tab "Video" đang liệt kê cả stream chỉ-có-hình (`video_info.dart:140`), nên chọn dòng "1080p" trong tab cũng có thể ra mp4 câm.
 
 **Bước test (máy thật, có mạng):**

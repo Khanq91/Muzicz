@@ -1,6 +1,6 @@
 # 05 — Animation & Transition Catalog (exhaustive)
 
-Every animation in the main app (downloader excluded). All specs verified in source.
+Every animation in the main app. All specs verified in source.
 Flutter defaults that apply app-wide: modal bottom sheets 250 ms in / 200 ms out,
 barrier black54, drag-to-dismiss on; dialogs fade+scale 150 ms in / 75 ms out;
 `MaterialPageRoute` = Android zoom+fade ≈300 ms; no custom page-transitions theme;

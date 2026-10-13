@@ -43,8 +43,7 @@ files alone — no access to the codebase or a running device is required.
 - **Name:** Muzicz Audio (package `muziczz`)
 - **Platform:** Flutter (Android is the primary target; Impeller enabled)
 - **What it does:** local-music player (scans device MediaStore), with playlists,
-  favorites, synced lyrics, sleep timer, playback speed, an audio-reactive visual mode,
-  and a separate URL-downloader feature (downloader is **out of scope** for this pack)
+  favorites, synced lyrics, sleep timer, playback speed, and an audio-reactive visual mode
 - **Brand:** purple `#9D50FF` on near-black `#080808`, paired with rose `#C25169`,
   Outfit typeface, rounded-everything (radius 10–26), soft colored glows instead of
   Material elevation

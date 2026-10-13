@@ -12,13 +12,11 @@ compensate with `SafeArea` individually. Status bar icons light (assumes dark bo
 2. Background audio + media notification initialized (non-dismissible while playing).
 3. Orientation locked to portrait.
 4. Transparent system bars, edge-to-edge mode.
-5. App runs with two state systems side by side: **Riverpod** (used only by the
-   downloader feature) and **provider/ChangeNotifier** (everything else).
+5. App state uses **provider/ChangeNotifier**.
 6. Five global providers above `MaterialApp`: MusicProvider (library),
    PlayerProvider (playback), LyricsProvider, VisualModeProvider, ThemeProvider.
-7. `MaterialApp`: no named routes for the main app (`home: SplashScreen`);
-   theme cross-fade 300 ms `easeInOut`; a global `ThemeSwitchWrapper` overlay wraps
-   every route (see §5). Only downloader routes (`/dl/*`) are named.
+7. `MaterialApp` starts at `SplashScreen`; theme cross-fades over 300 ms with
+   `easeInOut`; a global `ThemeSwitchWrapper` overlay wraps every route (see §5).
 
 ## 2. Startup flow with branches
 
@@ -101,7 +99,6 @@ NowPlayingScreen
 
 ProfileScreen
   ├─ "Quét lại nhạc" ──▶ OnboardingScreen
-  ├─ "Tải nhạc" ──▶ Downloader feature (OUT OF SCOPE)
   ├─ "Cài đặt" → settings bottom sheet
   │     ├─ "Bộ màu sắc" → ThemeSelectorSheet (Dark/AMOLED/Light)
   │     ├─ "Đồ họa" → BottomNavStyleSelectorSheet (normal/fancy glass)

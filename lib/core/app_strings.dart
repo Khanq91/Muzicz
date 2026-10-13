@@ -89,8 +89,6 @@ abstract final class AppStrings {
   static const graphics = 'Đồ họa';
   static const musicVisual = 'Music Visual';
   static const hiddenSongs = 'Bài hát đã ẩn';
-  static const downloadMusic = 'Tải nhạc';
-  static const downloadFromUrl = 'Tải nhạc từ URL';
   static const rescanMusic = 'Quét lại nhạc';
   static const rescanLibrary = 'Quét lại thư viện';
 
@@ -297,7 +295,6 @@ abstract final class AppStrings {
   static const profileTagline = 'Nocturne Audio';
   static const features = 'Chức năng';
   static const rescanMusicSubtitle = 'Cập nhật thư viện từ bộ nhớ máy';
-  static const downloadMusicSubtitle = 'Tải âm thanh dễ dàng chỉ từ URL';
   static const settingsSubtitle = 'Tùy chỉnh giao diện và ứng dụng';
   static const about = 'Về ứng dụng';
   static const colorScheme = 'Bộ màu sắc';
@@ -329,34 +326,4 @@ abstract final class AppStrings {
   static const visualizerPocTitle = 'Android Visualizer POC';
   static const visualizerPocSubtitle =
       'Harness riêng; quyền mic chỉ hỏi trong sub-toggle Realtime RMS';
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Downloader — gateway
-  // ─────────────────────────────────────────────────────────────────────────
-  static const gatewayDownloadSubtitle =
-      'YouTube · TikTok · Instagram và hơn thế nữa';
-  static const gatewayNeedNetwork = 'Cần kết nối mạng để tải nhạc';
-  static const rescanLibrarySubtitle = 'Cập nhật nhạc từ bộ nhớ thiết bị';
-  static const networkOnline = 'Đang kết nối mạng';
-  static const networkOffline = 'Không có mạng';
-  static const networkReady = 'Sẵn sàng tải nhạc';
-  static const networkConnectHint =
-      'Kết nối Wi-Fi hoặc dữ liệu di động để tiếp tục';
-  static const note = 'Lưu ý';
-  static const gatewayNoteStorage =
-      'File tải về được lưu vào thư mục Downloads (Có thể tùy chỉnh) trên thiết bị.';
-  static const gatewayNoteAudio =
-      'Hỗ trợ tách audio M4A từ video — không mất chất lượng.';
-  static const gatewayNoteInternet =
-      'Tải nhạc từ URL yêu cầu kết nối Internet.';
-  static const gatewayNoteRescan =
-      'Quét lại thư viện không cần mạng — chỉ đọc từ bộ nhớ máy.';
-
-  // Downloader — chuỗi mới thêm ở Phase 7 (các màn còn lại vẫn inline)
-  static const pickSaveFolder = 'Chọn thư mục lưu';
-  static const initFailed = 'Không thể khởi động bộ tải. Vui lòng thử lại.';
-  static const noVideosFound = 'Không tìm thấy video nào';
-  static const paste = 'Dán';
-  static const clear = 'Xóa';
-  static const retryAll = 'Thử lại tất cả';
 }
