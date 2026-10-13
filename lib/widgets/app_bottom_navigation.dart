@@ -67,7 +67,7 @@ class AppBottomNavigation extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14),
             child: Container(
               height: _dividerHeight,
-              color: context.appColors.glassBorder.withValues(alpha: 0.42),
+              color: context.appColors.divider,
             ),
           ),
         ],
@@ -110,9 +110,8 @@ class AppBottomNavigation extends StatelessWidget {
             builder: (context, constraints) {
               final collapsedWidth =
                   constraints.maxWidth.clamp(0.0, 232.0).toDouble();
-              final dockWidth = hasMiniPlayer
-                  ? constraints.maxWidth
-                  : collapsedWidth;
+              final dockWidth =
+                  hasMiniPlayer ? constraints.maxWidth : collapsedWidth;
               return AnimatedContainer(
                 duration: const Duration(milliseconds: 500),
                 curve: const Cubic(0.34, 1.56, 0.64, 1),
@@ -149,12 +148,16 @@ class _DockSurface extends StatelessWidget {
     final borderRadius = BorderRadius.circular(30);
     final shadow = [
       BoxShadow(
-        color: Colors.black.withValues(alpha: isFancy ? 0.25 : 0.18),
+        color: Colors.black.withValues(
+          alpha: c.isDark ? (isFancy ? 0.25 : 0.18) : (isFancy ? 0.09 : 0.06),
+        ),
         blurRadius: isFancy ? 26 : 20,
         offset: const Offset(0, 8),
       ),
       BoxShadow(
-        color: c.primary.withValues(alpha: isFancy ? 0.12 : 0.06),
+        color: c.primary.withValues(
+          alpha: c.isDark ? (isFancy ? 0.12 : 0.06) : 0.04,
+        ),
         blurRadius: 22,
         offset: const Offset(0, 2),
       ),
@@ -175,16 +178,19 @@ class _DockSurface extends StatelessWidget {
           shape: const LiquidRoundedSuperellipse(borderRadius: 30),
           clipBehavior: Clip.antiAlias,
           settings: LiquidGlassSettings(
-            glassColor: c.glassBg.withValues(alpha: 0.04),
+            glassColor:
+                c.isDark
+                    ? c.glassBg.withValues(alpha: 0.04)
+                    : c.surface.withValues(alpha: 0.78),
             thickness: 34,
             blur: 2,
-            lightIntensity: 0.52,
+            lightIntensity: c.isDark ? 0.52 : 0.25,
             chromaticAberration: 0.025,
             ambientStrength: 0.14,
             ambientRim: 0.16,
             refractiveIndex: 1.28,
             saturation: 1.4,
-            glowIntensity: 0.9,
+            glowIntensity: c.isDark ? 0.9 : 0.2,
           ),
           child: child,
         ),
@@ -200,13 +206,13 @@ class _DockSurface extends StatelessWidget {
           child: Container(
             height: height,
             decoration: BoxDecoration(
-              color: c.card.withValues(alpha: 0.62),
+              color: c.card.withValues(alpha: c.isDark ? 0.62 : 0.9),
               borderRadius: borderRadius,
             ),
             foregroundDecoration: BoxDecoration(
               borderRadius: borderRadius,
               border: Border.all(
-                color: c.glassBorder.withValues(alpha: 0.48),
+                color: c.glassBorder.withValues(alpha: c.isDark ? 0.48 : 0.16),
                 width: 0.7,
               ),
             ),

@@ -158,6 +158,15 @@ class AppColorsData extends ThemeExtension<AppColorsData> {
   final Brightness brightness;
   bool get isDark => brightness == Brightness.dark;
 
+  // Foreground on the full-screen player, separate from white-on-art/brand.
+  Color get playerForeground => isDark ? onPlayer : textPrimary;
+  Color get playerHigh => isDark ? onPlayerHigh : textSecondary;
+  Color get playerSubtle => isDark ? onPlayerSubtle : textTertiary;
+  Color get playerSecondary => isDark ? onPlayerMedium : textSecondary;
+  Color get playerMuted => isDark ? onPlayerLow : textTertiary;
+  Color get playerHint => isDark ? onPlayerMinimal : textTertiary;
+  Color get playerTrack => isDark ? onPlayerMinimal : border;
+
   // ─────────────────────────────────────────────────────────────────────────
   // ThemeExtension overrides
   // ─────────────────────────────────────────────────────────────────────────
@@ -259,7 +268,7 @@ class AppColorsData extends ThemeExtension<AppColorsData> {
       tertiaryGradient: tertiaryGradient ?? this.tertiaryGradient,
       backgroundGradient: backgroundGradient ?? this.backgroundGradient,
       recentlyPlayedGradient:
-      recentlyPlayedGradient ?? this.recentlyPlayedGradient,
+          recentlyPlayedGradient ?? this.recentlyPlayedGradient,
       mostPlayedGradient: mostPlayedGradient ?? this.mostPlayedGradient,
       favoritesGradient: favoritesGradient ?? this.favoritesGradient,
       randomMixGradient: randomMixGradient ?? this.randomMixGradient,
@@ -314,25 +323,28 @@ class AppColorsData extends ThemeExtension<AppColorsData> {
       warning: Color.lerp(warning, other.warning, t)!,
       error: Color.lerp(error, other.error, t)!,
       primaryGradient:
-      LinearGradient.lerp(primaryGradient, other.primaryGradient, t)!,
+          LinearGradient.lerp(primaryGradient, other.primaryGradient, t)!,
       tertiaryGradient:
-      LinearGradient.lerp(tertiaryGradient, other.tertiaryGradient, t)!,
-      backgroundGradient: LinearGradient.lerp(
-          backgroundGradient, other.backgroundGradient, t)!,
-      recentlyPlayedGradient: LinearGradient.lerp(
-          recentlyPlayedGradient, other.recentlyPlayedGradient, t)!,
-      mostPlayedGradient: LinearGradient.lerp(
-          mostPlayedGradient, other.mostPlayedGradient, t)!,
-      favoritesGradient: LinearGradient.lerp(
-          favoritesGradient, other.favoritesGradient, t)!,
-      randomMixGradient: LinearGradient.lerp(
-          randomMixGradient, other.randomMixGradient, t)!,
-      avatarButton: LinearGradient.lerp(
-          avatarButton, other.avatarButton, t)!,
-      successGradient: LinearGradient.lerp(
-          successGradient, other.successGradient, t)!,
-      disabledGradient: LinearGradient.lerp(
-          disabledGradient, other.disabledGradient, t)!,
+          LinearGradient.lerp(tertiaryGradient, other.tertiaryGradient, t)!,
+      backgroundGradient:
+          LinearGradient.lerp(backgroundGradient, other.backgroundGradient, t)!,
+      recentlyPlayedGradient:
+          LinearGradient.lerp(
+            recentlyPlayedGradient,
+            other.recentlyPlayedGradient,
+            t,
+          )!,
+      mostPlayedGradient:
+          LinearGradient.lerp(mostPlayedGradient, other.mostPlayedGradient, t)!,
+      favoritesGradient:
+          LinearGradient.lerp(favoritesGradient, other.favoritesGradient, t)!,
+      randomMixGradient:
+          LinearGradient.lerp(randomMixGradient, other.randomMixGradient, t)!,
+      avatarButton: LinearGradient.lerp(avatarButton, other.avatarButton, t)!,
+      successGradient:
+          LinearGradient.lerp(successGradient, other.successGradient, t)!,
+      disabledGradient:
+          LinearGradient.lerp(disabledGradient, other.disabledGradient, t)!,
       brightness: t < 0.5 ? brightness : other.brightness,
     );
   }
@@ -458,7 +470,7 @@ abstract class AppColorPresets {
   static const AppColorsData amoled = AppColorsData(
     brightness: Brightness.dark,
 
-    primary: Color(0xFFAA6FFF),      // sáng hơn dark một chút để nổi trên black
+    primary: Color(0xFFAA6FFF), // sáng hơn dark một chút để nổi trên black
     primaryDark: Color(0xFF8840FF),
     primaryLight: Color(0xFFCC99FF),
     secondary: Color(0xFFAA70D0),
@@ -466,7 +478,7 @@ abstract class AppColorPresets {
     tertiary: Color(0xFFD4607A),
     tertiaryDark: Color(0xFFB04060),
 
-    background: Color(0xFF000000),   // pure black — AMOLED tiết kiệm pin
+    background: Color(0xFF000000), // pure black — AMOLED tiết kiệm pin
     surface: Color(0xFF090909),
     surfaceElevated: Color(0xFF121212),
     card: Color(0xFF141414),
@@ -483,7 +495,7 @@ abstract class AppColorPresets {
     glassBg: Color(0x14FFFFFF),
     glassBorder: Color(0x20FFFFFF),
 
-    accentCyan: Color(0xFF00D9F5),    // vivid hơn trên nền đen
+    accentCyan: Color(0xFF00D9F5), // vivid hơn trên nền đen
     accentMagenta: Color(0xFFF050FF),
     accentPink: Color(0xFFFF2D6B),
 
@@ -550,7 +562,7 @@ abstract class AppColorPresets {
   static const AppColorsData light = AppColorsData(
     brightness: Brightness.light,
 
-    primary: Color(0xFF7C3AED),      // violet đậm hơn để contrast trên nền trắng
+    primary: Color(0xFF7C3AED), // violet đậm hơn để contrast trên nền trắng
     primaryDark: Color(0xFF5B21B6),
     primaryLight: Color(0xFF9D5FF0),
     secondary: Color(0xFF8B5CF6),
@@ -558,13 +570,13 @@ abstract class AppColorPresets {
     tertiary: Color(0xFFBE3A5A),
     tertiaryDark: Color(0xFF9B1C3E),
 
-    background: Color(0xFFF8F7FC),   // trắng xám nhẹ, mắt dễ chịu hơn pure white
+    background: Color(0xFFF8F7FC), // trắng xám nhẹ, mắt dễ chịu hơn pure white
     surface: Color(0xFFFFFFFF),
     surfaceElevated: Color(0xFFF3F1FA),
     card: Color(0xFFFFFFFF),
     cardHover: Color(0xFFEDE9F8),
 
-    textPrimary: Color(0xFF12101A),   // gần đen, không phải pure black
+    textPrimary: Color(0xFF12101A), // gần đen, không phải pure black
     textSecondary: Color(0xFF3D3650),
     textTertiary: Color(0xFF706885),
     textDisabled: Color(0xFFB0A8C8),
@@ -572,7 +584,7 @@ abstract class AppColorPresets {
     divider: Color(0x1A12101A),
     border: Color(0x2212101A),
 
-    glassBg: Color(0x1A7C3AED),      // primary tinted glass
+    glassBg: Color(0x1A7C3AED), // primary tinted glass
     glassBorder: Color(0x267C3AED),
 
     accentCyan: Color(0xFF0097A7),
@@ -599,7 +611,7 @@ abstract class AppColorPresets {
     scrimStrong: Color(0xBF000000),
 
     success: Color(0xFF34C759),
-    warning: Color(0xFFFF9500),     // cam iOS light, tương phản hơn trên nền sáng
+    warning: Color(0xFFFF9500), // cam iOS light, tương phản hơn trên nền sáng
     error: Color(0xFFFF3B30),
 
     primaryGradient: LinearGradient(

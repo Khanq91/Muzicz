@@ -30,7 +30,7 @@ class ControlsSection extends StatelessWidget {
             icon: Icons.shuffle_rounded,
             label: AppStrings.shufflePlay,
             toggled: shuffleEnabled,
-            color: shuffleEnabled ? c.primary : c.onPlayerLow,
+            color: shuffleEnabled ? c.primary : c.playerMuted,
             size: 24,
             onTap: () {
               player.toggleShuffle();
@@ -40,7 +40,7 @@ class ControlsSection extends StatelessWidget {
           IconBtn(
             icon: Icons.skip_previous_rounded,
             label: AppStrings.previousTrack,
-            color: c.onPlayer,
+            color: c.playerForeground,
             size: 36,
             onTap: () {
               player.skipToPrevious();
@@ -51,7 +51,7 @@ class ControlsSection extends StatelessWidget {
           IconBtn(
             icon: Icons.skip_next_rounded,
             label: AppStrings.nextTrack,
-            color: c.onPlayer,
+            color: c.playerForeground,
             size: 36,
             onTap: () {
               player.skipToNext();
@@ -68,7 +68,7 @@ class ControlsSection extends StatelessWidget {
                     ? AppStrings.repeatOne
                     : AppStrings.repeat,
             toggled: repeatMode != RepeatMode.none,
-            color: repeatMode == RepeatMode.one ? c.primary : c.onPlayerLow,
+            color: repeatMode == RepeatMode.one ? c.primary : c.playerMuted,
             size: 24,
             onTap: () {
               player.toggleRepeat();
@@ -134,11 +134,13 @@ class _PlayButtonState extends State<PlayButton>
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: c.onPlayer,
+              color: c.isDark ? c.onPlayer : c.primary,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: c.onPlayer.withValues(alpha: 0.25),
+                  color: (c.isDark ? c.onPlayer : c.primary).withValues(
+                    alpha: c.isDark ? 0.25 : 0.16,
+                  ),
                   blurRadius: 20,
                   offset: const Offset(0, 4),
                 ),
@@ -151,7 +153,7 @@ class _PlayButtonState extends State<PlayButton>
               child: Icon(
                 isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
                 key: ValueKey(isPlaying),
-                color: c.background,
+                color: c.isDark ? c.background : c.onPlayer,
                 size: 38,
               ),
             ),
@@ -273,10 +275,10 @@ class _ProgressSectionState extends State<ProgressSection> {
             children: [
               SliderTheme(
                 data: SliderThemeData(
-                  activeTrackColor: c.onPlayer,
-                  inactiveTrackColor: c.onPlayerMinimal,
-                  thumbColor: c.onPlayer,
-                  overlayColor: c.onPlayerMinimal,
+                  activeTrackColor: c.playerForeground,
+                  inactiveTrackColor: c.playerTrack,
+                  thumbColor: c.playerForeground,
+                  overlayColor: c.playerTrack,
                   trackHeight: 3,
                   thumbShape: const RoundSliderThumbShape(
                     enabledThumbRadius: 6,
@@ -309,14 +311,14 @@ class _ProgressSectionState extends State<ProgressSection> {
                       displayPos.mmss,
                       style: GoogleFonts.outfit(
                         fontSize: 12,
-                        color: c.onPlayerLow,
+                        color: c.playerMuted,
                       ),
                     ),
                     Text(
                       data.duration.mmss,
                       style: GoogleFonts.outfit(
                         fontSize: 12,
-                        color: c.onPlayerLow,
+                        color: c.playerMuted,
                       ),
                     ),
                   ],

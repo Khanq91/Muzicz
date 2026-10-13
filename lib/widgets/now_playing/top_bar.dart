@@ -27,7 +27,7 @@ class TopBar extends StatelessWidget {
             icon: Icon(
               Icons.keyboard_arrow_down_rounded,
               size: 32,
-              color: c.onPlayer,
+              color: c.playerForeground,
             ),
             onPressed: () => Navigator.pop(context),
           ),
@@ -51,7 +51,7 @@ class TopBar extends StatelessWidget {
                         style: GoogleFonts.outfit(
                           fontSize: 10,
                           fontWeight: FontWeight.w300,
-                          color: c.onPlayerLow,
+                          color: c.playerMuted,
                           letterSpacing: 2.5,
                         ),
                       ),
@@ -67,16 +67,16 @@ class TopBar extends StatelessWidget {
                             style: GoogleFonts.outfit(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
-                              color: c.onPlayerHigh,
+                              color: c.playerHigh,
                               decoration: TextDecoration.underline,
-                              decorationColor: c.onPlayerSubtle,
+                              decorationColor: c.playerSubtle,
                             ),
                           ),
                           const SizedBox(width: 3),
                           Icon(
                             Icons.arrow_forward_ios_rounded,
                             size: 9,
-                            color: c.onPlayerSubtle,
+                            color: c.playerSubtle,
                           ),
                         ],
                       ),
@@ -87,7 +87,11 @@ class TopBar extends StatelessWidget {
             ),
           ),
           PopupMenuButton<String>(
-            icon: Icon(Icons.more_vert_rounded, size: 24, color: c.onPlayer),
+            icon: Icon(
+              Icons.more_vert_rounded,
+              size: 24,
+              color: c.playerForeground,
+            ),
             color: c.card,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),

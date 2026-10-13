@@ -32,7 +32,7 @@ class SongInfo extends StatelessWidget {
                   style: GoogleFonts.outfit(
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
-                    color: c.onPlayer,
+                    color: c.playerForeground,
                     letterSpacing: -0.3,
                   ),
                 ),
@@ -44,7 +44,7 @@ class SongInfo extends StatelessWidget {
                   style: GoogleFonts.outfit(
                     fontSize: 14,
                     fontWeight: FontWeight.w300,
-                    color: c.onPlayerMedium,
+                    color: c.playerSecondary,
                   ),
                 ),
               ],
@@ -66,7 +66,7 @@ class SongInfo extends StatelessWidget {
             },
             icon: Icon(
               Icons.playlist_add_rounded,
-              color: c.onPlayerLow,
+              color: c.playerMuted,
               size: 26,
             ),
           ),
@@ -89,7 +89,7 @@ class SongInfo extends StatelessWidget {
                         ? Icons.favorite_rounded
                         : Icons.favorite_border_rounded,
                     key: ValueKey(isFav),
-                    color: isFav ? c.tertiary : c.onPlayerLow,
+                    color: isFav ? c.tertiary : c.playerMuted,
                     size: 26,
                   ),
                 ),

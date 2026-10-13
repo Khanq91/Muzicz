@@ -51,7 +51,7 @@ class ArtistDetailScreen extends StatelessWidget {
               icon: Icon(
                 Icons.arrow_back_ios_new_rounded,
                 size: 20,
-                color: c.onPlayer,
+                color: c.textPrimary,
               ),
               onPressed: () => Navigator.pop(context),
             ),
@@ -359,7 +359,10 @@ class _ArtistHeader extends StatelessWidget {
         ),
         BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(color: c.scrimLight),
+          child: Container(
+            color:
+                c.isDark ? c.scrimLight : c.background.withValues(alpha: 0.92),
+          ),
         ),
         // Artist circle avatar
         Positioned(
@@ -420,7 +423,7 @@ class _ArtistHeader extends StatelessWidget {
                 style: GoogleFonts.outfit(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
-                  color: c.onPlayer,
+                  color: c.textPrimary,
                   letterSpacing: -0.5,
                 ),
               ),
@@ -430,7 +433,7 @@ class _ArtistHeader extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: GoogleFonts.outfit(
                   fontSize: 13,
-                  color: c.onPlayerHigh,
+                  color: c.textSecondary,
                   fontWeight: FontWeight.w300,
                 ),
               ),

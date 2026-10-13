@@ -42,7 +42,7 @@ class AlbumDetailScreen extends StatelessWidget {
               icon: Icon(
                 Icons.arrow_back_ios_new_rounded,
                 size: 20,
-                color: c.onPlayer,
+                color: c.textPrimary,
               ),
               onPressed: () => Navigator.pop(context),
             ),
@@ -268,7 +268,10 @@ class _AlbumHeader extends StatelessWidget {
           ),
         ),
         // Dark overlay
-        Container(color: c.scrimMedium),
+        Container(
+          color:
+              c.isDark ? c.scrimMedium : c.background.withValues(alpha: 0.92),
+        ),
         // Center album art (sharp)
         Positioned(
           top: 52,
@@ -282,7 +285,9 @@ class _AlbumHeader extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.5),
+                    color: Colors.black.withValues(
+                      alpha: c.isDark ? 0.5 : 0.12,
+                    ),
                     blurRadius: 24,
                     offset: const Offset(0, 8),
                   ),
@@ -325,7 +330,7 @@ class _AlbumHeader extends StatelessWidget {
                 style: GoogleFonts.outfit(
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
-                  color: c.onPlayer,
+                  color: c.textPrimary,
                   letterSpacing: -0.3,
                 ),
               ),
@@ -335,7 +340,7 @@ class _AlbumHeader extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: GoogleFonts.outfit(
                   fontSize: 13,
-                  color: c.onPlayerHigh,
+                  color: c.textSecondary,
                   fontWeight: FontWeight.w300,
                 ),
               ),

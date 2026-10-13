@@ -104,7 +104,7 @@ final class _ActiveWaveformViewState extends State<_ActiveWaveformView> {
                   child: LinearProgressIndicator(
                     minHeight: 2,
                     color: colors.primary,
-                    backgroundColor: colors.onPlayerLow.withValues(alpha: 0.2),
+                    backgroundColor: colors.playerMuted.withValues(alpha: 0.2),
                   ),
                 );
               }
@@ -112,7 +112,7 @@ final class _ActiveWaveformViewState extends State<_ActiveWaveformView> {
                 return Icon(
                   Icons.graphic_eq_rounded,
                   size: 20,
-                  color: colors.onPlayerLow,
+                  color: colors.playerMuted,
                 );
               }
 
@@ -122,7 +122,7 @@ final class _ActiveWaveformViewState extends State<_ActiveWaveformView> {
                   amplitudes: waveform.amplitudes,
                   playhead: _playhead,
                   activeColor: colors.primaryLight,
-                  inactiveColor: colors.onPlayerLow.withValues(alpha: 0.32),
+                  inactiveColor: colors.playerMuted.withValues(alpha: 0.32),
                 ),
               );
             },

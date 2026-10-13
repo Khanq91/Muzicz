@@ -50,15 +50,15 @@ class PlatformChip extends StatelessWidget {
       case 'youtube':
         return const Color(0xFFFF3B30);
       case 'tiktok':
-        return const Color(0xFF69C9D0);
+        return c.isDark ? const Color(0xFF69C9D0) : const Color(0xFF147D85);
       case 'instagram':
         return const Color(0xFFE1306C);
       case 'facebook':
         return const Color(0xFF1877F2);
       case 'twitter / x':
-        return const Color(0xFFFFFFFF);
+        return c.textPrimary;
       case 'vimeo':
-        return const Color(0xFF1AB7EA);
+        return c.isDark ? const Color(0xFF1AB7EA) : const Color(0xFF087A9E);
       default:
         return c.primary;
     }

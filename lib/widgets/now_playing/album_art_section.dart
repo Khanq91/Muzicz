@@ -46,12 +46,12 @@ class AlbumArtSection extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: c.primary.withValues(alpha: 0.3),
+                  color: c.primary.withValues(alpha: c.isDark ? 0.3 : 0.12),
                   blurRadius: 60,
                   offset: const Offset(0, 20),
                 ),
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.5),
+                  color: Colors.black.withValues(alpha: c.isDark ? 0.5 : 0.12),
                   blurRadius: 40,
                   offset: const Offset(0, 16),
                 ),

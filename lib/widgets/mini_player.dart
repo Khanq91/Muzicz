@@ -157,16 +157,19 @@ class _MiniPlayerSurface extends StatelessWidget {
         shape: const LiquidRoundedSuperellipse(borderRadius: 22),
         clipBehavior: Clip.antiAlias,
         settings: LiquidGlassSettings(
-          glassColor: c.glassBg.withValues(alpha: 0.05),
+          glassColor:
+              c.isDark
+                  ? c.glassBg.withValues(alpha: 0.05)
+                  : c.surface.withValues(alpha: 0.78),
           thickness: 30,
           blur: 3,
-          lightIntensity: 0.42,
+          lightIntensity: c.isDark ? 0.42 : 0.25,
           chromaticAberration: 0.012,
           ambientStrength: 0.10,
           ambientRim: 0.12,
           refractiveIndex: 1.24,
           saturation: 1.35,
-          glowIntensity: 0.9,
+          glowIntensity: c.isDark ? 0.9 : 0.2,
         ),
         child: child,
       );

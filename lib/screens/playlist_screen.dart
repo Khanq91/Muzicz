@@ -435,7 +435,7 @@ class PlaylistDetailScreen extends StatelessWidget {
               icon: Icon(
                 Icons.arrow_back_ios_new_rounded,
                 size: 20,
-                color: c.onPlayer,
+                color: c.textPrimary,
               ),
               onPressed: () => Navigator.pop(context),
             ),
@@ -443,7 +443,11 @@ class PlaylistDetailScreen extends StatelessWidget {
               if (!isSystemPlaylist)
                 IconButton(
                   tooltip: AppStrings.rename,
-                  icon: Icon(Icons.edit_rounded, color: c.onPlayer, size: 22),
+                  icon: Icon(
+                    Icons.edit_rounded,
+                    color: c.textPrimary,
+                    size: 22,
+                  ),
                   onPressed: () => _showEditDialog(context, music, playlist),
                 ),
             ],
@@ -640,8 +644,8 @@ class PlaylistDetailScreen extends StatelessWidget {
           else
             RevealListSliver(
               itemCount: playlist.songs.length,
-              itemKeyBuilder: (i) =>
-                  ValueKey('playlist_song_${playlist.songs[i].id}'),
+              itemKeyBuilder:
+                  (i) => ValueKey('playlist_song_${playlist.songs[i].id}'),
               itemBuilder: (_, i, __) {
                 final song = playlist.songs[i];
                 return Selector<PlayerProvider, int?>(
@@ -809,8 +813,8 @@ class PlaylistDetailScreen extends StatelessWidget {
                                 edgeFadeColor: c.card,
                                 controller: scrollCtrl,
                                 itemCount: available.length,
-                                itemKeyBuilder: (i) =>
-                                    ValueKey(available[i].id),
+                                itemKeyBuilder:
+                                    (i) => ValueKey(available[i].id),
                                 itemBuilder: (ctx, i, __) {
                                   final song = available[i];
                                   return ListTile(
@@ -930,7 +934,7 @@ class _PlaylistHeader extends StatelessWidget {
                 style: GoogleFonts.outfit(
                   fontSize: 26,
                   fontWeight: FontWeight.w700,
-                  color: c.onPlayer,
+                  color: c.textPrimary,
                   letterSpacing: -0.5,
                 ),
               ),
@@ -938,7 +942,7 @@ class _PlaylistHeader extends StatelessWidget {
                 AppStrings.songCount(playlist.songCount),
                 style: GoogleFonts.outfit(
                   fontSize: 14,
-                  color: c.onPlayerHigh,
+                  color: c.textSecondary,
                   fontWeight: FontWeight.w300,
                 ),
               ),

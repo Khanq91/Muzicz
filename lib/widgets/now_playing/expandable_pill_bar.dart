@@ -86,17 +86,19 @@ class _ExpandablePillBarState extends State<ExpandablePillBar> {
           color:
               _isExpanded
                   ? c.surfaceElevated.withValues(alpha: 0.9)
-                  : c.onPlayerGhostBg,
+                  : c.glassBg,
           borderRadius: BorderRadius.circular(26),
           border: Border.all(
             color:
-                _isExpanded ? c.border.withValues(alpha: 0.3) : c.onPlayerGhost,
+                _isExpanded ? c.border.withValues(alpha: 0.3) : c.glassBorder,
           ),
           boxShadow:
               _isExpanded
                   ? [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
+                      color: Colors.black.withValues(
+                        alpha: c.isDark ? 0.2 : 0.08,
+                      ),
                       blurRadius: 16,
                       offset: const Offset(0, 8),
                     ),
@@ -124,7 +126,7 @@ class _ExpandablePillBarState extends State<ExpandablePillBar> {
                           alignment: Alignment.center,
                           child: Icon(
                             Icons.more_horiz_rounded,
-                            color: c.onPlayer,
+                            color: c.playerForeground,
                             size: 28,
                           ),
                         ),
@@ -189,12 +191,12 @@ class _ExpandablePillBarState extends State<ExpandablePillBar> {
                                   padding: const EdgeInsets.all(6),
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: c.onPlayerGhost,
+                                    color: c.glassBorder,
                                   ),
                                   child: Icon(
                                     Icons.close_rounded,
                                     size: 16,
-                                    color: c.onPlayerHigh,
+                                    color: c.textSecondary,
                                   ),
                                 ),
                               ),
@@ -242,7 +244,7 @@ class _ExpandablePillBarState extends State<ExpandablePillBar> {
             child: Icon(
               icon,
               size: 20,
-              color: isActive ? c.primary : c.onPlayerHigh,
+              color: isActive ? c.primary : c.textSecondary,
             ),
           ),
         ),

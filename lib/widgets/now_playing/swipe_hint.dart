@@ -21,12 +21,12 @@ class SwipeHint extends StatelessWidget {
           children: [
             Icon(
               Icons.keyboard_arrow_up_rounded,
-              color: c.onPlayerMinimal,
+              color: c.playerHint,
               size: 20,
             ),
             Text(
               AppStrings.queueShort,
-              style: GoogleFonts.outfit(fontSize: 11, color: c.onPlayerMinimal),
+              style: GoogleFonts.outfit(fontSize: 11, color: c.playerHint),
             ),
           ],
         ),
