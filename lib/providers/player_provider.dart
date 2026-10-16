@@ -5,7 +5,7 @@ import 'package:just_audio/just_audio.dart';
 import '../models/song_item.dart';
 import '../services/audio_handler.dart';
 
-enum RepeatMode { none, one, shuffleLoop }
+enum RepeatMode { none, one, shuffleLoop, all }
 
 class PlayerProvider extends ChangeNotifier {
   final PlayerAudioGateway _handler;
@@ -31,6 +31,9 @@ class PlayerProvider extends ChangeNotifier {
 
   List<SongItem> get queue => _playQueue;
   int get currentQueueIndex => _currentPlayIndex;
+  String _queueSourceName = 'All Songs';
+  String get queueSourceName => _queueSourceName;
+  ({SongItem song, int index, int originalIndex, int generation})? _queueUndo;
 
   bool _isPlaying = false;
   bool get isPlaying => _isPlaying;
@@ -68,6 +71,44 @@ class PlayerProvider extends ChangeNotifier {
 
   // ── Sleep timer ────────────────────────────────────────────────────────────
 
+  int? _sleepTracks;
+  int? get sleepTracksRemaining => _sleepTracks;
+  StreamSubscription<PositionData>? _sleepPositionSubscription;
+
+  void setSleepTrackCount(int count) {
+    if (count < 1) return;
+    cancelSleepTimer();
+    _sleepTracks = count;
+    Duration lastPosition = Duration.zero;
+    Duration lastDuration = Duration.zero;
+    // Repeat-one never changes queue index; detect its position wrapping.
+    _sleepPositionSubscription = positionDataStream.listen((data) {
+      if (_repeatMode == RepeatMode.one &&
+          lastDuration > Duration.zero &&
+          lastDuration - lastPosition < const Duration(seconds: 2) &&
+          data.position < const Duration(seconds: 1) &&
+          lastPosition > data.position &&
+          !_isChangingTrack) {
+        _completeSleepTrack();
+      }
+      lastPosition = data.position;
+      lastDuration = data.duration;
+    });
+    notifyListeners();
+  }
+
+  bool _completeSleepTrack() {
+    if (_sleepTracks == null) return false;
+    _sleepTracks = _sleepTracks! - 1;
+    if (_sleepTracks! <= 0) {
+      cancelSleepTimer();
+      unawaited(_handler.pause());
+      return true;
+    }
+    notifyListeners();
+    return false;
+  }
+
   Timer? _sleepTimer;
   Timer? _countdownTimer;
   DateTime? _sleepEndTime;
@@ -79,9 +120,10 @@ class PlayerProvider extends ChangeNotifier {
     return remaining.isNegative ? Duration.zero : remaining;
   }
 
-  bool get sleepTimerActive => _sleepEndTime != null;
+  bool get sleepTimerActive => _sleepEndTime != null || _sleepTracks != null;
 
   void setSleepTimer(Duration duration) {
+    cancelSleepTimer();
     _sleepTimer?.cancel();
     _countdownTimer?.cancel();
     _sleepEndTime = DateTime.now().add(duration);
@@ -104,6 +146,9 @@ class PlayerProvider extends ChangeNotifier {
   }
 
   void cancelSleepTimer() {
+    _sleepTracks = null;
+    _sleepPositionSubscription?.cancel();
+    _sleepPositionSubscription = null;
     _sleepTimer?.cancel();
     _countdownTimer?.cancel();
     _sleepTimer = null;
@@ -127,7 +172,12 @@ class PlayerProvider extends ChangeNotifier {
     _currentIndexSubscription = _handler.currentIndexStream.listen((index) {
       if (_isReordering || _isChangingTrack) return;
 
-      if (index != null) _applyCurrentIndex(index);
+      if (index != null) {
+        if (index != _currentPlayIndex && _currentSong != null) {
+          _completeSleepTrack();
+        }
+        _applyCurrentIndex(index);
+      }
     });
 
     _processingStateSubscription = _handler.processingStateStream.listen((
@@ -136,7 +186,7 @@ class PlayerProvider extends ChangeNotifier {
       if (state == ProcessingState.completed &&
           !_isChangingTrack &&
           !_isReordering) {
-        _onPlaylistEnded();
+        if (!_completeSleepTrack()) _onPlaylistEnded();
       }
     });
   }
@@ -145,6 +195,10 @@ class PlayerProvider extends ChangeNotifier {
     if (_originalQueue.isEmpty) return;
     try {
       switch (_repeatMode) {
+        case RepeatMode.all:
+          await _seekToIndex(0);
+          await _handler.play();
+          return;
         case RepeatMode.one:
           return; // the engine loops the track itself
         case RepeatMode.shuffleLoop:
@@ -194,8 +248,11 @@ class PlayerProvider extends ChangeNotifier {
     List<SongItem> songs, {
     int initialIndex = 0,
     SongItem? specificSong,
+    String sourceName = 'All Songs',
   }) async {
     if (songs.isEmpty) return;
+    _queueSourceName = sourceName;
+    _queueUndo = null;
     final loopModeDirty = _dropRepeatOne();
     _originalQueue = List.from(songs);
     _historyStack.clear();
@@ -226,7 +283,12 @@ class PlayerProvider extends ChangeNotifier {
     await _handler.play();
   }
 
-  Future<void> playSongsShuffled(List<SongItem> songs) async {
+  Future<void> playSongsShuffled(
+    List<SongItem> songs, {
+    String sourceName = 'All Songs',
+  }) async {
+    _queueSourceName = sourceName;
+    _queueUndo = null;
     if (songs.isEmpty) return;
 
     final loopModeDirty = _dropRepeatOne();
@@ -352,6 +414,21 @@ class PlayerProvider extends ChangeNotifier {
 
   // ── Repeat ────────────────────────────────────────────────────────────────
 
+  /// PixelPlayer's queue cycles off -> repeat all -> repeat one -> off.
+  Future<void> cycleQueueRepeat() async {
+    _repeatMode = switch (_repeatMode) {
+      RepeatMode.none => RepeatMode.all,
+      RepeatMode.all || RepeatMode.shuffleLoop => RepeatMode.one,
+      RepeatMode.one => RepeatMode.none,
+    };
+    await _handler.setLoopMode(switch (_repeatMode) {
+      RepeatMode.all => LoopMode.all,
+      RepeatMode.one => LoopMode.one,
+      _ => LoopMode.off,
+    });
+    notifyListeners();
+  }
+
   Future<void> toggleRepeat() async {
     switch (_repeatMode) {
       case RepeatMode.none:
@@ -362,6 +439,7 @@ class PlayerProvider extends ChangeNotifier {
         _repeatMode = RepeatMode.none;
         await _handler.setLoopMode(LoopMode.off);
         break;
+      case RepeatMode.all:
       case RepeatMode.shuffleLoop:
         _repeatMode = RepeatMode.none;
         await _handler.setLoopMode(LoopMode.off);
@@ -381,6 +459,7 @@ class PlayerProvider extends ChangeNotifier {
   }
 
   Future<void> stopAndClear() async {
+    _queueUndo = null;
     ++_loadGeneration;
     final previous = _loadChain;
     final completer = Completer<void>();
@@ -440,13 +519,29 @@ class PlayerProvider extends ChangeNotifier {
     if (index < 0 || index >= _playQueue.length) return;
     if (_isReordering) return;
 
-    final removedId = _playQueue[index].id;
+    final removedSong = _playQueue[index];
+    final removedId = removedSong.id;
+    // Match this occurrence, preserving duplicate tracks in the original order.
+    final occurrence =
+        _playQueue.take(index).where((s) => s.id == removedId).length;
+    final matches = [
+      for (var i = 0; i < _originalQueue.length; i++)
+        if (_originalQueue[i].id == removedId) i,
+    ];
+    final originalIndex =
+        matches.isEmpty ? -1 : matches[min(occurrence, matches.length - 1)];
     _isReordering = true;
     try {
       await _handler.removeSongAt(index);
 
       _playQueue.removeAt(index);
-      _originalQueue.removeWhere((s) => s.id == removedId);
+      if (originalIndex >= 0) _originalQueue.removeAt(originalIndex);
+      _queueUndo = (
+        song: removedSong,
+        index: index,
+        originalIndex: originalIndex,
+        generation: _loadGeneration,
+      );
 
       if (_playQueue.isEmpty) {
         _currentPlayIndex = 0;
@@ -467,6 +562,33 @@ class PlayerProvider extends ChangeNotifier {
       }
 
       _historyStack.clear();
+      notifyListeners();
+    } finally {
+      _isReordering = false;
+    }
+  }
+
+  Future<void> undoQueueRemoval() async {
+    final undo = _queueUndo;
+    if (undo == null || undo.generation != _loadGeneration || _isReordering) {
+      return;
+    }
+    _isReordering = true;
+    try {
+      final at = undo.index.clamp(0, _playQueue.length);
+      await _handler.insertSongAt(at, undo.song);
+      _playQueue.insert(at, undo.song);
+      _originalQueue.insert(
+        undo.originalIndex.clamp(0, _originalQueue.length),
+        undo.song,
+      );
+      if (_currentSong == null) {
+        _currentPlayIndex = at;
+        _currentSong = undo.song;
+      } else if (at <= _currentPlayIndex) {
+        _currentPlayIndex++;
+      }
+      _queueUndo = null;
       notifyListeners();
     } finally {
       _isReordering = false;
@@ -594,7 +716,10 @@ class PlayerProvider extends ChangeNotifier {
     bool played = true,
   }) {
     if (index < 0 || index >= _playQueue.length) return;
-    if (_playQueue[index].id == _currentSong?.id) return;
+    if (index == _currentPlayIndex &&
+        _playQueue[index].id == _currentSong?.id) {
+      return;
+    }
 
     if (recordHistory && _currentSong != null) {
       _historyStack.add(_currentPlayIndex);
@@ -613,6 +738,8 @@ class PlayerProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _sleepPositionSubscription?.cancel();
+    _sleepPositionSubscription = null;
     _sleepTimer?.cancel();
     _countdownTimer?.cancel();
     _sleepTimer = null;

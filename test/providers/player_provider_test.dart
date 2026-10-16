@@ -96,6 +96,81 @@ void main() {
     },
   );
 
+  test(
+    'undo removal restores order without changing the playing track',
+    () async {
+      await provider.playSongs([_song(1), _song(2), _song(3)], initialIndex: 2);
+      await provider.removeFromQueue(0);
+      await provider.undoQueueRemoval();
+      expect(provider.queue.map((s) => s.id), [1, 2, 3]);
+      expect(gateway.queue.map((s) => s.id), [1, 2, 3]);
+      expect(provider.currentSong?.id, 3);
+      expect(provider.currentQueueIndex, 2);
+      expect(gateway.currentSong?.id, 3);
+    },
+  );
+
+  test(
+    'undo from an old queue cannot insert into a replacement queue',
+    () async {
+      await provider.playSongs([_song(1), _song(2)]);
+      await provider.removeFromQueue(1);
+      await provider.playSongs([_song(9)]);
+      await provider.undoQueueRemoval();
+      expect(provider.queue.map((s) => s.id), [9]);
+      expect(gateway.queue.map((s) => s.id), [9]);
+    },
+  );
+
+  test(
+    'removing one duplicate preserves the other when shuffle is toggled',
+    () async {
+      await provider.playSongs([_song(1), _song(2), _song(2), _song(3)]);
+      await provider.removeFromQueue(1);
+      await provider.toggleShuffle();
+      await provider.toggleShuffle();
+      expect(provider.queue.map((s) => s.id), [1, 2, 3]);
+    },
+  );
+
+  test('queue repeat cycles through all, one and off', () async {
+    await provider.cycleQueueRepeat();
+    expect(provider.repeatMode, RepeatMode.all);
+    await provider.cycleQueueRepeat();
+    expect(provider.repeatMode, RepeatMode.one);
+    await provider.cycleQueueRepeat();
+    expect(provider.repeatMode, RepeatMode.none);
+  });
+
+  test(
+    'counted sleep pauses after the requested automatic transitions',
+    () async {
+      await provider.playSongs([_song(1), _song(2), _song(3)]);
+      provider.setSleepTrackCount(2);
+      gateway.emitCurrentIndex(1);
+      await _settle();
+      expect(provider.sleepTracksRemaining, 1);
+      expect(gateway.pauseCalls, 0);
+      gateway.emitCurrentIndex(2);
+      await _settle();
+      expect(provider.sleepTimerActive, isFalse);
+      expect(gateway.pauseCalls, 1);
+    },
+  );
+
+  test(
+    'end-of-track timer pauses on queue completion without rewinding',
+    () async {
+      await provider.playSongs([_song(1)]);
+      provider.setSleepTrackCount(1);
+      gateway.emitProcessingState(ProcessingState.completed);
+      await _settle();
+      expect(provider.sleepTimerActive, isFalse);
+      expect(gateway.pauseCalls, 1);
+      expect(gateway.seekToIndexCalls, isEmpty);
+    },
+  );
+
   test('reordering queue keeps provider and audio engine aligned', () async {
     final songs = [_song(1), _song(2), _song(3)];
     await provider.playSongs(songs);
@@ -700,6 +775,9 @@ class _FakePlayerAudioGateway implements PlayerAudioGateway {
   Future<void> insertSongAt(int index, SongItem song) async {
     insertCalls.add((index, song.id));
     queue.insert(index, song);
+    if (currentIndex != null && index <= currentIndex!) {
+      currentIndex = currentIndex! + 1;
+    }
   }
 
   @override

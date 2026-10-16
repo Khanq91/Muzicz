@@ -21,126 +21,216 @@ class SleepTimerSheet extends StatelessWidget {
     final player = context.watch<PlayerProvider>();
     final c = context.appColors;
     final rem = player.sleepRemaining;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: c.divider,
-                borderRadius: BorderRadius.circular(2),
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: c.divider,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Text(
-                AppStrings.sleepTimerTitle,
-                style: GoogleFonts.outfit(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: c.textPrimary,
-                ),
-              ),
-              const Spacer(),
-              if (player.sleepTimerActive)
-                TextButton(
-                  onPressed: () {
-                    player.cancelSleepTimer();
-                    Navigator.pop(context);
-                  },
-                  child: Text(
-                    AppStrings.cancelSleepTimer,
-                    style: GoogleFonts.outfit(color: c.tertiary, fontSize: 14),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Text(
+                  AppStrings.sleepTimerTitle,
+                  style: GoogleFonts.outfit(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: c.textPrimary,
                   ),
                 ),
+                const Spacer(),
+                if (player.sleepTimerActive)
+                  TextButton(
+                    onPressed: () {
+                      player.cancelSleepTimer();
+                      Navigator.pop(context);
+                    },
+                    child: Text(
+                      AppStrings.cancelSleepTimer,
+                      style: GoogleFonts.outfit(
+                        color: c.tertiary,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            if (rem != null && rem > Duration.zero) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 16,
+                ),
+                decoration: BoxDecoration(
+                  color: c.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: c.primary.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.bedtime_rounded, color: c.primary, size: 20),
+                    const SizedBox(width: 10),
+                    Text(
+                      AppStrings.stopAfterPrefix,
+                      style: GoogleFonts.outfit(
+                        color: c.textSecondary,
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      _formatRemaining(rem),
+                      style: GoogleFonts.outfit(
+                        color: c.primary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
-          ),
-          if (rem != null && rem > Duration.zero) ...[
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-              decoration: BoxDecoration(
-                color: c.primary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: c.primary.withValues(alpha: 0.3)),
+            if (player.sleepTracksRemaining != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(
+                  'Dừng sau ${player.sleepTracksRemaining} bài hát',
+                  style: TextStyle(color: c.primary),
+                ),
               ),
-              child: Row(
-                children: [
-                  Icon(Icons.bedtime_rounded, color: c.primary, size: 20),
-                  const SizedBox(width: 10),
-                  Text(
-                    AppStrings.stopAfterPrefix,
-                    style: GoogleFonts.outfit(
-                      color: c.textSecondary,
-                      fontSize: 14,
-                    ),
-                  ),
-                  Text(
-                    _formatRemaining(rem),
-                    style: GoogleFonts.outfit(
-                      color: c.primary,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
+            const SizedBox(height: 16),
+            Text(
+              AppStrings.chooseDuration,
+              style: GoogleFonts.outfit(fontSize: 13, color: c.textTertiary),
             ),
-          ],
-          const SizedBox(height: 16),
-          Text(
-            AppStrings.chooseDuration,
-            style: GoogleFonts.outfit(fontSize: 13, color: c.textTertiary),
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children:
-                _presets
-                    .map(
-                      (p) => Semantics(
-                        button: true,
-                        child: GestureDetector(
-                          onTap: () {
-                            player.setSleepTimer(p.duration);
-                            Navigator.pop(context);
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 18,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: c.surfaceElevated,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: c.border, width: 0.5),
-                            ),
-                            child: Text(
-                              p.label,
-                              style: GoogleFonts.outfit(
-                                fontSize: 14,
-                                color: c.textPrimary,
-                                fontWeight: FontWeight.w500,
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children:
+                  _presets
+                      .map(
+                        (p) => Semantics(
+                          button: true,
+                          child: GestureDetector(
+                            onTap: () {
+                              player.setSleepTimer(p.duration);
+                              Navigator.pop(context);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: c.surfaceElevated,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: c.border, width: 0.5),
+                              ),
+                              child: Text(
+                                p.label,
+                                style: GoogleFonts.outfit(
+                                  fontSize: 14,
+                                  color: c.textPrimary,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    )
-                    .toList(),
-          ),
-        ],
+                      )
+                      .toList(),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.music_note_rounded),
+              title: const Text('Dừng khi hết bài hiện tại'),
+              onTap: () {
+                player.setSleepTrackCount(1);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.repeat_rounded),
+              title: const Text('Dừng sau số bài hát…'),
+              onTap: () => _custom(context, player, tracks: true),
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.schedule_rounded),
+              title: const Text('Thời gian tùy chỉnh…'),
+              onTap: () => _custom(context, player, tracks: false),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  Future<void> _custom(
+    BuildContext context,
+    PlayerProvider player, {
+    required bool tracks,
+  }) async {
+    var value = tracks ? 3 : 20;
+    final chosen = await showDialog<int>(
+      context: context,
+      builder:
+          (ctx) => StatefulBuilder(
+            builder:
+                (ctx, update) => AlertDialog(
+                  title: Text(
+                    tracks
+                        ? 'Số bài hát trước khi dừng'
+                        : 'Số phút trước khi dừng',
+                  ),
+                  content: TextFormField(
+                    initialValue: '$value',
+                    keyboardType: TextInputType.number,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      suffixText: tracks ? 'bài' : 'phút',
+                    ),
+                    onChanged:
+                        (text) => update(() => value = int.tryParse(text) ?? 0),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text(AppStrings.cancel),
+                    ),
+                    FilledButton(
+                      onPressed:
+                          value > 0 && value <= 1440
+                              ? () => Navigator.pop(ctx, value)
+                              : null,
+                      child: const Text('Bắt đầu'),
+                    ),
+                  ],
+                ),
+          ),
+    );
+    if (chosen == null || !context.mounted) return;
+    if (tracks) {
+      player.setSleepTrackCount(chosen);
+    } else {
+      player.setSleepTimer(Duration(minutes: chosen));
+    }
+    Navigator.pop(context);
   }
 
   String _formatRemaining(Duration d) {

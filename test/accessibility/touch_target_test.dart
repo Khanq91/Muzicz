@@ -111,6 +111,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    _expectMinTapSize(tester, find.byTooltip('Tùy chọn bài hát').last);
+    await tester.tap(find.byTooltip('Tùy chọn bài hát').last);
+    await tester.pumpAndSettle();
     _expectMinTapSize(tester, find.bySemanticsLabel('Xóa khỏi hàng chờ'));
     handle.dispose();
   });

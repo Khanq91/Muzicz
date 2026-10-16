@@ -78,10 +78,35 @@ class _NowPlayingScreenState extends State<NowPlayingScreen> {
     );
   }
 
-  void _queue() => _sheet(
-    (sheetContext) =>
-        QueueSheet(onClose: () => Navigator.pop(sheetContext), useBlur: false),
-    height: MediaQuery.sizeOf(context).height * 0.72,
+  void _queue() => showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    backgroundColor: Colors.transparent,
+    sheetAnimationStyle: AnimationStyle(
+      duration:
+          MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 380),
+      reverseDuration:
+          MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 300),
+    ),
+    builder:
+        (sheetContext) => DraggableScrollableSheet(
+          initialChildSize: 1,
+          minChildSize: .45,
+          maxChildSize: 1,
+          expand: false,
+          snap: true,
+          builder:
+              (_, scrollController) => QueueSheet(
+                onClose: () => Navigator.pop(sheetContext),
+                useBlur: false,
+                scrollController: scrollController,
+              ),
+        ),
   );
 
   void _lyrics() => _sheet(

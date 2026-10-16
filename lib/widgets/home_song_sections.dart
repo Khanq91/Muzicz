@@ -75,8 +75,8 @@ class HomeSongCollage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(24, 8, 24, 38),
-    child: AspectRatio(
-      aspectRatio: 1.02,
+    child: SizedBox(
+      width: double.infinity,
       child: LayoutBuilder(
         builder: (context, box) {
           final w = box.maxWidth;

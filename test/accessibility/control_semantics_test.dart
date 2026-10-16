@@ -229,14 +229,19 @@ void main() {
     expect(queueButton, findsOneWidget);
     await tester.tap(queueButton);
     await tester.pump();
-    // Opening the sheet rebuilds its blur layer and starts row reveals.
+    await tester.pumpAndSettle();
+    expect(
+      find.byTooltip(AppStrings.collapseQueue).hitTestable(),
+      findsOneWidget,
+    );
+    await tester.tap(find.byTooltip('Tùy chọn bài hát').last);
     await tester.pumpAndSettle();
 
     expect(
       find.bySemanticsLabel('Xóa khỏi hàng chờ').hitTestable(),
       findsOneWidget,
     );
-    expect(find.byTooltip('Thu gọn hàng chờ').hitTestable(), findsOneWidget);
+
     handle.dispose();
   });
 

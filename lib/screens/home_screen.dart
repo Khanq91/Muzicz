@@ -91,182 +91,219 @@ class _HomeTabBody extends StatelessWidget {
       (p) => p.currentSong != null,
     );
     final c = context.appColors;
-    return RefreshIndicator(
-      onRefresh: context.read<MusicProvider>().scanMusic,
-      child: CustomScrollView(
-        key: const PageStorageKey('home-scroll'),
-        physics: const AlwaysScrollableScrollPhysics(
-          parent: BouncingScrollPhysics(),
-        ),
-        slivers: [
-          SliverAppBar(
-            pinned: true,
-            backgroundColor: c.background,
-            surfaceTintColor: c.primary,
-            automaticallyImplyLeading: false,
-            title: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: c.surfaceElevated,
-                borderRadius: BorderRadius.circular(28),
+    return LayoutBuilder(
+      builder:
+          (context, viewport) => RefreshIndicator(
+            onRefresh: context.read<MusicProvider>().scanMusic,
+            child: CustomScrollView(
+              key: const PageStorageKey('home-scroll'),
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
               ),
-              child: const Text(
-                AppStrings.appName,
-                style: TextStyle(fontSize: 15),
-              ),
-            ),
-            actions: [
-              IconButton.filledTonal(
-                tooltip: AppStrings.searchHint,
-                style: IconButton.styleFrom(backgroundColor: c.surfaceElevated),
-                onPressed: () => onShowAllSongs(''),
-                icon: const Icon(Icons.search_rounded),
-              ),
-              const SizedBox(width: 8),
-              IconButton.filledTonal(
-                tooltip: AppStrings.playlist,
-                style: IconButton.styleFrom(backgroundColor: c.surfaceElevated),
-                onPressed: onShowAllPlaylists,
-                icon: const Icon(Icons.library_music_outlined),
-              ),
-              const SizedBox(width: 8),
-              IconButton.filledTonal(
-                tooltip: AppStrings.settings,
-                style: IconButton.styleFrom(backgroundColor: c.surfaceElevated),
-                onPressed:
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ProfileScreen()),
+              slivers: [
+                SliverAppBar(
+                  pinned: true,
+                  backgroundColor: c.background,
+                  surfaceTintColor: c.primary,
+                  automaticallyImplyLeading: false,
+                  title: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
                     ),
-                icon: const Icon(Icons.settings_outlined),
-              ),
-              const SizedBox(width: 16),
-            ],
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 68, 24, 36),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final narrow = constraints.maxWidth < 330;
-                  final title = Text(
-                    AppStrings.yourSongsHeading,
-                    semanticsLabel: AppStrings.yourSongs,
-                    style: TextStyle(
-                      fontSize: narrow ? 62 : 72,
-                      height: .94,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -3.5,
-                      color: c.textPrimary,
+                    decoration: BoxDecoration(
+                      color: c.surfaceElevated,
+                      borderRadius: BorderRadius.circular(28),
                     ),
-                  );
-                  final actions = Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      HomeActionButton(
-                        label: AppStrings.favorites,
-                        icon: Icons.favorite_border_rounded,
-                        size: 52,
-                        color: c.surfaceElevated,
-                        onTap:
-                            () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (_) => const PlaylistDetailScreen(
-                                      playlistId:
-                                          MusicProvider.favoritesPlaylistId,
+                    child: const Text(
+                      AppStrings.appName,
+                      style: TextStyle(fontSize: 15),
+                    ),
+                  ),
+                  actions: [
+                    IconButton.filledTonal(
+                      tooltip: AppStrings.searchHint,
+                      style: IconButton.styleFrom(
+                        backgroundColor: c.surfaceElevated,
+                      ),
+                      onPressed: () => onShowAllSongs(''),
+                      icon: const Icon(Icons.search_rounded),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton.filledTonal(
+                      tooltip: AppStrings.playlist,
+                      style: IconButton.styleFrom(
+                        backgroundColor: c.surfaceElevated,
+                      ),
+                      onPressed: onShowAllPlaylists,
+                      icon: const Icon(Icons.library_music_outlined),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton.filledTonal(
+                      tooltip: AppStrings.settings,
+                      style: IconButton.styleFrom(
+                        backgroundColor: c.surfaceElevated,
+                      ),
+                      onPressed:
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ProfileScreen(),
+                            ),
+                          ),
+                      icon: const Icon(Icons.settings_outlined),
+                    ),
+                    const SizedBox(width: 16),
+                  ],
+                ),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: (viewport.maxHeight -
+                            MediaQuery.paddingOf(context).top -
+                            kToolbarHeight)
+                        .clamp(580.0, double.infinity),
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 68, 24, 36),
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              final narrow = constraints.maxWidth < 330;
+                              final title = Text(
+                                AppStrings.appName,
+                                style: TextStyle(
+                                  fontSize: narrow ? 48 : 60,
+                                  height: .94,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -3.5,
+                                  color: c.textPrimary,
+                                ),
+                              );
+                              final actions = Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  HomeActionButton(
+                                    label: AppStrings.favorites,
+                                    icon: Icons.favorite_border_rounded,
+                                    size: 52,
+                                    color: c.surfaceElevated,
+                                    onTap:
+                                        () => Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (
+                                                  _,
+                                                ) => const PlaylistDetailScreen(
+                                                  playlistId:
+                                                      MusicProvider
+                                                          .favoritesPlaylistId,
+                                                ),
+                                          ),
+                                        ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  HomeActionButton(
+                                    label: AppStrings.shufflePlay,
+                                    icon: Icons.shuffle_rounded,
+                                    size: narrow ? 74 : 88,
+                                    color: c.tertiary.withValues(alpha: .25),
+                                    onTap:
+                                        songs.isEmpty
+                                            ? null
+                                            : () => context
+                                                .read<PlayerProvider>()
+                                                .playSongsShuffled(songs),
+                                  ),
+                                ],
+                              );
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Expanded(child: title),
+                                      const SizedBox(width: 12),
+                                      actions,
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    'Your Songs',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      color: c.textSecondary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    AppStrings.songCount(songs.length),
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: c.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        ),
+                        Expanded(
+                          child: HomeSongCollage(
+                            songs: songs,
+                            onSongTap:
+                                (song) => context
+                                    .read<PlayerProvider>()
+                                    .playSongs(songs, specificSong: song),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (songs.isNotEmpty) ...[
+                  SliverToBoxAdapter(
+                    child: HomeSongSection(
+                      title: AppStrings.yourSongs.toUpperCase(),
+                      subtitle: AppStrings.songCount(songs.length),
+                      songs: songs,
+                      onViewAll: () => onShowAllSongs(''),
+                    ),
+                  ),
+                  const SliverToBoxAdapter(child: HomeListeningSections()),
+                ] else
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 260,
+                      child:
+                          status == LibraryStatus.scanning
+                              ? const Center(child: CircularProgressIndicator())
+                              : LibraryEmptyState(
+                                icon: Icons.music_note_rounded,
+                                message: AppStrings.emptyLibrary,
+                                onScanTap:
+                                    () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (_) => const OnboardingScreen(),
+                                      ),
                                     ),
                               ),
-                            ),
-                      ),
-                      const SizedBox(height: 12),
-                      HomeActionButton(
-                        label: AppStrings.shufflePlay,
-                        icon: Icons.shuffle_rounded,
-                        size: narrow ? 74 : 88,
-                        color: c.tertiary.withValues(alpha: .25),
-                        onTap:
-                            songs.isEmpty
-                                ? null
-                                : () => context
-                                    .read<PlayerProvider>()
-                                    .playSongsShuffled(songs),
-                      ),
-                    ],
-                  );
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Expanded(child: title),
-                          const SizedBox(width: 12),
-                          actions,
-                        ],
-                      ),
-                      const SizedBox(height: 18),
-                      Text(
-                        AppStrings.songCount(songs.length),
-                        style: TextStyle(fontSize: 15, color: c.textSecondary),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-          ),
-          if (songs.isNotEmpty) ...[
-            SliverToBoxAdapter(
-              child: HomeSongCollage(
-                songs: songs,
-                onSongTap:
-                    (song) => context.read<PlayerProvider>().playSongs(
-                      songs,
-                      specificSong: song,
                     ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: HomeSongSection(
-                title: AppStrings.yourSongs.toUpperCase(),
-                subtitle: AppStrings.songCount(songs.length),
-                songs: songs,
-                onViewAll: () => onShowAllSongs(''),
-              ),
-            ),
-            const SliverToBoxAdapter(child: HomeListeningSections()),
-          ] else
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: 260,
-                child:
-                    status == LibraryStatus.scanning
-                        ? const Center(child: CircularProgressIndicator())
-                        : LibraryEmptyState(
-                          icon: Icons.music_note_rounded,
-                          message: AppStrings.emptyLibrary,
-                          onScanTap:
-                              () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const OnboardingScreen(),
-                                ),
-                              ),
-                        ),
-              ),
-            ),
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: AppBottomNavigation.scrollBottomPadding(
-                context,
-                hasMiniPlayer: hasSong,
-              ),
+                  ),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: AppBottomNavigation.scrollBottomPadding(
+                      context,
+                      hasMiniPlayer: hasSong,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
     );
   }
 }

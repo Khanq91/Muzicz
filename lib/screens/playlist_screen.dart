@@ -20,7 +20,7 @@ class PlaylistsTab extends StatelessWidget {
 
   final VoidCallback onClearSearch;
 
-  @override 
+  @override
   Widget build(BuildContext context) {
     final music = context.watch<MusicProvider>();
     final hasMiniPlayer = context.select<PlayerProvider, bool>(
@@ -523,7 +523,10 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                         label: AppStrings.playAll,
                         icon: Icons.play_arrow_rounded,
                         onTap: () {
-                          player.playSongs(playlist.songs);
+                          player.playSongs(
+                            playlist.songs,
+                            sourceName: playlist.name,
+                          );
                         },
                         primary: true,
                       ),
@@ -534,7 +537,10 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                         label: AppStrings.shuffle,
                         icon: Icons.shuffle_rounded,
                         onTap: () {
-                          player.playSongsShuffled(playlist.songs);
+                          player.playSongsShuffled(
+                            playlist.songs,
+                            sourceName: playlist.name,
+                          );
                         },
                         primary: false,
                       ),
@@ -736,7 +742,11 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                         song: song,
                         isActive: activeId == song.id,
                         onTap: () {
-                          player.playSongs(playlist.songs, specificSong: song);
+                          player.playSongs(
+                            playlist.songs,
+                            specificSong: song,
+                            sourceName: playlist.name,
+                          );
                         },
                         // IconButton: 48dp target + tooltip/semantics label.
                         trailing:

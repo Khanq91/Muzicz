@@ -18,6 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:muziczz/core/app_strings.dart';
 
 import 'package:muziczz/screens/home_screen.dart';
+import 'package:muziczz/widgets/home_song_sections.dart';
 
 import 'package:muziczz/screens/playlist_screen.dart';
 
@@ -64,7 +65,25 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text(AppStrings.yourSongsHeading), findsOneWidget);
+    expect(find.text(AppStrings.appName), findsNWidgets(2));
+    expect(find.text('Your Songs'), findsOneWidget);
+    final section = find.byType(HomeSongSection);
+    expect(section.hitTestable(), findsNothing);
+    expect(
+      tester.getBottomLeft(find.byType(HomeSongCollage)).dy,
+      greaterThanOrEqualTo(844),
+    );
+    await tester.drag(
+      find.byKey(const PageStorageKey('home-scroll')),
+      const Offset(0, -600),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(section.first).dy, lessThan(844));
+    await tester.drag(
+      find.byKey(const PageStorageKey('home-scroll')),
+      const Offset(0, 900),
+    );
+    await tester.pumpAndSettle();
     expect(
       find.byTooltip(AppStrings.shufflePlay).hitTestable(),
       findsOneWidget,
