@@ -6,9 +6,11 @@ import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
 import '../providers/player_provider.dart';
+import '../models/song_item.dart';
 import '../providers/theme_provider.dart';
 import '../services/audio_handler.dart';
-import '../screens/now_playing_screen.dart';
+import 'library/player_route.dart';
+import 'track_swipe.dart';
 import 'package:muziczz/core/app_strings.dart';
 
 class MiniPlayer extends StatelessWidget {
@@ -18,108 +20,85 @@ class MiniPlayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final player = context.watch<PlayerProvider>();
-    final song = player.currentSong;
+    final player = context.read<PlayerProvider>();
+    final song = context.select<PlayerProvider, SongItem?>(
+      (p) => p.currentSong,
+    );
     if (song == null) return const SizedBox.shrink();
     final c = context.appColors;
     final useLiquidGlass =
         context.watch<ThemeProvider>().bottomNavStyle.usesLiquidGlass;
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          PageRouteBuilder(
-            pageBuilder: (_, animation, __) => const NowPlayingScreen(),
-            transitionDuration: const Duration(milliseconds: 400),
-            transitionsBuilder: (_, anim, __, child) {
-              return SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0, 1),
-                  end: Offset.zero,
-                ).animate(
-                  CurvedAnimation(parent: anim, curve: Curves.easeOutCubic),
-                ),
-                child: child,
-              );
-            },
-          ),
-        );
-      },
-      onHorizontalDragEnd: (details) {
-        if (details.primaryVelocity == null) return;
-        if (details.primaryVelocity! < -300) {
-          player.skipToNext();
-          HapticFeedback.selectionClick();
-        } else if (details.primaryVelocity! > 300) {
-          player.skipToPrevious();
-          HapticFeedback.selectionClick();
-        }
-      },
-      child: _MiniPlayerSurface(
-        useLiquidGlass: useLiquidGlass,
-        embeddedInDock: embeddedInDock,
-        child: Stack(
-          children: [
-            // ── Progress line at bottom ─────────────────────────────
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: _MiniProgressBar(player: player),
-            ),
-            // ── Content ─────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.only(
-                left: 14,
-                right: 4,
-                top: 0,
+    return PlayerLauncher(
+      child: TrackSwipe(
+        onNext: player.skipToNext,
+        onPrevious: player.skipToPrevious,
+        child: _MiniPlayerSurface(
+          useLiquidGlass: useLiquidGlass,
+          embeddedInDock: embeddedInDock,
+          child: Stack(
+            children: [
+              // ── Progress line at bottom ─────────────────────────────
+              Positioned(
                 bottom: 0,
+                left: 0,
+                right: 0,
+                child: _MiniProgressBar(player: player),
               ),
-              child: Row(
-                children: [
-                  _AlbumArt(
-                    albumId: song.albumId,
-                    size: embeddedInDock ? 36 : 44,
-                  ),
-                  SizedBox(width: embeddedInDock ? 8 : 12),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          song.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: c.textPrimary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          song.artist,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: c.textTertiary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w300,
-                          ),
-                        ),
-                      ],
+              // ── Content ─────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: 14,
+                  right: 4,
+                  top: 0,
+                  bottom: 0,
+                ),
+                child: Row(
+                  children: [
+                    _AlbumArt(
+                      albumId: song.albumId,
+                      size: embeddedInDock ? 36 : 44,
                     ),
-                  ),
-                  // UX 4: Controls with loading state
-                  if (embeddedInDock)
-                    _SmartPlayPauseButton(player: player)
-                  else
-                    _MiniControls(player: player),
-                  _CloseButton(player: player),
-                ],
+                    SizedBox(width: embeddedInDock ? 8 : 12),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            song.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: c.textPrimary,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            song.artist,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: c.textTertiary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w300,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // UX 4: Controls with loading state
+                    if (embeddedInDock)
+                      _SmartPlayPauseButton(player: player)
+                    else
+                      _MiniControls(player: player),
+                    _CloseButton(player: player),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -315,6 +294,7 @@ class _SmartPlayPauseButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
+    final isPlaying = context.select<PlayerProvider, bool>((p) => p.isPlaying);
     return StreamBuilder<ProcessingState>(
       stream: player.processingStateStream,
       builder: (context, snap) {
@@ -328,7 +308,7 @@ class _SmartPlayPauseButton extends StatelessWidget {
           label:
               isLoading
                   ? AppStrings.loading
-                  : (player.isPlaying ? AppStrings.pause : AppStrings.play),
+                  : (isPlaying ? AppStrings.pause : AppStrings.play),
           child: GestureDetector(
             onTap: () {
               if (!isLoading) {
@@ -367,10 +347,10 @@ class _SmartPlayPauseButton extends StatelessWidget {
                                 (child, anim) =>
                                     ScaleTransition(scale: anim, child: child),
                             child: Icon(
-                              player.isPlaying
+                              isPlaying
                                   ? Icons.pause_rounded
                                   : Icons.play_arrow_rounded,
-                              key: ValueKey(player.isPlaying),
+                              key: ValueKey(isPlaying),
                               color: Colors.white,
                               size: 20,
                             ),
@@ -469,7 +449,10 @@ class _MiniProgressBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.appColors;
     return StreamBuilder<PositionData>(
-      stream: player.positionDataStream,
+      stream:
+          TickerMode.valuesOf(context).enabled
+              ? player.positionDataStream
+              : null,
       builder: (_, snap) {
         if (!snap.hasData) return const SizedBox.shrink();
         final data = snap.data!;

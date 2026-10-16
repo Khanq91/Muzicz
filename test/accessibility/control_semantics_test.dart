@@ -160,15 +160,7 @@ void main() {
 
     await _pumpNowPlaying(tester, player);
 
-    final optionsButton =
-        find.bySemanticsLabel(AppStrings.playbackOptions).hitTestable();
-    expect(optionsButton, findsOneWidget);
-    await tester.tap(optionsButton);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 350));
-
-    expect(find.bySemanticsLabel(AppStrings.collapseOptions), findsOneWidget);
-    final queueButton = find.bySemanticsLabel(AppStrings.queue).hitTestable();
+    final queueButton = find.byTooltip(AppStrings.queue).hitTestable();
     expect(queueButton, findsOneWidget);
     await tester.tap(queueButton);
     await tester.pump();
@@ -182,9 +174,62 @@ void main() {
     expect(find.byTooltip('Thu gọn hàng chờ').hitTestable(), findsOneWidget);
     handle.dispose();
   });
+
+  testWidgets('player opening drag can cancel, commit and close continuously', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(tester.view.reset);
+    final gateway = _FakePlayerAudioGateway();
+    final player = PlayerProvider(gateway);
+    addTearDown(() async {
+      player.dispose();
+      await gateway.dispose();
+    });
+    await player.playSongs([_songA, _songB]);
+    await _pumpNowPlaying(tester, player, mini: true);
+    final start = tester.getCenter(find.byType(MiniPlayer));
+    final cancel = await tester.startGesture(start);
+    await cancel.moveBy(const Offset(0, -20));
+    await cancel.moveBy(const Offset(0, -70));
+    await tester.pump();
+    expect(find.byType(NowPlayingScreen), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 200));
+    await cancel.up();
+    await tester.pumpAndSettle();
+    expect(find.byType(NowPlayingScreen), findsNothing);
+    final open = await tester.startGesture(start);
+    await open.moveBy(const Offset(0, -20));
+    await open.moveBy(const Offset(0, -260));
+    await tester.pump();
+    final intermediateTop = tester.getTopLeft(find.byType(NowPlayingScreen)).dy;
+    expect(intermediateTop, greaterThan(0));
+    expect(intermediateTop, lessThan(start.dy));
+    await open.up();
+    await tester.pumpAndSettle();
+    expect(find.byType(NowPlayingScreen), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.byType(NowPlayingScreen)).dy,
+      closeTo(0, 0.01),
+    );
+    final close = await tester.startGesture(const Offset(195, 160));
+    await close.moveBy(const Offset(0, 20));
+    await close.moveBy(const Offset(0, 350));
+    await tester.pump();
+    expect(tester.getTopLeft(find.byType(NowPlayingScreen)).dy, greaterThan(0));
+    await close.up();
+    await tester.pumpAndSettle();
+    expect(find.byType(NowPlayingScreen), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 }
 
-Future<void> _pumpNowPlaying(WidgetTester tester, PlayerProvider player) async {
+Future<void> _pumpNowPlaying(
+  WidgetTester tester,
+  PlayerProvider player, {
+  bool mini = false,
+}) async {
   SharedPreferences.setMockInitialValues({});
   // Diagnostic có sẵn của queue sheet (ListTile trong DecoratedBox) nằm ngoài
   // phạm vi UI-04/UI-05; chỉ lọc đúng thông báo đó, lỗi khác vẫn fail test.
@@ -207,10 +252,21 @@ Future<void> _pumpNowPlaying(WidgetTester tester, PlayerProvider player) async {
           create: (_) => _FakeLyricsProvider(),
         ),
         ChangeNotifierProvider(create: (_) => VisualModeProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: MaterialApp(
         theme: AppTheme.buildTheme(AppColorPresets.dark),
-        home: const NowPlayingScreen(),
+        home:
+            mini
+                ? Scaffold(
+                  bottomNavigationBar: AppBottomNavigation(
+                    currentIndex: 1,
+                    onTap: (_) {},
+                    style: BottomNavStyle.normal,
+                    miniPlayer: const MiniPlayer(embeddedInDock: true),
+                  ),
+                )
+                : const NowPlayingScreen(),
       ),
     ),
   );

@@ -1256,12 +1256,16 @@ class _PlayButton extends StatelessWidget {
           children: [
             Icon(icon, color: primary ? c.onPlayer : c.textSecondary, size: 20),
             const SizedBox(width: 6),
-            Text(
-              label,
-              style: GoogleFonts.outfit(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: primary ? c.onPlayer : c.textSecondary,
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.outfit(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: primary ? c.onPlayer : c.textSecondary,
+                ),
               ),
             ),
           ],

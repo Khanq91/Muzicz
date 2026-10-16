@@ -1,309 +1,258 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart' hide RepeatMode;
-import 'package:flutter/services.dart';
-import 'package:muziczz/theme/app_colors_data.dart';
+import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
-import '../features/music_visual/widgets/reactive_waveform_view.dart';
+import '../core/app_strings.dart';
 import '../models/song_item.dart';
 import '../providers/lyrics_provider.dart';
 import '../providers/player_provider.dart';
-import '../widgets/now_playing/album_art_section.dart';
+import '../theme/app_colors_data.dart';
 import '../widgets/now_playing/controls.dart';
-import '../widgets/now_playing/expandable_pill_bar.dart';
 import '../widgets/now_playing/lyrics_view.dart';
-import '../widgets/now_playing/sheets/queue_sheet.dart';
 import '../widgets/now_playing/song_info.dart';
-import '../widgets/now_playing/swipe_hint.dart';
 import '../widgets/now_playing/top_bar.dart';
-import 'package:muziczz/core/app_strings.dart';
+import '../widgets/now_playing/sheets/queue_sheet.dart';
+import '../widgets/now_playing/sheets/sleep_timer_sheet.dart';
+import '../widgets/now_playing/sheets/speed_sheet.dart';
+import '../widgets/track_swipe.dart';
 
 class NowPlayingScreen extends StatefulWidget {
   const NowPlayingScreen({super.key});
-
   @override
   State<NowPlayingScreen> createState() => _NowPlayingScreenState();
 }
 
-class _NowPlayingScreenState extends State<NowPlayingScreen>
-    with TickerProviderStateMixin {
-  late final AnimationController _artRotateCtrl;
-  late final AnimationController _appearCtrl;
-
-  // ── Flip animation ─────────────────────────────────────────────────────────
-  late final AnimationController _flipCtrl;
-  late final Animation<double> _flipAnim;
-  bool _showingLyrics = false;
-
-  bool _queueVisible = false;
-  bool _queueFullyOpen = false;
-  late final PlayerProvider _playerProvider;
-
-  // ── Lyrics auto-scroll ─────────────────────────────────────────────────────
-  final _lyricsScrollCtrl = ScrollController();
-  static const _lineHeight = 52.0; // approx height per line for scroll calc
+class _NowPlayingScreenState extends State<NowPlayingScreen> {
+  final _lyricsScroll = ScrollController();
+  late final PlayerProvider _player;
+  int? _lyricsSongId;
 
   @override
   void initState() {
     super.initState();
-
-    _playerProvider = context.read<PlayerProvider>();
-
-    _artRotateCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 20),
-    );
-
-    _appearCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    )..forward();
-
-    _flipCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    );
-    _flipAnim = Tween<double>(
-      begin: 0,
-      end: 1,
-    ).animate(CurvedAnimation(parent: _flipCtrl, curve: Curves.easeInOutCubic));
-
-    if (_playerProvider.isPlaying) _artRotateCtrl.repeat();
-    _playerProvider.addListener(_onPlayerChange);
-
-    // Preload lyrics cho bài hiện tại
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final song = _playerProvider.currentSong;
-      if (song != null) {
-        context.read<LyricsProvider>().loadLyrics(song);
-      }
-    });
+    _player = context.read<PlayerProvider>()..addListener(_loadLyrics);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadLyrics());
   }
 
-  void _onPlayerChange() {
-    if (_playerProvider.isPlaying) {
-      if (!_artRotateCtrl.isAnimating) _artRotateCtrl.repeat();
-    } else {
-      _artRotateCtrl.stop();
-    }
-
-    // Khi bài đổi → load lyrics mới + reset flip về album art
-    final song = _playerProvider.currentSong;
-    if (song != null) {
-      final lyricsProvider = context.read<LyricsProvider>();
-      if (lyricsProvider.state.songId != song.id) {
-        lyricsProvider.loadLyrics(song);
-        if (_showingLyrics) _flipBack();
-      }
+  void _loadLyrics() {
+    if (!mounted) return;
+    final song = _player.currentSong;
+    if (song != null && song.id != _lyricsSongId) {
+      _lyricsSongId = song.id;
+      context.read<LyricsProvider>().loadLyrics(song);
     }
   }
 
   @override
   void dispose() {
-    _artRotateCtrl.dispose();
-    _appearCtrl.dispose();
-    _flipCtrl.dispose();
-    _lyricsScrollCtrl.dispose();
-    _playerProvider.removeListener(_onPlayerChange);
+    _player.removeListener(_loadLyrics);
+    _lyricsScroll.dispose();
     super.dispose();
   }
 
-  // ── Flip logic ─────────────────────────────────────────────────────────────
-
-  void _flipToLyrics() {
-    setState(() => _showingLyrics = true);
-    _flipCtrl.forward();
-    HapticFeedback.lightImpact();
-  }
-
-  void _flipBack() {
-    _flipCtrl.reverse().then((_) {
-      if (mounted) setState(() => _showingLyrics = false);
-    });
-  }
-
-  void _toggleFlip() {
-    if (_showingLyrics) {
-      _flipBack();
-    } else {
-      _flipToLyrics();
-    }
-  }
-
-  // ── Queue ──────────────────────────────────────────────────────────────────
-
-  void _openQueue() {
-    setState(() {
-      _queueVisible = true;
-      _queueFullyOpen = false;
-    });
-    HapticFeedback.lightImpact();
-  }
-
-  void _closeQueue() {
-    setState(() {
-      _queueVisible = false;
-      _queueFullyOpen = false;
-    });
-  }
-
-  // ── Auto-scroll lyrics ─────────────────────────────────────────────────────
-
-  void _scrollToCurrentLine(int index) {
-    if (!_lyricsScrollCtrl.hasClients) return;
-    if (index < 0) return;
-
-    final viewportHeight = _lyricsScrollCtrl.position.viewportDimension;
-    final targetOffset =
-        (index * _lineHeight) - (viewportHeight / 2) + (_lineHeight / 2);
-    final clampedOffset = targetOffset.clamp(
-      0.0,
-      _lyricsScrollCtrl.position.maxScrollExtent,
-    );
-
-    _lyricsScrollCtrl.animateTo(
-      clampedOffset,
-      duration: const Duration(milliseconds: 350),
+  void _scrollToLine(int index) {
+    if (!_lyricsScroll.hasClients || index < 0) return;
+    final position = _lyricsScroll.position;
+    _lyricsScroll.animateTo(
+      (index * 52.0 - position.viewportDimension / 2 + 26).clamp(
+        0.0,
+        position.maxScrollExtent,
+      ),
+      duration: const Duration(milliseconds: 300),
       curve: Curves.easeOutCubic,
     );
   }
 
+  void _sheet(Widget Function(BuildContext) builder, {double? height}) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: context.appColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder:
+          (sheetContext) =>
+              SizedBox(height: height, child: builder(sheetContext)),
+    );
+  }
+
+  void _queue() => _sheet(
+    (sheetContext) =>
+        QueueSheet(onClose: () => Navigator.pop(sheetContext), useBlur: false),
+    height: MediaQuery.sizeOf(context).height * 0.72,
+  );
+
+  void _lyrics() => _sheet(
+    (sheetContext) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              AppStrings.lyrics,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+            LyricsView(
+              player: _player,
+              scrollCtrl: _lyricsScroll,
+              onScrollToLine: _scrollToLine,
+              onTap: () => Navigator.pop(sheetContext),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
-    // Only the current song is needed at this level. Children that render
-    // player/lyrics state subscribe to their own slice, so the sleep-timer
-    // tick (1/s) and each lyric line change no longer rebuild the whole
-    // screen (blurred background, flip card, queue sheet included).
     final song = context.select<PlayerProvider, SongItem?>(
       (p) => p.currentSong,
     );
-    final player = _playerProvider;
     final c = context.appColors;
-
     if (song == null) {
       return Scaffold(
         backgroundColor: c.background,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          leading: IconButton(
-            tooltip: AppStrings.close,
-            icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 32),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
+        appBar: AppBar(leading: const CloseButton()),
       );
     }
-
-    return GestureDetector(
-      onVerticalDragEnd: (d) {
-        if ((d.primaryVelocity ?? 0) > 400) Navigator.pop(context);
-        if ((d.primaryVelocity ?? 0) < -400 && !_queueVisible) _openQueue();
-      },
-      onHorizontalDragEnd: (d) {
-        // Không xử lý horizontal swipe sẽ conflict với lyrics scroll
-        if (_showingLyrics) return;
-        if (d.primaryVelocity == null) return;
-        if (d.primaryVelocity! < -300) {
-          player.skipToNext();
-          HapticFeedback.selectionClick();
-        }
-        if (d.primaryVelocity! > 300) {
-          player.skipToPrevious();
-          HapticFeedback.selectionClick();
-        }
-      },
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Stack(
+    return Scaffold(
+      backgroundColor: c.background,
+      body: SafeArea(
+        child: Column(
           children: [
-            Positioned.fill(child: BlurredBackground(albumId: song.albumId)),
-            Positioned.fill(
-              child: Container(
-                color:
-                    c.isDark
-                        ? c.scrimDark
-                        : c.background.withValues(alpha: 0.92),
-              ),
-            ),
-            SafeArea(
-              child: FadeTransition(
-                opacity: CurvedAnimation(
-                  parent: _appearCtrl,
-                  curve: Curves.easeOut,
-                ),
-                child: Column(
-                  children: [
-                    TopBar(song: song),
-                    const SizedBox(height: 8),
-                    Expanded(
-                      child: Column(
-                        children: [
-                          // ── Flip card: Album art ↔ Lyrics ───────────────
-                          FlipCard(
-                            flipAnim: _flipAnim,
-                            front: AlbumArtSection(
-                              song: song,
-                              player: player,
-                              rotateCtrl: _artRotateCtrl,
-                              onTap: _toggleFlip,
-                            ),
-                            back: LyricsView(
-                              player: player,
-                              scrollCtrl: _lyricsScrollCtrl,
-                              onScrollToLine: _scrollToCurrentLine,
-                              onTap: _toggleFlip,
+            TopBar(song: song),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final extraText =
+                      (MediaQuery.textScalerOf(context).scale(48) - 48).clamp(
+                        0.0,
+                        180.0,
+                      );
+                  final height = math.max(
+                    constraints.maxHeight,
+                    560.0 + extraText,
+                  );
+                  final artSize = math.min(
+                    constraints.maxWidth * 0.84,
+                    height - 324 - extraText,
+                  );
+                  final content = SizedBox(
+                    height: height,
+                    child: Column(
+                      children: [
+                        const Spacer(),
+                        SizedBox(
+                          height: artSize,
+                          child: TrackSwipe(
+                            onNext: _player.skipToNext,
+                            onPrevious: _player.skipToPrevious,
+                            child: Center(
+                              child: _PlayerArtwork(song: song, size: artSize),
                             ),
                           ),
-                          const SizedBox(height: 28),
-                          SongInfo(song: song),
-                          const SizedBox(height: 20),
-                          ProgressSection(player: player),
-                          const ReactiveWaveformView(),
-                          const SizedBox(height: 20),
-                          ControlsSection(player: player),
-                          const SizedBox(height: 16),
-                          ExpandablePillBar(
-                            player: player,
-                            onQueueTap: () {
-                              if (_queueVisible) {
-                                _closeQueue();
-                              } else {
-                                _openQueue();
-                              }
-                            },
-                            onLyricsTap: _toggleFlip,
-                            showingLyrics: _showingLyrics,
-                            queueVisible: _queueVisible,
+                        ),
+                        const Spacer(),
+                        SongInfo(song: song),
+                        const SizedBox(height: 16),
+                        ProgressSection(player: _player),
+                        const SizedBox(height: 12),
+                        ControlsSection(player: _player),
+                        const SizedBox(height: 20),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              IconButton(
+                                onPressed: _lyrics,
+                                tooltip: AppStrings.lyrics,
+                                icon: const Icon(Icons.lyrics_rounded),
+                              ),
+                              IconButton(
+                                tooltip: AppStrings.playbackSpeed,
+                                icon: const Icon(Icons.speed_rounded),
+                                onPressed:
+                                    () => _sheet((_) => const SpeedSheet()),
+                              ),
+                              IconButton(
+                                tooltip: AppStrings.sleepTimer,
+                                icon: const Icon(Icons.bedtime_outlined),
+                                onPressed:
+                                    () =>
+                                        _sheet((_) => const SleepTimerSheet()),
+                              ),
+                              IconButton(
+                                tooltip: AppStrings.queue,
+                                icon: const Icon(Icons.queue_music_rounded),
+                                onPressed: _queue,
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 20),
-                          if (!_queueVisible) SwipeHint(onTap: _openQueue),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-            ),
-
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 350),
-              curve: Curves.easeOutCubic,
-              onEnd: () {
-                if (_queueVisible) {
-                  setState(() => _queueFullyOpen = true);
-                }
-              },
-              bottom:
-                  _queueVisible ? 0 : -MediaQuery.of(context).size.height * 0.6,
-              left: 0,
-              right: 0,
-              height: MediaQuery.of(context).size.height * 0.6,
-              child: RepaintBoundary(
-                child: QueueSheet(
-                  onClose: _closeQueue,
-                  useBlur: _queueFullyOpen,
-                ),
+                  );
+                  if (constraints.maxHeight < height) {
+                    return SingleChildScrollView(child: content);
+                  }
+                  return content;
+                },
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PlayerArtwork extends StatelessWidget {
+  const _PlayerArtwork({required this.song, required this.size});
+  final SongItem song;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final playing = context.select<PlayerProvider, bool>((p) => p.isPlaying);
+    final c = context.appColors;
+    return AnimatedScale(
+      scale: playing ? 1 : 0.95,
+      duration:
+          MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+      child: RepaintBoundary(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(32),
+          child: SizedBox.square(
+            dimension: size,
+            child: QueryArtworkWidget(
+              key: ValueKey(song.albumId),
+              id: song.albumId,
+              type: ArtworkType.ALBUM,
+              artworkWidth: size,
+              artworkHeight: size,
+              artworkFit: BoxFit.cover,
+              artworkBorder: BorderRadius.zero,
+              keepOldArtwork: true,
+              nullArtworkWidget: DecoratedBox(
+                decoration: BoxDecoration(gradient: c.primaryGradient),
+                child: Icon(
+                  Icons.music_note_rounded,
+                  size: 96,
+                  color: c.onPlayer,
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );

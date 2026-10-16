@@ -35,7 +35,7 @@ class _LyricsViewState extends State<LyricsView> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size.width * 0.70;
+    final size = MediaQuery.of(context).size.width * 0.85;
     final c = context.appColors;
     // Subscribed here (not at NowPlayingScreen) so a lyric line change only
     // rebuilds the lyrics card.
@@ -51,11 +51,11 @@ class _LyricsViewState extends State<LyricsView> {
           width: size,
           height: size,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(size / 2),
+            borderRadius: BorderRadius.circular(24),
             child: Container(
               decoration: BoxDecoration(
                 color: c.scrimStrong,
-                shape: BoxShape.circle,
+                shape: BoxShape.rectangle,
               ),
               child: _buildContent(context, lp, c, size),
             ),
@@ -216,7 +216,7 @@ class LyricsListView extends StatelessWidget {
                             height: 4,
                             margin: const EdgeInsets.symmetric(horizontal: 2),
                             decoration: BoxDecoration(
-                              shape: BoxShape.circle,
+                              shape: BoxShape.rectangle,
                               color: isActive ? c.primary : c.onPlayerMinimal,
                             ),
                           ),

@@ -70,6 +70,7 @@ void main() {
     );
     await tester.pump();
 
+    FlutterError.onError = previousErrorHandler;
     expect(
       flutterErrors.where(
         (error) => error.toString().contains('overflowed by'),

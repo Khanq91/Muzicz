@@ -42,7 +42,7 @@ class TopBar extends StatelessWidget {
                 behavior: HitTestBehavior.opaque,
                 onTap: () => showAlbumSongsSheet(context, music, song),
                 child: SizedBox(
-                  height: 48,
+                  height: MediaQuery.textScalerOf(context).scale(24) + 24,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -58,18 +58,20 @@ class TopBar extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            song.album.isNotEmpty
-                                ? song.album
-                                : AppStrings.fromLibrary,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.outfit(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: c.playerHigh,
-                              decoration: TextDecoration.underline,
-                              decorationColor: c.playerSubtle,
+                          Flexible(
+                            child: Text(
+                              song.album.isNotEmpty
+                                  ? song.album
+                                  : AppStrings.fromLibrary,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.outfit(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: c.playerHigh,
+                                decoration: TextDecoration.underline,
+                                decorationColor: c.playerSubtle,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 3),

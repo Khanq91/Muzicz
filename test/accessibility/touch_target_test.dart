@@ -105,18 +105,15 @@ void main() {
 
     await _pumpNowPlaying(tester, player);
 
-    await tester.tap(find.byIcon(Icons.more_horiz_rounded));
-    await tester.pump(const Duration(milliseconds: 350));
     await tester.tap(
       find.byIcon(Icons.queue_music_rounded),
       warnIfMissed: false,
     );
-    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pumpAndSettle();
 
     _expectMinTapSize(tester, find.bySemanticsLabel('Xóa khỏi hàng chờ'));
     handle.dispose();
   });
-
 }
 
 void _expectMinTapSize(WidgetTester tester, Finder finder) {

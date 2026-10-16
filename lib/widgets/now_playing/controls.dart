@@ -131,11 +131,11 @@ class _PlayButtonState extends State<PlayButton>
         child: ScaleTransition(
           scale: _scale,
           child: Container(
-            width: 72,
-            height: 72,
+            width: 80,
+            height: 68,
             decoration: BoxDecoration(
               color: c.isDark ? c.onPlayer : c.primary,
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(isPlaying ? 24 : 34),
               boxShadow: [
                 BoxShadow(
                   color: (c.isDark ? c.onPlayer : c.primary).withValues(
@@ -252,7 +252,10 @@ class _ProgressSectionState extends State<ProgressSection> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<PositionData>(
-      stream: widget.player.positionDataStream,
+      stream:
+          TickerMode.valuesOf(context).enabled
+              ? widget.player.positionDataStream
+              : null,
       builder: (_, snap) {
         final data =
             snap.data ??

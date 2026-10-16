@@ -19,6 +19,7 @@ import '../widgets/library/selection_header.dart';
 import '../widgets/library/sort_type.dart';
 import '../widgets/mini_player.dart';
 import '../widgets/music_list_tile.dart';
+import '../widgets/home_song_sections.dart';
 import 'library_screen.dart';
 import 'onboarding_screen.dart';
 import 'playlist_screen.dart';
@@ -65,9 +66,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: Consumer<PlayerProvider>(
+      bottomNavigationBar: Selector<PlayerProvider, bool>(
+        selector: (_, player) => player.currentSong != null,
         builder:
-            (_, player, __) => AppBottomNavigation(
+            (_, hasSong, __) => AppBottomNavigation(
               currentIndex: _currentIndex,
               onTap: (index) {
                 if (index != 1) _homeTabKey.currentState?.clearSelection();
@@ -75,9 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
               style: bottomNavStyle,
               miniPlayer:
-                  player.currentSong != null
-                      ? const MiniPlayer(embeddedInDock: true)
-                      : null,
+                  hasSong ? const MiniPlayer(embeddedInDock: true) : null,
             ),
       ),
     );
@@ -362,6 +362,13 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
                             )
                             : _buildHeader(),
                   ),
+                  if (!_isSelecting && !_searchActive && allSongs.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: HomeSongCollage(
+                        songs: allSongs,
+                        onSongTap: (song) => _playSong(allSongs, song),
+                      ),
+                    ),
                   if (!_isSelecting)
                     SliverPersistentHeader(
                       pinned: true,
@@ -385,6 +392,8 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
                         onViewAll: widget.onShowAllPlaylists,
                       ),
                     ),
+                  if (!_isSelecting && !_searchActive)
+                    const SliverToBoxAdapter(child: HomeListeningSections()),
                   if (_searchActive && displayedSongs.isEmpty)
                     SliverFillRemaining(
                       hasScrollBody: false,
@@ -492,9 +501,6 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
   }
 
   Widget _buildHeader() {
-    final favoriteSongs = context.select<MusicProvider, List<SongItem>>(
-      (music) => music.favorites,
-    );
     final allSongs = context.select<MusicProvider, List<SongItem>>(
       (music) => music.allSongs,
     );
@@ -520,9 +526,9 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
                     ),
                   ),
                   Text(
-                    AppStrings.appName,
+                    AppStrings.yourSongs,
                     style: GoogleFonts.outfit(
-                      fontSize: 23,
+                      fontSize: 38,
                       fontWeight: FontWeight.w700,
                       color: c.textPrimary,
                       letterSpacing: -0.5,
@@ -536,17 +542,20 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
               label: AppStrings.favorites,
               icon: Icons.favorite_rounded,
               gradient: c.favoritesGradient,
-              enabled: favoriteSongs.isNotEmpty,
+              enabled: true,
               onTap:
-                  favoriteSongs.isEmpty
-                      ? null
-                      : () => context.read<PlayerProvider>().playSongs(
-                        favoriteSongs,
-                      ),
+                  () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder:
+                          (_) => const PlaylistDetailScreen(
+                            playlistId: MusicProvider.favoritesPlaylistId,
+                          ),
+                    ),
+                  ),
             ),
             const SizedBox(width: 8),
             _HomeQuickActionButton(
-              label: AppStrings.mix,
+              label: AppStrings.shufflePlay,
               icon: Icons.shuffle_rounded,
               gradient: c.randomMixGradient,
               enabled: allSongs.isNotEmpty,
@@ -760,15 +769,15 @@ class _HomeQuickActionButton extends StatelessWidget {
             onTap: onTap,
             borderRadius: BorderRadius.circular(16),
             child: SizedBox(
-              width: 58,
+              width: 52,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Ink(
-                    width: 44,
-                    height: 44,
+                    width: 48,
+                    height: 48,
                     decoration: BoxDecoration(
-                      shape: BoxShape.circle,
+                      borderRadius: BorderRadius.circular(18),
                       gradient: gradient,
                       boxShadow: [
                         BoxShadow(

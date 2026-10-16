@@ -1,4 +1,5 @@
 import 'dart:ui' show ImageFilter;
+import 'dock_motion.dart';
 
 import 'package:flutter/material.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
@@ -195,10 +196,13 @@ class _AppBottomNavigationState extends State<AppBottomNavigation>
                   return SizedBox(
                     width: dockWidth,
                     height: dockHeight,
-                    child: _DockSurface(
-                      isFancy: isFancy,
-                      height: dockHeight,
-                      child: dock,
+                    child: DockMotion(
+                      expanded: widget.miniPlayer != null,
+                      child: _DockSurface(
+                        isFancy: isFancy,
+                        height: dockHeight,
+                        child: dock,
+                      ),
                     ),
                   );
                 },

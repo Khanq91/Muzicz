@@ -9,6 +9,8 @@
 /// - Nhóm theo màn hình/widget; chuỗi dùng chung nằm ở phần "Chung".
 /// ════════════════════════════════════════════════════════════════════════════
 abstract final class AppStrings {
+  static const trackChangeFailed = 'Kh?ng th? chuy?n b?i. H?y th? l?i.';
+  static const yourSongs = 'Your Songs';
   // ─────────────────────────────────────────────────────────────────────────
   // Thương hiệu
   // ─────────────────────────────────────────────────────────────────────────
