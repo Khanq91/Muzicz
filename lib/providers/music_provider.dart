@@ -6,6 +6,7 @@ import '../models/playlist_item.dart';
 import '../services/music_scanner.dart';
 import '../services/storage_service.dart';
 import '../core/app_strings.dart';
+import '../utils/vietnamese_normalize.dart';
 
 enum LibraryStatus { idle, scanning, done, error, permissionDenied }
 
@@ -78,7 +79,7 @@ class MusicProvider extends ChangeNotifier {
   String get librarySearchQuery => _librarySearchQuery;
 
   void setHomeSearchQuery(String q) {
-    final query = q.toLowerCase().trim();
+    final query = vnNormalize(q.trim());
     _homeSearchTimer?.cancel();
     _homeSearchTimer = null;
     if (query == _homeSearchQuery) return;
@@ -93,7 +94,7 @@ class MusicProvider extends ChangeNotifier {
   }
 
   void setLibrarySearchQuery(String q) {
-    final query = q.toLowerCase().trim();
+    final query = vnNormalize(q.trim());
     _librarySearchTimer?.cancel();
     _librarySearchTimer = null;
     if (query == _librarySearchQuery) return;
@@ -479,9 +480,9 @@ class MusicProvider extends ChangeNotifier {
     _libraryRevision += 1;
     _normalizedSearchText = {
       for (final song in _allSongs)
-        song.id:
-            '${song.title}\u0000${song.artist}\u0000${song.album}'
-                .toLowerCase(),
+        song.id: vnNormalize(
+          '${song.title}\u0000${song.artist}\u0000${song.album}',
+        ),
     };
     _homeFilterCache = null;
     _libraryFilterCache = null;

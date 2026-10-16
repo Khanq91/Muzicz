@@ -7,6 +7,63 @@ import 'package:muziczz/widgets/app_bottom_navigation.dart';
 import 'package:muziczz/core/app_strings.dart';
 
 void main() {
+  for (final style in BottomNavStyle.values) {
+    testWidgets('dock reveals a full height player without overflow: $style', (
+      tester,
+    ) async {
+      var showPlayer = false;
+      late StateSetter rebuild;
+      const playerKey = ValueKey('test-mini-player');
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.buildTheme(AppColorPresets.dark),
+          home: StatefulBuilder(
+            builder: (context, setState) {
+              rebuild = setState;
+              return Scaffold(
+                bottomNavigationBar: AppBottomNavigation(
+                  currentIndex: 1,
+                  onTap: _ignoreTap,
+                  style: style,
+                  miniPlayer:
+                      showPlayer
+                          ? const SizedBox(
+                            key: playerKey,
+                            height: 56,
+                            child: Column(children: [SizedBox(height: 56)]),
+                          )
+                          : null,
+                ),
+              );
+            },
+          ),
+        ),
+      );
+      final nav = find.byKey(const ValueKey('navigation-row'));
+      final initialBottom = tester.getBottomLeft(nav).dy;
+      rebuild(() => showPlayer = true);
+      await tester.pump();
+      for (var frame = 0; frame < 22; frame++) {
+        await tester.pump(const Duration(milliseconds: 16));
+        expect(tester.takeException(), isNull);
+        expect(tester.getSize(find.byKey(playerKey)).height, 56);
+        expect(tester.getBottomLeft(nav).dy, closeTo(initialBottom, 0.01));
+      }
+      rebuild(() => showPlayer = false);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 80));
+      expect(tester.takeException(), isNull);
+      // Reopening during collapse must reverse cleanly.
+      rebuild(() => showPlayer = true);
+      await tester.pumpAndSettle();
+      expect(tester.getSize(find.byKey(playerKey)).height, 56);
+      rebuild(() => showPlayer = false);
+      await tester.pumpAndSettle();
+      expect(find.byKey(playerKey), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('normal style shows an icon-only floating navigation', (
     tester,
   ) async {

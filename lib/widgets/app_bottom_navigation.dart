@@ -7,7 +7,7 @@ import '../providers/theme_provider.dart';
 import '../theme/app_colors_data.dart';
 import 'package:muziczz/core/app_strings.dart';
 
-class AppBottomNavigation extends StatelessWidget {
+class AppBottomNavigation extends StatefulWidget {
   const AppBottomNavigation({
     super.key,
     required this.currentIndex,
@@ -26,6 +26,9 @@ class AppBottomNavigation extends StatelessWidget {
   final ValueChanged<int> onTap;
   final BottomNavStyle style;
   final Widget? miniPlayer;
+
+  @override
+  State<AppBottomNavigation> createState() => _AppBottomNavigationState();
 
   static double bottomOverlayExtent(
     BuildContext context, {
@@ -47,86 +50,163 @@ class AppBottomNavigation extends StatelessWidget {
     BuildContext context, {
     bool hasMiniPlayer = false,
   }) => scrollBottomPadding(context, hasMiniPlayer: hasMiniPlayer) + 12;
+}
+
+class _AppBottomNavigationState extends State<AppBottomNavigation>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _expandController;
+  Widget? _miniPlayerDuringCollapse;
+
+  @override
+  void initState() {
+    super.initState();
+    _miniPlayerDuringCollapse = widget.miniPlayer;
+    _expandController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 320),
+      value: widget.miniPlayer == null ? 0 : 1,
+    )..addStatusListener(_onExpansionStatusChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant AppBottomNavigation oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.miniPlayer != null) {
+      _miniPlayerDuringCollapse = widget.miniPlayer;
+      if (oldWidget.miniPlayer == null) _expandController.forward();
+    } else if (oldWidget.miniPlayer != null) {
+      _expandController.reverse();
+    }
+  }
+
+  void _onExpansionStatusChanged(AnimationStatus status) {
+    if (status == AnimationStatus.dismissed && widget.miniPlayer == null) {
+      setState(() => _miniPlayerDuringCollapse = null);
+    }
+  }
+
+  @override
+  void dispose() {
+    _expandController
+      ..removeStatusListener(_onExpansionStatusChanged)
+      ..dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final isFancy = style == BottomNavStyle.fancy;
-    final hasMiniPlayer = miniPlayer != null;
-    final dockHeight =
-        _barHeight + (hasMiniPlayer ? _miniPlayerHeight + _dividerHeight : 0);
-    final dock = Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (miniPlayer != null) ...[
-          SizedBox(
-            width: double.infinity,
-            height: _miniPlayerHeight,
-            child: miniPlayer,
+    return AnimatedBuilder(
+      animation: _expandController,
+      builder: (context, _) {
+        final progress = Curves.easeOutCubic.transform(_expandController.value);
+        final expandedExtent =
+            (AppBottomNavigation._miniPlayerHeight +
+                AppBottomNavigation._dividerHeight) *
+            progress;
+        final miniPlayerHeight =
+            expandedExtent
+                .clamp(0.0, AppBottomNavigation._miniPlayerHeight)
+                .toDouble();
+        final dividerHeight =
+            (expandedExtent - AppBottomNavigation._miniPlayerHeight)
+                .clamp(0.0, AppBottomNavigation._dividerHeight)
+                .toDouble();
+        final dockHeight = AppBottomNavigation._barHeight + expandedExtent;
+        final isFancy = widget.style == BottomNavStyle.fancy;
+        final miniPlayer = widget.miniPlayer ?? _miniPlayerDuringCollapse;
+        final collapsedExtent = AppBottomNavigation.bottomOverlayExtent(
+          context,
+        );
+
+        return SizedBox(
+          key: ValueKey(
+            isFancy
+                ? 'premium-glass-bottom-navigation'
+                : 'normal-bottom-navigation',
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: Container(
-              height: _dividerHeight,
-              color: context.appColors.divider,
+          height: collapsedExtent + expandedExtent,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              AppBottomNavigation._topMargin,
+              16,
+              AppBottomNavigation._bottomMargin +
+                  MediaQuery.viewPaddingOf(context).bottom,
             ),
-          ),
-        ],
-        SizedBox(
-          height: _barHeight,
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 232),
-              child: SizedBox(
-                width: double.infinity,
-                height: _barHeight,
-                child: _FloatingNavigationPill(
-                  currentIndex: currentIndex,
-                  onTap: onTap,
-                  isFancy: isFancy,
-                ),
+            child: Center(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final collapsedWidth =
+                      constraints.maxWidth.clamp(0.0, 232.0).toDouble();
+                  final dockWidth =
+                      collapsedWidth +
+                      (constraints.maxWidth - collapsedWidth) * progress;
+                  final dock = Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (miniPlayer != null && miniPlayerHeight > 0)
+                        SizedBox(
+                          width: double.infinity,
+                          height: miniPlayerHeight,
+                          child: ClipRect(
+                            child: OverflowBox(
+                              alignment: Alignment.bottomCenter,
+                              minHeight: AppBottomNavigation._miniPlayerHeight,
+                              maxHeight: AppBottomNavigation._miniPlayerHeight,
+                              child: SizedBox(
+                                height: AppBottomNavigation._miniPlayerHeight,
+                                child: Opacity(
+                                  opacity: progress,
+                                  child: miniPlayer,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      if (dividerHeight > 0)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          child: Container(
+                            height: dividerHeight,
+                            color: context.appColors.divider,
+                          ),
+                        ),
+                      SizedBox(
+                        key: const ValueKey('navigation-row'),
+                        height: AppBottomNavigation._barHeight,
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 232),
+                            child: SizedBox(
+                              width: double.infinity,
+                              height: AppBottomNavigation._barHeight,
+                              child: _FloatingNavigationPill(
+                                currentIndex: widget.currentIndex,
+                                onTap: widget.onTap,
+                                isFancy: isFancy,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+
+                  return SizedBox(
+                    width: dockWidth,
+                    height: dockHeight,
+                    child: _DockSurface(
+                      isFancy: isFancy,
+                      height: dockHeight,
+                      child: dock,
+                    ),
+                  );
+                },
               ),
             ),
           ),
-        ),
-      ],
-    );
-
-    return SizedBox(
-      key: ValueKey(
-        isFancy
-            ? 'premium-glass-bottom-navigation'
-            : 'normal-bottom-navigation',
-      ),
-      height: bottomOverlayExtent(context, hasMiniPlayer: hasMiniPlayer),
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          16,
-          _topMargin,
-          16,
-          _bottomMargin + MediaQuery.viewPaddingOf(context).bottom,
-        ),
-        child: Center(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final collapsedWidth =
-                  constraints.maxWidth.clamp(0.0, 232.0).toDouble();
-              final dockWidth =
-                  hasMiniPlayer ? constraints.maxWidth : collapsedWidth;
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 500),
-                curve: const Cubic(0.34, 1.56, 0.64, 1),
-                width: dockWidth,
-                height: dockHeight,
-                child: _DockSurface(
-                  isFancy: isFancy,
-                  height: dockHeight,
-                  child: dock,
-                ),
-              );
-            },
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

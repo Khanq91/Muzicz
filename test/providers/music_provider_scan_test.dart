@@ -127,6 +127,34 @@ void main() {
     });
   });
 
+  testWidgets('Home and Library search ignore Vietnamese accents and case', (
+    tester,
+  ) async {
+    const song = SongItem(
+      id: 1,
+      title: 'Đường về nhà',
+      artist: 'Đen Vâu',
+      album: 'Âm nhạc',
+      albumId: 1,
+      artistId: 1,
+      data: '/music/1.mp3',
+      duration: 60000,
+    );
+    final provider = MusicProvider(
+      scanner: _RecordingMusicScanner(songs: [song]),
+    );
+    addTearDown(provider.dispose);
+    await provider.init();
+    await provider.scanMusic();
+    for (final query in ['DUONG VE NHA', 'Đường', 'den vau', 'am nhac']) {
+      provider.setHomeSearchQuery(query);
+      provider.setLibrarySearchQuery(query);
+      await tester.pump(const Duration(milliseconds: 160));
+      expect(provider.filteredSongs.map((song) => song.id), [1]);
+      expect(provider.libraryFilteredSongs.map((song) => song.id), [1]);
+    }
+  });
+
   testWidgets('search applies only the final query after debounce', (
     tester,
   ) async {

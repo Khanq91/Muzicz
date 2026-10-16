@@ -60,6 +60,10 @@ abstract final class AppStrings {
 
   static const favorites = 'Yêu thích';
   static const random = 'Random';
+  static const mix = 'Mix';
+  static const viewAll = 'Xem tất cả';
+  static const noPlaylistsYet = 'Chưa có playlist nào';
+  static const sort = 'Sắp xếp';
   static const emptyFavoritesHint =
       'Những bài hát bạn thả tim sẽ xuất hiện ở đây.';
   static const unfavorite = 'Bỏ yêu thích';

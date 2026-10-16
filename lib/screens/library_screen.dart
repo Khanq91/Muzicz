@@ -8,6 +8,7 @@ import '../widgets/library/fade_tab_bar_view.dart';
 import '../widgets/library/folders_tab.dart';
 import '../widgets/library/library_search_bar.dart';
 import '../widgets/library/library_tab_bar.dart';
+import '../widgets/library/songs_tab.dart';
 import 'onboarding_screen.dart';
 import 'playlist_screen.dart';
 import 'package:muziczz/core/app_strings.dart';
@@ -16,10 +17,10 @@ class LibraryScreen extends StatefulWidget {
   const LibraryScreen({super.key});
 
   @override
-  State<LibraryScreen> createState() => _LibraryScreenState();
+  State<LibraryScreen> createState() => LibraryScreenState();
 }
 
-class _LibraryScreenState extends State<LibraryScreen>
+class LibraryScreenState extends State<LibraryScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabCtrl;
   final _searchCtrl = TextEditingController();
@@ -27,7 +28,7 @@ class _LibraryScreenState extends State<LibraryScreen>
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 3, vsync: this);
+    _tabCtrl = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -41,6 +42,19 @@ class _LibraryScreenState extends State<LibraryScreen>
     Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (_) => const OnboardingScreen()));
+  }
+
+  void _clearSearch() {
+    _searchCtrl.clear();
+    context.read<MusicProvider>().setLibrarySearchQuery('');
+  }
+
+  void showTab(int index, {String? searchQuery}) {
+    if (searchQuery != null) {
+      if (_searchCtrl.text != searchQuery) _searchCtrl.text = searchQuery;
+      context.read<MusicProvider>().setLibrarySearchQuery(searchQuery);
+    }
+    _tabCtrl.animateTo(index.clamp(0, _tabCtrl.length - 1).toInt());
   }
 
   @override
@@ -98,7 +112,11 @@ class _LibraryScreenState extends State<LibraryScreen>
               child: FadeTabBarView(
                 controller: _tabCtrl,
                 children: [
-                  const PlaylistsTab(),
+                  PlaylistsTab(onClearSearch: _clearSearch),
+                  SongsTab(
+                    onScanTap: _navigateToScan,
+                    onClearSearch: _clearSearch,
+                  ),
                   ArtistsTab(onScanTap: _navigateToScan),
                   FoldersTab(onScanTap: _navigateToScan),
                 ],

@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
 
 import 'package:muziczz/core/app_strings.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
+import '../models/playlist_item.dart';
 import '../models/song_item.dart';
 import '../providers/music_provider.dart';
 import '../providers/player_provider.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/app_bottom_navigation.dart';
-import '../widgets/reveal_list/reveal_list.dart';
 import '../widgets/library/bulk_playlist_sheet.dart';
 import '../widgets/library/library_empty_state.dart';
 import '../widgets/library/selection_action_bar.dart';
@@ -33,12 +34,22 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 1;
   final _homeTabKey = GlobalKey<_HomeTabBodyState>();
+  final _libraryScreenKey = GlobalKey<LibraryScreenState>();
 
   late final _tabs = [
-    const LibraryScreen(),
-    _HomeTabBody(key: _homeTabKey),
+    LibraryScreen(key: _libraryScreenKey),
+    _HomeTabBody(
+      key: _homeTabKey,
+      onShowAllPlaylists: () => _showLibraryTab(0),
+      onShowAllSongs: (query) => _showLibraryTab(1, searchQuery: query),
+    ),
     const ProfileScreen(embeddedInHome: true),
   ];
+
+  void _showLibraryTab(int tabIndex, {String searchQuery = ''}) {
+    _libraryScreenKey.currentState?.showTab(tabIndex, searchQuery: searchQuery);
+    if (_currentIndex != 0) setState(() => _currentIndex = 0);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +85,14 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _HomeTabBody extends StatefulWidget {
-  const _HomeTabBody({super.key});
+  const _HomeTabBody({
+    super.key,
+    required this.onShowAllPlaylists,
+    required this.onShowAllSongs,
+  });
+
+  final VoidCallback onShowAllPlaylists;
+  final ValueChanged<String> onShowAllSongs;
 
   @override
   State<_HomeTabBody> createState() => _HomeTabBodyState();
@@ -285,6 +303,29 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
       SortType.recentlyAdded => LibrarySongSort.recentlyAdded,
       SortType.duration => LibrarySongSort.duration,
     });
+    final visibleSongs = displayedSongs.take(10).toList(growable: false);
+    // Snapshot mutable playlist fields so rename/add/remove notifications rebuild
+    // the preview even when the provider retains the same list instance.
+    context.select<MusicProvider, Object>(
+      (provider) => provider.playlists
+          .take(3)
+          .map(
+            (playlist) => (
+              playlist.id,
+              playlist.name,
+              playlist.songCount,
+              playlist.songs.firstOrNull?.albumId,
+            ),
+          )
+          .toList(growable: false),
+    );
+    final homePlaylists = music.playlists.take(3).toList(growable: false);
+    final isScanning = context.select<MusicProvider, bool>(
+      (provider) => provider.status == LibraryStatus.scanning,
+    );
+    final hasScannedOnce = context.select<MusicProvider, bool>(
+      (provider) => provider.hasScannedOnce,
+    );
     final isInitialScan = status == LibraryStatus.scanning && allSongs.isEmpty;
     final route = ModalRoute.of(context);
 
@@ -313,9 +354,9 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
                               bottom: false,
                               child: SelectionHeader(
                                 count: _selectedIds.length,
-                                total: filteredSongs.length,
+                                total: visibleSongs.length,
                                 onToggleSelectAll:
-                                    () => _toggleSelectAll(displayedSongs),
+                                    () => _toggleSelectAll(visibleSongs),
                                 onCancel: _exitSelecting,
                               ),
                             )
@@ -337,7 +378,25 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
                         onClear: _clearSearch,
                       ),
                     ),
-                  if (isInitialScan)
+                  if (!_isSelecting && !_searchActive)
+                    SliverToBoxAdapter(
+                      child: _HomePlaylistSection(
+                        playlists: homePlaylists,
+                        onViewAll: widget.onShowAllPlaylists,
+                      ),
+                    ),
+                  if (_searchActive && displayedSongs.isEmpty)
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: LibraryEmptyState(
+                        icon: Icons.search_off_rounded,
+                        message: AppStrings.noResultsDot,
+                        showSearchTip: true,
+                        searchQuery: music.homeSearchQuery,
+                        onClearSearch: _clearSearch,
+                      ),
+                    )
+                  else if (isInitialScan)
                     const SliverFillRemaining(
                       hasScrollBody: false,
                       child: _InitialLibraryLoadingState(),
@@ -346,58 +405,44 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
                     SliverFillRemaining(
                       hasScrollBody: false,
                       child: LibraryEmptyState(
-                        icon:
-                            _searchActive
-                                ? Icons.search_off_rounded
-                                : Icons.music_note_rounded,
-                        message:
-                            _searchActive
-                                ? AppStrings.noResultsDot
-                                : AppStrings.emptyLibrary,
-                        showSearchTip: _searchActive,
-                        searchQuery: music.homeSearchQuery,
-                        onScanTap: _searchActive ? null : _navigateToScan,
-                        onClearSearch: _searchActive ? _clearSearch : null,
+                        icon: Icons.music_note_rounded,
+                        message: AppStrings.emptyLibrary,
+                        onScanTap: _navigateToScan,
                       ),
                     )
                   else ...[
                     if (!_searchActive && !_isSelecting)
                       SliverToBoxAdapter(
-                        child: RepaintBoundary(
-                          child: _QuickAccessSection(
-                            allSongsCount: allSongs.length,
-                            onFavoritesTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder:
-                                      (_) => const PlaylistDetailScreen(
-                                        playlistId:
-                                            MusicProvider.favoritesPlaylistId,
-                                      ),
-                                ),
-                              );
-                            },
-                            onRandomTap: () {
-                              if (allSongs.isEmpty) return;
-                              context.read<PlayerProvider>().playSongsShuffled(
-                                allSongs,
-                              );
-                            },
+                        child: _SectionHeader(
+                          title: AppStrings.allSongsWithCount(allSongs.length),
+                          actionLabel: AppStrings.viewAll,
+                          onAction: () => widget.onShowAllSongs(''),
+                          trailing: _HomeListActions(
+                            isScanning: isScanning,
+                            hasScannedOnce: hasScannedOnce,
+                            sortType: _sortType,
+                            onSortChanged:
+                                (sort) => setState(() => _sortType = sort),
                           ),
                         ),
                       ),
-                    if (!_searchActive && !_isSelecting)
+                    if (_searchActive)
                       SliverToBoxAdapter(
                         child: _SectionHeader(
-                          title: AppStrings.allSongsWithCount(allSongs.length),
+                          title: AppStrings.allSongsWithCount(
+                            filteredSongs.length,
+                          ),
+                          actionLabel: AppStrings.viewAll,
+                          onAction:
+                              () => widget.onShowAllSongs(
+                                _searchCtrl.text.trim(),
+                              ),
                         ),
                       ),
-                    RevealListSliver(
-                      itemCount: displayedSongs.length,
-                      itemKeyBuilder: (index) =>
-                          ValueKey('home_song_${displayedSongs[index].id}'),
-                      itemBuilder: (_, index, __) {
-                        final song = displayedSongs[index];
+                    SliverList.builder(
+                      itemCount: visibleSongs.length,
+                      itemBuilder: (_, index) {
+                        final song = visibleSongs[index];
                         return MusicListTile(
                           key: ValueKey('home_song_${song.id}'),
                           song: song,
@@ -447,19 +492,20 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
   }
 
   Widget _buildHeader() {
-    final isScanning = context.select<MusicProvider, bool>(
-      (music) => music.status == LibraryStatus.scanning,
+    final favoriteSongs = context.select<MusicProvider, List<SongItem>>(
+      (music) => music.favorites,
     );
-    final hasScannedOnce = context.select<MusicProvider, bool>(
-      (music) => music.hasScannedOnce,
+    final allSongs = context.select<MusicProvider, List<SongItem>>(
+      (music) => music.allSongs,
     );
     final c = context.appColors;
 
     return SafeArea(
       bottom: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 12, 8),
+        padding: const EdgeInsets.fromLTRB(20, 16, 16, 12),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(
               child: Column(
@@ -476,26 +522,40 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
                   Text(
                     AppStrings.appName,
                     style: GoogleFonts.outfit(
-                      fontSize: 24,
+                      fontSize: 23,
                       fontWeight: FontWeight.w700,
                       color: c.textPrimary,
                       letterSpacing: -0.5,
+                      height: 1.1,
                     ),
                   ),
                 ],
               ),
             ),
-            if (hasScannedOnce) _ScanButton(isScanning: isScanning),
-            PopupMenuButton<SortType>(
-              color: c.card,
-              icon: Icon(Icons.sort_rounded, color: c.textSecondary),
-              onSelected: (type) => setState(() => _sortType = type),
-              itemBuilder:
-                  (_) => [
-                    _menuItem(SortType.az, AppStrings.sortAZ),
-                    _menuItem(SortType.recentlyAdded, AppStrings.sortNewest),
-                    _menuItem(SortType.duration, AppStrings.duration),
-                  ],
+            _HomeQuickActionButton(
+              label: AppStrings.favorites,
+              icon: Icons.favorite_rounded,
+              gradient: c.favoritesGradient,
+              enabled: favoriteSongs.isNotEmpty,
+              onTap:
+                  favoriteSongs.isEmpty
+                      ? null
+                      : () => context.read<PlayerProvider>().playSongs(
+                        favoriteSongs,
+                      ),
+            ),
+            const SizedBox(width: 8),
+            _HomeQuickActionButton(
+              label: AppStrings.mix,
+              icon: Icons.shuffle_rounded,
+              gradient: c.randomMixGradient,
+              enabled: allSongs.isNotEmpty,
+              onTap:
+                  allSongs.isEmpty
+                      ? null
+                      : () => context.read<PlayerProvider>().playSongsShuffled(
+                        allSongs,
+                      ),
             ),
           ],
         ),
@@ -505,20 +565,6 @@ class _HomeTabBodyState extends State<_HomeTabBody> {
 
   void _playSong(List<SongItem> songs, SongItem song) {
     context.read<PlayerProvider>().playSongs(songs, specificSong: song);
-  }
-
-  PopupMenuItem<SortType> _menuItem(SortType type, String label) {
-    final c = context.appColors;
-    return PopupMenuItem(
-      value: type,
-      child: Text(
-        label,
-        style: GoogleFonts.outfit(
-          color: _sortType == type ? c.primary : c.textPrimary,
-          fontSize: 14,
-        ),
-      ),
-    );
   }
 }
 
@@ -684,115 +730,209 @@ class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
   bool shouldRebuild(covariant _SearchBarDelegate old) => true;
 }
 
-class _QuickAccessSection extends StatelessWidget {
-  const _QuickAccessSection({
-    required this.allSongsCount,
-    required this.onFavoritesTap,
-    required this.onRandomTap,
+class _HomeQuickActionButton extends StatelessWidget {
+  const _HomeQuickActionButton({
+    required this.label,
+    required this.icon,
+    required this.gradient,
+    required this.enabled,
+    required this.onTap,
   });
 
-  final int allSongsCount;
-  final VoidCallback onFavoritesTap;
-  final VoidCallback onRandomTap;
+  final String label;
+  final IconData icon;
+  final LinearGradient gradient;
+  final bool enabled;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final favoriteCount = context.select<MusicProvider, int>(
-      (music) => music.favorites.length,
-    );
     final c = context.appColors;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _SectionHeader(title: AppStrings.quickAccess),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              Expanded(
-                child: _QuickActionCard(
-                  title: AppStrings.favorites,
-                  subtitle: AppStrings.songCountShort(favoriteCount),
-                  icon: Icons.favorite_rounded,
-                  gradient: c.favoritesGradient,
-                  onTap: onFavoritesTap,
-                ),
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: label,
+      child: Tooltip(
+        message: label,
+        child: Opacity(
+          opacity: enabled ? 1 : 0.45,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(16),
+            child: SizedBox(
+              width: 58,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Ink(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: gradient,
+                      boxShadow: [
+                        BoxShadow(
+                          color: c.primary.withValues(alpha: 0.14),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Icon(icon, color: Colors.white, size: 21),
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.outfit(
+                      color: c.textSecondary,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _QuickActionCard(
-                  title: AppStrings.random,
-                  subtitle: AppStrings.songCountShort(allSongsCount),
-                  icon: Icons.shuffle_rounded,
-                  gradient: c.randomMixGradient,
-                  onTap: allSongsCount == 0 ? null : onRandomTap,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _HomePlaylistSection extends StatelessWidget {
+  const _HomePlaylistSection({
+    required this.playlists,
+    required this.onViewAll,
+  });
+
+  final List<PlaylistItem> playlists;
+  final VoidCallback onViewAll;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _SectionHeader(
+          title: AppStrings.playlist,
+          actionLabel: AppStrings.viewAll,
+          onAction: onViewAll,
+        ),
+        if (playlists.isEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 6, 20, 4),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                AppStrings.noPlaylistsYet,
+                style: GoogleFonts.outfit(
+                  color: context.appColors.textTertiary,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          )
+        else
+          for (final playlist in playlists)
+            _HomePlaylistTile(playlist: playlist),
       ],
     );
   }
 }
 
-class _QuickActionCard extends StatelessWidget {
-  const _QuickActionCard({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.gradient,
-    required this.onTap,
-  });
+class _HomePlaylistTile extends StatelessWidget {
+  const _HomePlaylistTile({required this.playlist});
 
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final LinearGradient gradient;
-  final VoidCallback? onTap;
+  final PlaylistItem playlist;
 
   @override
   Widget build(BuildContext context) {
-    return Opacity(
-      opacity: onTap == null ? 0.5 : 1,
+    final c = context.appColors;
+    final firstSong = playlist.songs.isEmpty ? null : playlist.songs.first;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
+          key: ValueKey('home_playlist_${playlist.id}'),
+          borderRadius: BorderRadius.circular(16),
+          onTap:
+              () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => PlaylistDetailScreen(playlistId: playlist.id),
+                ),
+              ),
           child: Ink(
-            height: 112,
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              gradient: gradient,
+              color: c.card,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: c.border.withValues(alpha: 0.7)),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Row(
               children: [
-                Icon(icon, color: Colors.white, size: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        title,
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(11),
+                  child: SizedBox(
+                    width: 48,
+                    height: 48,
+                    child:
+                        firstSong == null
+                            ? Container(
+                              color: c.surfaceElevated,
+                              child: Icon(
+                                Icons.queue_music_rounded,
+                                color: c.textTertiary,
+                                size: 22,
+                              ),
+                            )
+                            : QueryArtworkWidget(
+                              id: firstSong.albumId,
+                              type: ArtworkType.ALBUM,
+                              artworkFit: BoxFit.cover,
+                              artworkBorder: BorderRadius.zero,
+                              keepOldArtwork: true,
+                              nullArtworkWidget: Container(
+                                color: c.surfaceElevated,
+                                child: Icon(
+                                  Icons.queue_music_rounded,
+                                  color: c.textTertiary,
+                                  size: 22,
+                                ),
+                              ),
+                            ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        playlist.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.outfit(
+                          color: c.textPrimary,
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
                         ),
                       ),
-                    ),
-                    Text(
-                      subtitle,
-                      style: GoogleFonts.outfit(
-                        fontSize: 11,
-                        color: Colors.white.withValues(alpha: 0.8),
+                      const SizedBox(height: 3),
+                      Text(
+                        AppStrings.songCount(playlist.songCount),
+                        style: GoogleFonts.outfit(
+                          color: c.textTertiary,
+                          fontSize: 11,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                Icon(Icons.chevron_right_rounded, color: c.textTertiary),
               ],
             ),
           ),
@@ -803,22 +943,112 @@ class _QuickActionCard extends StatelessWidget {
 }
 
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title});
+  const _SectionHeader({
+    required this.title,
+    this.actionLabel,
+    this.onAction,
+    this.trailing,
+  });
+
   final String title;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-      child: Text(
-        title,
-        style: GoogleFonts.outfit(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: c.textPrimary,
-        ),
+      padding: const EdgeInsets.fromLTRB(20, 20, 16, 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.outfit(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: c.textPrimary,
+              ),
+            ),
+          ),
+          if (actionLabel != null)
+            TextButton(
+              onPressed: onAction,
+              style: TextButton.styleFrom(
+                foregroundColor: c.primary,
+                minimumSize: const Size(44, 40),
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                textStyle: GoogleFonts.outfit(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              child: Text(actionLabel!),
+            ),
+          if (trailing != null) trailing!,
+        ],
       ),
     );
   }
+}
+
+class _HomeListActions extends StatelessWidget {
+  const _HomeListActions({
+    required this.isScanning,
+    required this.hasScannedOnce,
+    required this.sortType,
+    required this.onSortChanged,
+  });
+
+  final bool isScanning;
+  final bool hasScannedOnce;
+  final SortType sortType;
+  final ValueChanged<SortType> onSortChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.appColors;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (hasScannedOnce) _ScanButton(isScanning: isScanning),
+        PopupMenuButton<SortType>(
+          tooltip: AppStrings.sort,
+          color: c.card,
+          icon: Icon(Icons.sort_rounded, color: c.textSecondary, size: 21),
+          onSelected: onSortChanged,
+          itemBuilder:
+              (_) => [
+                _sortItem(c, SortType.az, AppStrings.sortAZ, sortType),
+                _sortItem(
+                  c,
+                  SortType.recentlyAdded,
+                  AppStrings.sortNewest,
+                  sortType,
+                ),
+                _sortItem(c, SortType.duration, AppStrings.duration, sortType),
+              ],
+        ),
+      ],
+    );
+  }
+
+  PopupMenuItem<SortType> _sortItem(
+    AppColorsData colors,
+    SortType type,
+    String label,
+    SortType selected,
+  ) => PopupMenuItem(
+    value: type,
+    child: Text(
+      label,
+      style: GoogleFonts.outfit(
+        color: selected == type ? colors.primary : colors.textPrimary,
+        fontSize: 14,
+      ),
+    ),
+  );
 }

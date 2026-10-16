@@ -20,6 +20,7 @@ class LibraryTabBar extends StatelessWidget {
           label: AppStrings.tabPlaylistsShort,
           count: music.playlists.length + 1,
         ),
+        _CountTab(label: AppStrings.songs, count: music.allSongs.length),
         _CountTab(
           label: AppStrings.artist,
           count: music.sortedArtistGroups.length,

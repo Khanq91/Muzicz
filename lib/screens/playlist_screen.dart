@@ -2,19 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:muziczz/utils/duration_format.dart';
+import 'package:muziczz/utils/vietnamese_normalize.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
 import '../models/playlist_item.dart';
+import '../models/song_item.dart';
 import '../providers/music_provider.dart';
 import '../providers/player_provider.dart';
 import '../widgets/app_bottom_navigation.dart';
+import '../widgets/library/library_empty_state.dart';
 import '../widgets/music_list_tile.dart';
-import '../widgets/reveal_list/reveal_list.dart';
 import 'package:muziczz/core/app_strings.dart';
 
 /// Tab content: list of all playlists
 class PlaylistsTab extends StatelessWidget {
-  const PlaylistsTab({super.key});
+  const PlaylistsTab({super.key, required this.onClearSearch});
+
+  final VoidCallback onClearSearch;
 
   @override
   Widget build(BuildContext context) {
@@ -22,40 +26,56 @@ class PlaylistsTab extends StatelessWidget {
     final hasMiniPlayer = context.select<PlayerProvider, bool>(
       (player) => player.currentSong != null,
     );
-    final playlists = [music.favoritesPlaylist, ...music.playlists];
+    final query = vnNormalize(music.librarySearchQuery.trim());
+    final playlists = [music.favoritesPlaylist, ...music.playlists]
+        .where(
+          (playlist) =>
+              query.isEmpty || vnNormalize(playlist.name).contains(query),
+        )
+        .toList(growable: false);
     return Stack(
       children: [
-        RevealList(
-          itemSpacing: 0,
-          edgeFadeColor: context.appColors.background,
-          physics: const BouncingScrollPhysics(),
-          padding: EdgeInsets.only(
-            bottom: AppBottomNavigation.scrollBottomPadding(
-              context,
-              hasMiniPlayer: hasMiniPlayer,
+        if (playlists.isEmpty)
+          LibraryEmptyState(
+            icon: Icons.search_off_rounded,
+            message: AppStrings.noResultsDot,
+            showSearchTip: true,
+            searchQuery: music.librarySearchQuery,
+            onClearSearch: onClearSearch,
+          )
+        else
+          ListView.separated(
+            key: const PageStorageKey<String>('library_playlists'),
+            physics: const BouncingScrollPhysics(),
+            padding: EdgeInsets.only(
+              bottom: AppBottomNavigation.scrollBottomPadding(
+                context,
+                hasMiniPlayer: hasMiniPlayer,
+              ),
             ),
-          ),
-          itemCount: playlists.length,
-          itemKeyBuilder: (i) => ValueKey(playlists[i].id),
-          itemBuilder: (_, i, __) {
-            final pl = playlists[i];
-            final isSystemPlaylist = pl.id == MusicProvider.favoritesPlaylistId;
-            return _PlaylistTile(
-              playlist: pl,
-              isSystemPlaylist: isSystemPlaylist,
-              onTap:
-                  () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => PlaylistDetailScreen(playlistId: pl.id),
+            itemCount: playlists.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 2),
+            itemBuilder: (context, i) {
+              final pl = playlists[i];
+              final isSystemPlaylist =
+                  pl.id == MusicProvider.favoritesPlaylistId;
+              return _PlaylistTile(
+                key: ValueKey('library_playlist_${pl.id}'),
+                playlist: pl,
+                isSystemPlaylist: isSystemPlaylist,
+                onTap:
+                    () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => PlaylistDetailScreen(playlistId: pl.id),
+                      ),
                     ),
-                  ),
-              onDelete:
-                  isSystemPlaylist
-                      ? null
-                      : () => _confirmDelete(context, music, pl),
-            );
-          },
-        ),
+                onDelete:
+                    isSystemPlaylist
+                        ? null
+                        : () => _confirmDelete(context, music, pl),
+              );
+            },
+          ),
         // FAB: create new playlist
         Positioned(
           bottom: AppBottomNavigation.floatingActionBottom(
@@ -142,6 +162,7 @@ class PlaylistsTab extends StatelessWidget {
 
 class _PlaylistTile extends StatelessWidget {
   const _PlaylistTile({
+    super.key,
     required this.playlist,
     required this.isSystemPlaylist,
     required this.onTap,
@@ -403,13 +424,35 @@ class _CreatePlaylistFab extends StatelessWidget {
 
 // ── Playlist detail screen ────────────────────────────────
 
-class PlaylistDetailScreen extends StatelessWidget {
+class PlaylistDetailScreen extends StatefulWidget {
   const PlaylistDetailScreen({super.key, required this.playlistId});
   final String playlistId;
 
   @override
+  State<PlaylistDetailScreen> createState() => _PlaylistDetailScreenState();
+}
+
+class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
+  late final TextEditingController _searchCtrl;
+  String _searchQuery = '';
+  final _songSearchText = Expando<String>();
+
+  @override
+  void initState() {
+    super.initState();
+    _searchCtrl = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final music = context.watch<MusicProvider>();
+    final playlistId = widget.playlistId;
     final isSystemPlaylist = playlistId == MusicProvider.favoritesPlaylistId;
     // Player state is only rendered per tile (isActive); read it here so a
     // play/pause, track change or sleep-timer tick does not rebuild the
@@ -419,6 +462,19 @@ class PlaylistDetailScreen extends StatelessWidget {
         isSystemPlaylist
             ? music.favoritesPlaylist
             : music.playlists.firstWhere((p) => p.id == playlistId);
+    final normalizedQuery = vnNormalize(_searchQuery.trim());
+    final visibleSongs =
+        normalizedQuery.isEmpty
+            ? playlist.songs
+            : playlist.songs
+                .where((song) {
+                  final text =
+                      _songSearchText[song] ??= vnNormalize(
+                        '${song.title}\u0000${song.artist}\u0000${song.album}',
+                      );
+                  return text.contains(normalizedQuery);
+                })
+                .toList(growable: false);
     final c = context.appColors;
     return Scaffold(
       backgroundColor: c.background,
@@ -579,6 +635,19 @@ class PlaylistDetailScreen extends StatelessWidget {
                 ),
               ),
             ),
+
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _PlaylistSearchHeader(
+                controller: _searchCtrl,
+                query: _searchQuery,
+                onChanged: (query) => setState(() => _searchQuery = query),
+                onClear: () {
+                  _searchCtrl.clear();
+                  setState(() => _searchQuery = '');
+                },
+              ),
+            ),
           ],
           // Song list with reorder
           SliverToBoxAdapter(
@@ -588,7 +657,7 @@ class PlaylistDetailScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    AppStrings.songCount(playlist.songCount),
+                    AppStrings.songCount(visibleSongs.length),
                     style: GoogleFonts.outfit(
                       color: c.textTertiary,
                       fontSize: 13,
@@ -641,14 +710,26 @@ class PlaylistDetailScreen extends StatelessWidget {
                 ),
               ),
             )
+          else if (visibleSongs.isEmpty)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
+                child: Text(
+                  AppStrings.noResultsDot,
+                  style: GoogleFonts.outfit(
+                    color: c.textTertiary,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            )
           else
-            RevealListSliver(
-              itemCount: playlist.songs.length,
-              itemKeyBuilder:
-                  (i) => ValueKey('playlist_song_${playlist.songs[i].id}'),
-              itemBuilder: (_, i, __) {
-                final song = playlist.songs[i];
+            SliverList.builder(
+              itemCount: visibleSongs.length,
+              itemBuilder: (_, i) {
+                final song = visibleSongs[i];
                 return Selector<PlayerProvider, int?>(
+                  key: ValueKey('playlist_song_${song.id}'),
                   selector: (_, p) => p.currentSong?.id,
                   builder:
                       (_, activeId, __) => MusicListTile(
@@ -735,7 +816,7 @@ class PlaylistDetailScreen extends StatelessWidget {
                 onPressed: () {
                   final name = ctrl.text.trim();
                   if (name.isNotEmpty) {
-                    music.renamePlaylist(playlistId, name);
+                    music.renamePlaylist(widget.playlistId, name);
                     Navigator.pop(context);
                   }
                 },
@@ -776,109 +857,291 @@ class PlaylistDetailScreen extends StatelessWidget {
             minChildSize: 0.4,
             expand: false,
             builder:
-                (_, scrollCtrl) => Column(
-                  children: [
-                    const SizedBox(height: 12),
-                    Container(
-                      width: 36,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: c.divider,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      AppStrings.addSongsTitle,
-                      style: GoogleFonts.outfit(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: c.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Expanded(
-                      child:
-                          available.isEmpty
-                              ? Center(
-                                child: Text(
-                                  AppStrings.allSongsAlreadyInPlaylist,
-                                  style: GoogleFonts.outfit(
-                                    color: c.textTertiary,
-                                  ),
-                                ),
-                              )
-                              : RevealList(
-                                itemSpacing: 0,
-                                edgeFadeColor: c.card,
-                                controller: scrollCtrl,
-                                itemCount: available.length,
-                                itemKeyBuilder:
-                                    (i) => ValueKey(available[i].id),
-                                itemBuilder: (ctx, i, __) {
-                                  final song = available[i];
-                                  return ListTile(
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 20,
-                                      vertical: 2,
-                                    ),
-                                    leading: SizedBox(
-                                      width: 44,
-                                      height: 44,
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: QueryArtworkWidget(
-                                          id: song.albumId,
-                                          type: ArtworkType.ALBUM,
-                                          artworkFit: BoxFit.cover,
-                                          artworkBorder: BorderRadius.zero,
-                                          keepOldArtwork: true,
-                                          nullArtworkWidget: Container(
-                                            color: c.surfaceElevated,
-                                            child: Icon(
-                                              Icons.music_note_rounded,
-                                              color: c.textDisabled,
-                                              size: 20,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    title: Text(
-                                      song.title,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.outfit(
-                                        color: c.textPrimary,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    subtitle: Text(
-                                      song.artist,
-                                      maxLines: 1,
-                                      style: GoogleFonts.outfit(
-                                        color: c.textTertiary,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                    trailing: Icon(
-                                      Icons.add_rounded,
-                                      color: c.primary,
-                                    ),
-                                    onTap: () {
-                                      music.addToPlaylist(playlist.id, song);
-                                      Navigator.pop(context);
-                                    },
-                                  );
-                                },
-                              ),
-                    ),
-                  ],
+                (_, scrollCtrl) => _AddSongsSheet(
+                  music: music,
+                  playlist: playlist,
+                  availableSongs: available,
+                  scrollController: scrollCtrl,
                 ),
           ),
     );
   }
+}
+
+class _AddSongsSheet extends StatefulWidget {
+  const _AddSongsSheet({
+    required this.music,
+    required this.playlist,
+    required this.availableSongs,
+    required this.scrollController,
+  });
+
+  final MusicProvider music;
+  final PlaylistItem playlist;
+  final List<SongItem> availableSongs;
+  final ScrollController scrollController;
+
+  @override
+  State<_AddSongsSheet> createState() => _AddSongsSheetState();
+}
+
+class _AddSongsSheetState extends State<_AddSongsSheet> {
+  late final TextEditingController _searchController;
+  String _searchQuery = '';
+  late final Map<int, String> _songSearchText;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+    _songSearchText = {
+      for (final song in widget.availableSongs)
+        song.id: vnNormalize(
+          '${song.title}\u0000${song.artist}\u0000${song.album}',
+        ),
+    };
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.appColors;
+    final query = vnNormalize(_searchQuery.trim());
+    final songs =
+        query.isEmpty
+            ? widget.availableSongs
+            : widget.availableSongs
+                .where((song) {
+                  final text = _songSearchText[song.id]!;
+                  return text.contains(query);
+                })
+                .toList(growable: false);
+
+    return Column(
+      children: [
+        const SizedBox(height: 12),
+        Container(
+          width: 36,
+          height: 4,
+          decoration: BoxDecoration(
+            color: c.divider,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          AppStrings.addSongsTitle,
+          style: GoogleFonts.outfit(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: c.textPrimary,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: TextField(
+            controller: _searchController,
+            onChanged: (value) => setState(() => _searchQuery = value),
+            style: GoogleFonts.outfit(color: c.textPrimary, fontSize: 14),
+            decoration: InputDecoration(
+              hintText: AppStrings.searchHint,
+              hintStyle: GoogleFonts.outfit(
+                color: c.textDisabled,
+                fontSize: 14,
+              ),
+              prefixIcon: Icon(
+                Icons.search_rounded,
+                color: c.textTertiary,
+                size: 20,
+              ),
+              suffixIcon:
+                  _searchQuery.isEmpty
+                      ? null
+                      : IconButton(
+                        tooltip: AppStrings.clearSearch,
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                        },
+                        icon: Icon(
+                          Icons.close_rounded,
+                          color: c.textTertiary,
+                          size: 18,
+                        ),
+                      ),
+              filled: true,
+              fillColor: c.surfaceElevated,
+              contentPadding: const EdgeInsets.symmetric(vertical: 10),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: c.primary, width: 1),
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          child:
+              widget.availableSongs.isEmpty
+                  ? Center(
+                    child: Text(
+                      AppStrings.allSongsAlreadyInPlaylist,
+                      style: GoogleFonts.outfit(color: c.textTertiary),
+                    ),
+                  )
+                  : songs.isEmpty
+                  ? Center(
+                    child: Text(
+                      AppStrings.noResultsDot,
+                      style: GoogleFonts.outfit(color: c.textTertiary),
+                    ),
+                  )
+                  : ListView.builder(
+                    controller: widget.scrollController,
+                    key: const PageStorageKey<String>('add_playlist_songs'),
+                    itemCount: songs.length,
+                    itemBuilder: (context, index) {
+                      final song = songs[index];
+                      return ListTile(
+                        key: ValueKey('available_song_${song.id}'),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 2,
+                        ),
+                        leading: SizedBox(
+                          width: 44,
+                          height: 44,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: QueryArtworkWidget(
+                              id: song.albumId,
+                              type: ArtworkType.ALBUM,
+                              artworkFit: BoxFit.cover,
+                              artworkBorder: BorderRadius.zero,
+                              keepOldArtwork: true,
+                              nullArtworkWidget: Container(
+                                color: c.surfaceElevated,
+                                child: Icon(
+                                  Icons.music_note_rounded,
+                                  color: c.textDisabled,
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        title: Text(
+                          song.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.outfit(
+                            color: c.textPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        subtitle: Text(
+                          song.artist,
+                          maxLines: 1,
+                          style: GoogleFonts.outfit(
+                            color: c.textTertiary,
+                            fontSize: 12,
+                          ),
+                        ),
+                        trailing: Icon(Icons.add_rounded, color: c.primary),
+                        onTap: () {
+                          widget.music.addToPlaylist(widget.playlist.id, song);
+                          Navigator.pop(context);
+                        },
+                      );
+                    },
+                  ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PlaylistSearchHeader extends SliverPersistentHeaderDelegate {
+  const _PlaylistSearchHeader({
+    required this.controller,
+    required this.query,
+    required this.onChanged,
+    required this.onClear,
+  });
+
+  final TextEditingController controller;
+  final String query;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    final c = context.appColors;
+    return Container(
+      color: c.background.withValues(alpha: 0.96),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: TextField(
+        controller: controller,
+        onChanged: onChanged,
+        style: GoogleFonts.outfit(color: c.textPrimary, fontSize: 14),
+        decoration: InputDecoration(
+          hintText: AppStrings.searchHint,
+          hintStyle: GoogleFonts.outfit(color: c.textDisabled, fontSize: 14),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            color: c.textTertiary,
+            size: 20,
+          ),
+          suffixIcon:
+              query.isEmpty
+                  ? null
+                  : IconButton(
+                    tooltip: AppStrings.clearSearch,
+                    onPressed: onClear,
+                    icon: Icon(
+                      Icons.close_rounded,
+                      color: c.textTertiary,
+                      size: 18,
+                    ),
+                  ),
+          filled: true,
+          fillColor: c.surfaceElevated,
+          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: c.primary, width: 1),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  double get maxExtent => 64;
+
+  @override
+  double get minExtent => 64;
+
+  @override
+  bool shouldRebuild(covariant _PlaylistSearchHeader oldDelegate) =>
+      oldDelegate.controller != controller || oldDelegate.query != query;
 }
 
 // ── Playlist header ───────────────────────────────────────
