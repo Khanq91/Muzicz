@@ -6,7 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
-// The fixture supplies local SDK fonts so screenshots and tests need no network.
+// Repository fixtures keep tests independent of network and SDK cache contents.
 // ignore: implementation_imports
 import 'package:google_fonts/src/google_fonts_base.dart' as font_test;
 import 'package:just_audio/just_audio.dart';
@@ -168,20 +168,17 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async {
     font_test.assetManifest = _FontManifest();
-    final sdk = Platform.environment['FLUTTER_ROOT']!;
     await (FontLoader('MaterialIcons')..addFont(
       Future.value(
         ByteData.sublistView(
           File(
-            '$sdk/bin/cache/artifacts/material_fonts/materialicons-regular.otf',
+            'test/fixtures/fonts/materialicons-regular.otf',
           ).readAsBytesSync(),
         ),
       ),
     )).load();
     final bytes =
-        File(
-          '$sdk/bin/cache/artifacts/material_fonts/roboto-regular.ttf',
-        ).readAsBytesSync();
+        File('test/fixtures/fonts/roboto-regular.ttf').readAsBytesSync();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMessageHandler('flutter/assets', (message) async {
           final key = const StringCodec().decodeMessage(message);
