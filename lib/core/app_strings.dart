@@ -9,6 +9,26 @@
 /// - Nhóm theo màn hình/widget; chuỗi dùng chung nằm ở phần "Chung".
 /// ════════════════════════════════════════════════════════════════════════════
 abstract final class AppStrings {
+  static const libraryChooseSection = 'Chọn mục thư viện';
+  static const librarySections = 'Các mục thư viện';
+  static const librarySectionsHint =
+      'Chuyển nhanh đến một mục hoặc đổi thứ tự.';
+  static const libraryReorder = 'Đổi thứ tự';
+  static const libraryReset = 'Đặt lại';
+  static const libraryDone = 'Xong';
+  static const libraryAscending = 'Tăng dần';
+  static const libraryDescending = 'Giảm dần';
+  static const libraryFlipDirection = 'Chạm để đổi chiều';
+  static const librarySortName = 'Tên';
+  static const librarySortAdded = 'Ngày thêm';
+  static const librarySortCount = 'Số bài hát';
+  static const libraryLocate = 'Tìm bài đang phát';
+  static const libraryActions = 'Thao tác';
+  static const libraryDevice = 'Thiết bị';
+  static const libraryHideSelected = 'Ẩn các bài đã chọn?';
+  static const libraryPlaylistOptions = 'Tùy chọn danh sách phát';
+  static const libraryScanPermission = 'Cần quyền truy cập để quét nhạc.';
+  static const libraryRefreshFailed = 'Không thể cập nhật thư viện.';
   static const trackChangeFailed = 'Không thể chuyển bài. Hãy thử lại.';
   static const yourSongs = 'Your Songs';
   static const yourSongsHeading = 'Your\nSongs';

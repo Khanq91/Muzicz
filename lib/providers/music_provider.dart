@@ -61,6 +61,7 @@ class MusicProvider extends ChangeNotifier {
   static const _searchDebounceDuration = Duration(milliseconds: 160);
 
   int _libraryRevision = 0;
+  int get libraryRevision => _libraryRevision;
   Map<int, String> _normalizedSearchText = const {};
   String? _homeFilterCacheQuery;
   int _homeFilterCacheRevision = -1;

@@ -74,9 +74,8 @@ class LibrarySearchBar extends StatelessWidget {
                 ),
               ),
             ),
-            AnimatedContainer(
+            AnimatedSize(
               duration: const Duration(milliseconds: 200),
-              height: hasSearchText ? 28 : 0,
               curve: Curves.easeOut,
               child:
                   hasSearchText
@@ -90,11 +89,15 @@ class LibrarySearchBar extends StatelessWidget {
                               color: c.textDisabled,
                             ),
                             const SizedBox(width: 5),
-                            Text(
-                              AppStrings.searchLocalLibrary(songCount),
-                              style: GoogleFonts.outfit(
-                                fontSize: 11,
-                                color: c.textDisabled,
+                            Expanded(
+                              child: Text(
+                                AppStrings.searchLocalLibrary(songCount),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.outfit(
+                                  fontSize: 11,
+                                  color: c.textDisabled,
+                                ),
                               ),
                             ),
                           ],

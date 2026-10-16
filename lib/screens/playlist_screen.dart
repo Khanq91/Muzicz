@@ -12,6 +12,7 @@ import '../providers/player_provider.dart';
 import '../widgets/app_bottom_navigation.dart';
 import '../widgets/library/library_empty_state.dart';
 import '../widgets/music_list_tile.dart';
+import '../widgets/library/library_chrome.dart';
 import 'package:muziczz/core/app_strings.dart';
 
 /// Tab content: list of all playlists
@@ -738,33 +739,37 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                   key: ValueKey('playlist_song_${song.id}'),
                   selector: (_, p) => p.currentSong?.id,
                   builder:
-                      (_, activeId, __) => MusicListTile(
-                        song: song,
-                        isActive: activeId == song.id,
-                        onTap: () {
-                          player.playSongs(
-                            playlist.songs,
-                            specificSong: song,
-                            sourceName: playlist.name,
-                          );
-                        },
-                        // IconButton: 48dp target + tooltip/semantics label.
-                        trailing:
-                            isSystemPlaylist
-                                ? null
-                                : IconButton(
-                                  tooltip: AppStrings.removeFromPlaylist,
-                                  onPressed:
-                                      () => music.removeFromPlaylist(
-                                        playlistId,
-                                        song.id,
-                                      ),
-                                  icon: Icon(
-                                    Icons.remove_circle_outline_rounded,
-                                    color: c.textDisabled,
-                                    size: 20,
+                      (_, activeId, __) => Padding(
+                        padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+                        child: MusicListTile(
+                          libraryStyle: true,
+                          song: song,
+                          isActive: activeId == song.id,
+                          onTap: () {
+                            player.playSongs(
+                              playlist.songs,
+                              specificSong: song,
+                              sourceName: playlist.name,
+                            );
+                          },
+                          // IconButton: 48dp target + tooltip/semantics label.
+                          trailing:
+                              isSystemPlaylist
+                                  ? null
+                                  : IconButton(
+                                    tooltip: AppStrings.removeFromPlaylist,
+                                    onPressed:
+                                        () => music.removeFromPlaylist(
+                                          playlistId,
+                                          song.id,
+                                        ),
+                                    icon: Icon(
+                                      Icons.remove_circle_outline_rounded,
+                                      color: c.textDisabled,
+                                      size: 20,
+                                    ),
                                   ),
-                                ),
+                        ),
                       ),
                 );
               },
@@ -1159,75 +1164,18 @@ class _PlaylistSearchHeader extends SliverPersistentHeaderDelegate {
 class _PlaylistHeader extends StatelessWidget {
   const _PlaylistHeader({required this.playlist});
   final PlaylistItem playlist;
-
   @override
-  Widget build(BuildContext context) {
-    final c = context.appColors;
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // Background
-        Container(decoration: BoxDecoration(gradient: c.backgroundGradient)),
-        // Generated mosaic from the first song's album art
-        if (playlist.songs.isNotEmpty)
-          Opacity(
-            opacity: 0.4,
-            child: QueryArtworkWidget(
-              id: playlist.songs.first.albumId,
-              type: ArtworkType.ALBUM,
-              artworkFit: BoxFit.cover,
-              artworkBorder: BorderRadius.zero,
-              keepOldArtwork: true,
-              nullArtworkWidget: const SizedBox.shrink(),
-            ),
-          ),
-        // Gradient overlay
-        Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.transparent,
-                c.background.withValues(alpha: 0.95),
-              ],
-            ),
-          ),
-        ),
-        // Info
-        Positioned(
-          left: 20,
-          right: 20,
-          bottom: 20,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                playlist.name,
-                style: GoogleFonts.outfit(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w700,
-                  color: c.textPrimary,
-                  letterSpacing: -0.5,
-                ),
-              ),
-              Text(
-                AppStrings.songCount(playlist.songCount),
-                style: GoogleFonts.outfit(
-                  fontSize: 14,
-                  color: c.textSecondary,
-                  fontWeight: FontWeight.w300,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => LibraryDetailHeader(
+    title: playlist.name,
+    subtitle: AppStrings.songCount(playlist.songCount),
+    artworkId: playlist.songs.firstOrNull?.albumId,
+    type: ArtworkType.ALBUM,
+    icon:
+        playlist.id == MusicProvider.favoritesPlaylistId
+            ? Icons.favorite_rounded
+            : Icons.playlist_play_rounded,
+  );
 }
-
-// ── Play button row ───────────────────────────────────────
 
 class _PlayButton extends StatelessWidget {
   const _PlayButton({
@@ -1240,47 +1188,11 @@ class _PlayButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
   final bool primary;
-
   @override
-  Widget build(BuildContext context) {
-    final c = context.appColors;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 46,
-        decoration: BoxDecoration(
-          gradient:
-              primary
-                  ? LinearGradient(
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                    colors: [c.primary, c.secondary],
-                  )
-                  : null,
-          color: primary ? null : c.surfaceElevated,
-          borderRadius: BorderRadius.circular(12),
-          border: primary ? null : Border.all(color: c.border, width: 0.5),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: primary ? c.onPlayer : c.textSecondary, size: 20),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.outfit(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: primary ? c.onPlayer : c.textSecondary,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => LibraryDetailAction(
+    label: label,
+    icon: icon,
+    onTap: onTap,
+    primary: primary,
+  );
 }

@@ -27,7 +27,6 @@ class _HomeScreenState extends State<HomeScreen> {
   final _libraryScreenKey = GlobalKey<LibraryScreenState>();
 
   late final _tabs = [
-    LibraryScreen(key: _libraryScreenKey),
     _HomeTabBody(
       onShowAllPlaylists: () => _showLibraryTab(0),
       onShowAllSongs: (query) => _showLibraryTab(1, searchQuery: query),
@@ -50,7 +49,16 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Stack(
         children: [
           Positioned.fill(
-            child: IndexedStack(index: _currentIndex, children: _tabs),
+            child: IndexedStack(
+              index: _currentIndex,
+              children: [
+                LibraryScreen(
+                  key: _libraryScreenKey,
+                  active: _currentIndex == 0,
+                ),
+                ..._tabs,
+              ],
+            ),
           ),
         ],
       ),

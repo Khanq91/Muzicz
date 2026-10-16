@@ -8,6 +8,7 @@ import '../providers/music_provider.dart';
 import '../providers/player_provider.dart';
 import 'add_to_playlist_sheet.dart';
 import 'package:muziczz/core/app_strings.dart';
+import 'library/library_chrome.dart';
 
 class MusicListTile extends StatelessWidget {
   const MusicListTile({
@@ -16,6 +17,7 @@ class MusicListTile extends StatelessWidget {
     required this.onTap,
     this.trailing,
     this.isActive = false,
+    this.libraryStyle = false,
     // ── Selection support ──────────────────────────────────────────────────
     this.isSelecting = false,
     this.isSelected = false,
@@ -26,6 +28,7 @@ class MusicListTile extends StatelessWidget {
   final VoidCallback onTap;
   final Widget? trailing;
   final bool isActive;
+  final bool libraryStyle;
   final bool isSelecting;
   final bool isSelected;
   final VoidCallback? onLongPress;
@@ -39,10 +42,14 @@ class MusicListTile extends StatelessWidget {
             ? c.primary.withValues(alpha: 0.14)
             : isActive
             ? c.primary.withValues(alpha: 0.08)
+            : libraryStyle
+            ? libraryCardColor(context)
             : Colors.transparent;
 
     return Material(
-      color: Colors.transparent,
+      color: libraryStyle ? bgColor : Colors.transparent,
+      borderRadius: BorderRadius.circular(libraryStyle ? 26 : 12),
+      clipBehavior: libraryStyle ? Clip.antiAlias : Clip.none,
       child: InkWell(
         onTap: onTap,
         onLongPress:
@@ -61,23 +68,32 @@ class MusicListTile extends StatelessWidget {
                         music,
                       );
                     }),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(libraryStyle ? 26 : 12),
         splashColor: c.primary.withValues(alpha: 0.1),
         highlightColor: c.primary.withValues(alpha: 0.05),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          duration:
+              MediaQuery.disableAnimationsOf(context)
+                  ? Duration.zero
+                  : const Duration(milliseconds: 200),
+          padding: EdgeInsets.symmetric(
+            horizontal: libraryStyle ? 12 : 16,
+            vertical: libraryStyle ? 12 : 10,
+          ),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(libraryStyle ? 26 : 12),
             color: bgColor,
           ),
           child: Row(
             children: [
-              _AlbumArtWithCheckbox(
-                albumId: song.albumId,
-                isActive: isActive && !isSelecting,
-                isSelecting: isSelecting,
-                isSelected: isSelected,
+              ClipRRect(
+                borderRadius: BorderRadius.circular(libraryStyle ? 24 : 10),
+                child: _AlbumArtWithCheckbox(
+                  albumId: song.albumId,
+                  isActive: isActive && !isSelecting,
+                  isSelecting: isSelecting,
+                  isSelected: isSelected,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -100,7 +116,9 @@ class MusicListTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      '${song.artist} · ${song.album}',
+                      libraryStyle
+                          ? song.artist
+                          : '${song.artist} · ${song.album}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -116,6 +134,24 @@ class MusicListTile extends StatelessWidget {
               if (!isSelecting) ...[
                 if (trailing != null)
                   trailing!
+                else if (libraryStyle)
+                  IconButton.filledTonal(
+                    tooltip: AppStrings.songOptions,
+                    style: IconButton.styleFrom(
+                      backgroundColor: c.surfaceElevated,
+                      foregroundColor: c.textPrimary,
+                      minimumSize: const Size(48, 48),
+                    ),
+                    icon: const Icon(Icons.more_vert_rounded),
+                    onPressed: () {
+                      final music = context.read<MusicProvider>();
+                      _showContextMenu(
+                        context,
+                        music.isFavorite(song.id),
+                        music,
+                      );
+                    },
+                  )
                 else
                   Text(
                     song.durationFormatted,
@@ -139,6 +175,21 @@ class MusicListTile extends StatelessWidget {
     MusicProvider musicProvider,
   ) {
     final c = context.appColors;
+    if (libraryStyle) {
+      showLibrarySheet(
+        context,
+        SingleChildScrollView(
+          child: _SongContextMenu(
+            song: song,
+            isFavorite: isFav,
+            onFavoriteToggle: () => musicProvider.toggleFavorite(song.id),
+            parentContext: context,
+            libraryStyle: true,
+          ),
+        ),
+      );
+      return;
+    }
     showModalBottomSheet(
       context: context,
       backgroundColor: c.card,
@@ -261,12 +312,14 @@ class _SongContextMenu extends StatelessWidget {
     required this.isFavorite,
     required this.onFavoriteToggle,
     required this.parentContext,
+    this.libraryStyle = false,
   });
 
   final SongItem song;
   final bool isFavorite;
   final VoidCallback onFavoriteToggle;
   final BuildContext parentContext;
+  final bool libraryStyle;
 
   @override
   Widget build(BuildContext context) {
@@ -276,14 +329,15 @@ class _SongContextMenu extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: c.divider,
-              borderRadius: BorderRadius.circular(2),
+          if (!libraryStyle)
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: c.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-          ),
           const SizedBox(height: 16),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
