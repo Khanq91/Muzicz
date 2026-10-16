@@ -20,7 +20,7 @@ class PlaylistsTab extends StatelessWidget {
 
   final VoidCallback onClearSearch;
 
-  @override
+  @override 
   Widget build(BuildContext context) {
     final music = context.watch<MusicProvider>();
     final hasMiniPlayer = context.select<PlayerProvider, bool>(

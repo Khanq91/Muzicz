@@ -29,6 +29,9 @@ class MusicProvider extends ChangeNotifier {
   List<SongItem> _allSongs = [];
   List<SongItem> get allSongs => _allSongs;
 
+  int get totalPlayCount =>
+      _storage.playCounts.values.fold(0, (total, count) => total + count);
+
   Map<String, List<SongItem>> _albumMap = {};
   Map<String, List<SongItem>> get albumMap => _albumMap;
   List<MapEntry<String, List<SongItem>>> _sortedAlbumGroups = const [];

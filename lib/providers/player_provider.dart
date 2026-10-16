@@ -30,6 +30,7 @@ class PlayerProvider extends ChangeNotifier {
   int _currentPlayIndex = 0;
 
   List<SongItem> get queue => _playQueue;
+  int get currentQueueIndex => _currentPlayIndex;
 
   bool _isPlaying = false;
   bool get isPlaying => _isPlaying;

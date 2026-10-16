@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart' hide RepeatMode;
-import 'package:on_audio_query/on_audio_query.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../core/app_strings.dart';
 import '../models/song_item.dart';
@@ -14,7 +14,7 @@ import '../widgets/now_playing/top_bar.dart';
 import '../widgets/now_playing/sheets/queue_sheet.dart';
 import '../widgets/now_playing/sheets/sleep_timer_sheet.dart';
 import '../widgets/now_playing/sheets/speed_sheet.dart';
-import '../widgets/track_swipe.dart';
+import '../widgets/now_playing/album_carousel.dart';
 
 class NowPlayingScreen extends StatefulWidget {
   const NowPlayingScreen({super.key});
@@ -108,6 +108,26 @@ class _NowPlayingScreenState extends State<NowPlayingScreen> {
     ),
   );
 
+  Future<void> _output() async {
+    try {
+      await const MethodChannel(
+        'muzicz/audio_output',
+      ).invokeMethod<void>('showOutputSwitcher');
+    } on PlatformException {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text(AppStrings.outputUnavailable)),
+        );
+      }
+    } on MissingPluginException {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text(AppStrings.outputAndroidOnly)),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final song = context.select<PlayerProvider, SongItem?>(
@@ -121,11 +141,21 @@ class _NowPlayingScreenState extends State<NowPlayingScreen> {
       );
     }
     return Scaffold(
-      backgroundColor: c.background,
+      backgroundColor: Color.lerp(
+        c.background,
+        c.primary,
+        c.isDark ? .10 : .14,
+      ),
       body: SafeArea(
         child: Column(
           children: [
-            TopBar(song: song),
+            TopBar(
+              song: song,
+              onQueue: _queue,
+              onOutput: _output,
+              onSpeed: () => _sheet((_) => const SpeedSheet()),
+              onTimer: () => _sheet((_) => const SleepTimerSheet()),
+            ),
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraints) {
@@ -136,11 +166,11 @@ class _NowPlayingScreenState extends State<NowPlayingScreen> {
                       );
                   final height = math.max(
                     constraints.maxHeight,
-                    560.0 + extraText,
+                    620.0 + extraText,
                   );
                   final artSize = math.min(
-                    constraints.maxWidth * 0.84,
-                    height - 324 - extraText,
+                    constraints.maxWidth - 44,
+                    height - 390 - extraText,
                   );
                   final content = SizedBox(
                     height: height,
@@ -148,54 +178,19 @@ class _NowPlayingScreenState extends State<NowPlayingScreen> {
                       children: [
                         const Spacer(),
                         SizedBox(
+                          width: artSize + 44,
                           height: artSize,
-                          child: TrackSwipe(
-                            onNext: _player.skipToNext,
-                            onPrevious: _player.skipToPrevious,
-                            child: Center(
-                              child: _PlayerArtwork(song: song, size: artSize),
-                            ),
-                          ),
+                          child: AlbumCarousel(player: _player),
                         ),
                         const Spacer(),
-                        SongInfo(song: song),
+                        SongInfo(song: song, onLyrics: _lyrics),
                         const SizedBox(height: 16),
                         ProgressSection(player: _player),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 24),
                         ControlsSection(player: _player),
                         const SizedBox(height: 20),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              IconButton(
-                                onPressed: _lyrics,
-                                tooltip: AppStrings.lyrics,
-                                icon: const Icon(Icons.lyrics_rounded),
-                              ),
-                              IconButton(
-                                tooltip: AppStrings.playbackSpeed,
-                                icon: const Icon(Icons.speed_rounded),
-                                onPressed:
-                                    () => _sheet((_) => const SpeedSheet()),
-                              ),
-                              IconButton(
-                                tooltip: AppStrings.sleepTimer,
-                                icon: const Icon(Icons.bedtime_outlined),
-                                onPressed:
-                                    () =>
-                                        _sheet((_) => const SleepTimerSheet()),
-                              ),
-                              IconButton(
-                                tooltip: AppStrings.queue,
-                                icon: const Icon(Icons.queue_music_rounded),
-                                onPressed: _queue,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 12),
+                        PlayerToggleRow(player: _player),
+                        const SizedBox(height: 20),
                       ],
                     ),
                   );
@@ -207,52 +202,6 @@ class _NowPlayingScreenState extends State<NowPlayingScreen> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PlayerArtwork extends StatelessWidget {
-  const _PlayerArtwork({required this.song, required this.size});
-  final SongItem song;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    final playing = context.select<PlayerProvider, bool>((p) => p.isPlaying);
-    final c = context.appColors;
-    return AnimatedScale(
-      scale: playing ? 1 : 0.95,
-      duration:
-          MediaQuery.disableAnimationsOf(context)
-              ? Duration.zero
-              : const Duration(milliseconds: 260),
-      curve: Curves.easeOutCubic,
-      child: RepaintBoundary(
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(32),
-          child: SizedBox.square(
-            dimension: size,
-            child: QueryArtworkWidget(
-              key: ValueKey(song.albumId),
-              id: song.albumId,
-              type: ArtworkType.ALBUM,
-              artworkWidth: size,
-              artworkHeight: size,
-              artworkFit: BoxFit.cover,
-              artworkBorder: BorderRadius.zero,
-              keepOldArtwork: true,
-              nullArtworkWidget: DecoratedBox(
-                decoration: BoxDecoration(gradient: c.primaryGradient),
-                child: Icon(
-                  Icons.music_note_rounded,
-                  size: 96,
-                  color: c.onPlayer,
-                ),
-              ),
-            ),
-          ),
         ),
       ),
     );

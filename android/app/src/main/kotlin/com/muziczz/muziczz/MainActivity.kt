@@ -1,5 +1,9 @@
 package com.muziczz.muziczz
 
+import android.content.Intent
+import android.media.MediaRouter2
+import android.provider.Settings
+import io.flutter.plugin.common.MethodChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
@@ -24,6 +28,22 @@ class MainActivity : AudioServiceFragmentActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "muzicz/audio_output")
+            .setMethodCallHandler { call, result ->
+                if (call.method != "showOutputSwitcher") {
+                    result.notImplemented()
+                } else {
+                    try {
+                        // Public output-switcher API; older devices use system Bluetooth settings.
+                        val shown = Build.VERSION.SDK_INT >= 34 &&
+                            MediaRouter2.getInstance(this).showSystemOutputSwitcher()
+                        if (!shown) startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
+                        result.success(null)
+                    } catch (error: Exception) {
+                        result.error("audio_output", error.message, null)
+                    }
+                }
+            }
         androidVisualizerPoc = AndroidVisualizerPocPlugin.register(
             flutterEngine.dartExecutor.binaryMessenger
         )

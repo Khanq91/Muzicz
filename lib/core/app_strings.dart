@@ -9,8 +9,21 @@
 /// - Nhóm theo màn hình/widget; chuỗi dùng chung nằm ở phần "Chung".
 /// ════════════════════════════════════════════════════════════════════════════
 abstract final class AppStrings {
-  static const trackChangeFailed = 'Kh?ng th? chuy?n b?i. H?y th? l?i.';
+  static const trackChangeFailed = 'Không thể chuyển bài. Hãy thử lại.';
   static const yourSongs = 'Your Songs';
+  static const yourSongsHeading = 'Your\nSongs';
+  static const audioOutput = 'Đầu ra âm thanh';
+  static const songOptions = 'Tùy chọn bài hát';
+  static const outputUnavailable = 'Không mở được lựa chọn đầu ra âm thanh.';
+  static const outputAndroidOnly =
+      'Lựa chọn đầu ra âm thanh khả dụng trên Android.';
+  static const fromListeningHistory = 'Từ lịch sử nghe của bạn';
+  static const listeningStats = 'Thống kê nghe nhạc';
+  static const mostPlayedTitle = 'Nghe nhiều nhất';
+  static const allTimePlays = 'Tổng lượt phát từ trước đến nay';
+  static const inYourLibrary = 'Trong thư viện của bạn';
+  static String totalPlaysLabel(int count) =>
+      '$count lượt phát · từ trước đến nay';
   // ─────────────────────────────────────────────────────────────────────────
   // Thương hiệu
   // ─────────────────────────────────────────────────────────────────────────

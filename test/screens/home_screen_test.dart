@@ -64,7 +64,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text(AppStrings.yourSongs), findsOneWidget);
+    expect(find.text(AppStrings.yourSongsHeading), findsOneWidget);
     expect(
       find.byTooltip(AppStrings.shufflePlay).hitTestable(),
       findsOneWidget,

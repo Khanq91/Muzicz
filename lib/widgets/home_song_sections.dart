@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
@@ -6,8 +7,63 @@ import '../models/song_item.dart';
 import '../providers/music_provider.dart';
 import '../providers/player_provider.dart';
 import '../theme/app_colors_data.dart';
+import 'now_playing/top_bar.dart';
 
-/// A bounded, stable collage: no random ordering or image work while scrolling.
+class HomeActionButton extends StatefulWidget {
+  const HomeActionButton({
+    super.key,
+    required this.label,
+    required this.icon,
+    required this.size,
+    required this.color,
+    this.onTap,
+  });
+  final String label;
+  final IconData icon;
+  final double size;
+  final Color color;
+  final VoidCallback? onTap;
+  @override
+  State<HomeActionButton> createState() => _HomeActionButtonState();
+}
+
+class _HomeActionButtonState extends State<HomeActionButton> {
+  bool _pressed = false;
+  @override
+  Widget build(BuildContext context) => AnimatedScale(
+    scale: _pressed ? .9 : 1,
+    duration:
+        MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 380),
+    curve: Curves.easeOutBack,
+    child: SizedBox.square(
+      dimension: widget.size,
+      child: Material(
+        color: widget.color,
+        shape: const CircleBorder(),
+        child: Tooltip(
+          message: widget.label,
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: widget.onTap,
+            onHighlightChanged: (pressed) => setState(() => _pressed = pressed),
+            child: Semantics(
+              button: true,
+              label: widget.label,
+              child: Icon(
+                widget.icon,
+                size: widget.size * .38,
+                color: context.appColors.textPrimary,
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 class HomeSongCollage extends StatelessWidget {
   const HomeSongCollage({
     super.key,
@@ -16,61 +72,302 @@ class HomeSongCollage extends StatelessWidget {
   });
   final List<SongItem> songs;
   final ValueChanged<SongItem> onSongTap;
-
   @override
-  Widget build(BuildContext context) {
-    final preview = songs.take(5).toList(growable: false);
-    if (preview.isEmpty) return const SizedBox.shrink();
-    Widget tile(int index, double radius) => Expanded(
-      child: Padding(
-        padding: const EdgeInsets.all(4),
-        child: _SongCover(
-          song: preview[index],
-          radius: radius,
-          onTap: () => onSongTap(preview[index]),
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(24, 8, 24, 38),
+    child: AspectRatio(
+      aspectRatio: 1.02,
+      child: LayoutBuilder(
+        builder: (context, box) {
+          final w = box.maxWidth;
+          final h = box.maxHeight;
+          // PixelPlayer's freeform pattern: a diagonal capsule, two satellites,
+          // and two lower cutouts. Stable positions avoid reshuffling on rebuild.
+          const positions = [
+            (.29, .02, .43, .58, math.pi / 4),
+            (.01, .01, .20, .20, 0.0),
+            (.78, .36, .20, .20, 0.0),
+            (.10, .67, .25, .30, -.35),
+            (.60, .63, .37, .36, .10),
+          ];
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              for (var i = 0; i < math.min(5, songs.length); i++)
+                Positioned(
+                  left: positions[i].$1 * w,
+                  top: positions[i].$2 * h,
+                  width: positions[i].$3 * w,
+                  height: positions[i].$4 * h,
+                  child: Transform.rotate(
+                    angle: positions[i].$5,
+                    child: _CollageCover(
+                      song: songs[i],
+                      cutout: i > 2,
+                      onTap: () => onSongTap(songs[i]),
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+    ),
+  );
+}
+
+class _CollageCover extends StatelessWidget {
+  const _CollageCover({
+    required this.song,
+    required this.cutout,
+    required this.onTap,
+  });
+  final SongItem song;
+  final bool cutout;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: '${song.title}, ${song.artist}',
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(cutout ? 30 : 120),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          child: RepaintBoundary(
+            child: QueryArtworkWidget(
+              id: song.albumId,
+              type: ArtworkType.ALBUM,
+              artworkBorder: BorderRadius.zero,
+              artworkFit: BoxFit.cover,
+              keepOldArtwork: true,
+              nullArtworkWidget: ColoredBox(
+                color:
+                    cutout
+                        ? Colors.transparent
+                        : context.appColors.surfaceElevated,
+                child: LayoutBuilder(
+                  builder:
+                      (_, size) => Icon(
+                        Icons.music_note_rounded,
+                        size: size.biggest.shortestSide * .9,
+                        color: context.appColors.textDisabled,
+                      ),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
-    );
+    ),
+  );
+}
+
+class HomeSongSection extends StatelessWidget {
+  const HomeSongSection({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.songs,
+    this.onViewAll,
+  });
+  final String title;
+  final String subtitle;
+  final List<SongItem> songs;
+  final VoidCallback? onViewAll;
+  void _open(BuildContext context) => Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder:
+          (_) => Scaffold(
+            appBar: AppBar(title: Text(title)),
+            body: ListView.builder(
+              itemCount: songs.length,
+              itemBuilder: (_, i) => _SongRow(song: songs[i], songs: songs),
+            ),
+          ),
+    ),
+  );
+  @override
+  Widget build(BuildContext context) {
+    final c = context.appColors;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
-      child: SizedBox(
-        height: (MediaQuery.sizeOf(context).width * 0.95).clamp(240.0, 420.0),
-        child:
-            preview.length < 3
-                ? Row(
-                  children: [
-                    for (var i = 0; i < preview.length; i++) tile(i, 36),
-                  ],
-                )
-                : Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: Material(
+          color: c.surfaceElevated,
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 22,
+                  vertical: 20,
+                ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Color.lerp(c.primary, c.surface, .35)!,
+                      Color.lerp(c.tertiary, c.surface, .45)!,
+                    ],
+                  ),
+                ),
+                child: Row(
                   children: [
                     Expanded(
-                      flex: 6,
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          tile(0, 36),
-                          if (preview.length > 3)
-                            Flexible(
-                              child: Row(
-                                children: [
-                                  tile(3, 50),
-                                  if (preview.length > 4) tile(4, 24),
-                                ],
+                          Text(
+                            title,
+                            style: const TextStyle(
+                              fontSize: 21,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            subtitle,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    SizedBox(
+                      width: 88,
+                      height: 48,
+                      child: Stack(
+                        children: [
+                          for (var i = 0; i < 3; i++)
+                            Positioned(
+                              left: i * 21,
+                              top: i == 1 ? 0 : 5,
+                              child: Container(
+                                width: 46,
+                                height: 43,
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.white70,
+                                    width: 1.5,
+                                  ),
+                                  borderRadius: BorderRadius.circular(
+                                    i == 1 ? 40 : 14,
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.music_note_rounded,
+                                  color: Colors.white54,
+                                ),
                               ),
                             ),
                         ],
                       ),
                     ),
-                    Expanded(
-                      flex: 5,
-                      child: Column(children: [tile(1, 70), tile(2, 28)]),
-                    ),
                   ],
                 ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                child: Column(
+                  children: [
+                    for (final song in songs.take(4))
+                      _SongRow(song: song, songs: songs),
+                  ],
+                ),
+              ),
+              InkWell(
+                onTap: onViewAll ?? () => _open(context),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 20,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          AppStrings.viewAll,
+                          style: TextStyle(
+                            fontSize: 17,
+                            color: c.textSecondary,
+                          ),
+                        ),
+                      ),
+                      Icon(Icons.arrow_forward_rounded, color: c.textSecondary),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
+}
+
+class _SongRow extends StatelessWidget {
+  const _SongRow({required this.song, required this.songs});
+  final SongItem song;
+  final List<SongItem> songs;
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 3),
+    child: Material(
+      color: context.appColors.background.withValues(alpha: .55),
+      borderRadius: BorderRadius.circular(22),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(22),
+        onTap:
+            () => context.read<PlayerProvider>().playSongs(
+              songs,
+              specificSong: song,
+            ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 10, 10, 10),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      song.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      song.artist,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: context.appColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Material(
+                color: context.appColors.surfaceElevated,
+                shape: const CircleBorder(),
+                child: SongOverflowMenu(song: song),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 class HomeListeningSections extends StatelessWidget {
@@ -83,153 +380,73 @@ class HomeListeningSections extends StatelessWidget {
     final added = context.select<MusicProvider, List<SongItem>>(
       (p) => p.recentlyAdded,
     );
+    final total = context.select<MusicProvider, int>((p) => p.totalPlayCount);
     return Column(
       children: [
         if (recent.isNotEmpty)
-          _SongRail(title: AppStrings.recentlyPlayed, songs: recent),
+          HomeSongSection(
+            title: AppStrings.recentlyPlayed,
+            subtitle: AppStrings.fromListeningHistory,
+            songs: recent,
+          ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          child: Material(
+            color: context.appColors.surfaceElevated,
+            borderRadius: BorderRadius.circular(30),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(30),
+              onTap:
+                  () => showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    builder:
+                        (_) => SafeArea(
+                          child: SingleChildScrollView(
+                            child: HomeSongSection(
+                              title: AppStrings.mostPlayedTitle,
+                              subtitle: AppStrings.allTimePlays,
+                              songs: context.read<MusicProvider>().mostPlayed,
+                            ),
+                          ),
+                        ),
+                  ),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            AppStrings.listeningStats,
+                            style: TextStyle(fontSize: 20),
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            AppStrings.totalPlaysLabel(total),
+                            style: TextStyle(
+                              color: context.appColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_rounded),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
         if (added.isNotEmpty)
-          _SongRail(title: AppStrings.recentlyAdded, songs: added),
+          HomeSongSection(
+            title: AppStrings.recentlyAdded,
+            subtitle: AppStrings.inYourLibrary,
+            songs: added,
+          ),
       ],
     );
   }
-}
-
-class _SongRail extends StatelessWidget {
-  const _SongRail({required this.title, required this.songs});
-  final String title;
-  final List<SongItem> songs;
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 14),
-        child: Text(
-          title,
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: context.appColors.textPrimary,
-          ),
-        ),
-      ),
-      SizedBox(
-        height: 156 + MediaQuery.textScalerOf(context).scale(40),
-        child: ListView.separated(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          scrollDirection: Axis.horizontal,
-          itemCount: songs.length,
-          separatorBuilder: (_, _) => const SizedBox(width: 12),
-          itemBuilder: (context, index) {
-            final song = songs[index];
-            return SizedBox(
-              width: 144,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox.square(
-                    dimension: 144,
-                    child: _SongCover(
-                      song: song,
-                      onTap:
-                          () => context.read<PlayerProvider>().playSongs(
-                            songs,
-                            specificSong: song,
-                          ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    song.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  Text(
-                    song.artist,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: context.appColors.textTertiary,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-      ),
-    ],
-  );
-}
-
-class _SongCover extends StatelessWidget {
-  const _SongCover({required this.song, required this.onTap, this.radius = 24});
-  final SongItem song;
-  final VoidCallback onTap;
-  final double radius;
-  @override
-  Widget build(BuildContext context) => Semantics(
-    button: true,
-    label: '${song.title}, ${song.artist}',
-    child: ClipRRect(
-      borderRadius: BorderRadius.circular(radius),
-      child: Material(
-        color: context.appColors.surfaceElevated,
-        child: InkWell(
-          onTap: onTap,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              RepaintBoundary(
-                child: QueryArtworkWidget(
-                  id: song.albumId,
-                  type: ArtworkType.ALBUM,
-                  artworkFit: BoxFit.cover,
-                  artworkBorder: BorderRadius.zero,
-                  keepOldArtwork: true,
-                  nullArtworkWidget: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: context.appColors.primaryGradient,
-                    ),
-                    child: const Center(
-                      child: Icon(Icons.music_note_rounded, size: 48),
-                    ),
-                  ),
-                ),
-              ),
-              const Positioned.fill(
-                child: IgnorePointer(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.center,
-                        end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, Color(0x80000000)],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: 14,
-                right: 14,
-                bottom: 14,
-                child: Text(
-                  song.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
 }

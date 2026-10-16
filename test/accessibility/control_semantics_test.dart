@@ -138,9 +138,74 @@ void main() {
       tester.getSemantics(find.byTooltip('Yêu thích')),
       isSemantics(hasTapAction: true, hasToggledState: true, isToggled: false),
     );
-    expect(find.byTooltip('Thêm vào danh sách phát'), findsOneWidget);
+    expect(find.byTooltip(AppStrings.songOptions), findsOneWidget);
     handle.dispose();
   });
+
+  testWidgets(
+    'album swipe commits only after settling; rapid skips stay in sync',
+    (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(390, 844);
+      addTearDown(tester.view.reset);
+      final gateway = _FakePlayerAudioGateway();
+      final player = PlayerProvider(gateway);
+      addTearDown(() async {
+        player.dispose();
+        await gateway.dispose();
+      });
+      final songs = List.generate(
+        5,
+        (i) => SongItem(
+          id: i + 10,
+          title: 'Song $i',
+          artist: 'Artist',
+          album: 'Album',
+          albumId: i,
+          artistId: 1,
+          data: '/$i.mp3',
+          duration: 180000,
+        ),
+      );
+      await player.playSongs(songs);
+      await _pumpNowPlaying(tester, player);
+      final carousel = find.byKey(const ValueKey('album-carousel'));
+      final start = tester.getCenter(carousel);
+      final drag = await tester.startGesture(start);
+      await drag.moveBy(const Offset(-20, 0));
+      await drag.moveBy(const Offset(-65, 0));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(player.currentQueueIndex, 0);
+      await drag.up();
+      await tester.pumpAndSettle();
+      expect(player.currentQueueIndex, 0);
+      await tester.drag(carousel, const Offset(-300, 0));
+      await tester.pumpAndSettle();
+      expect(player.currentQueueIndex, 1);
+      final next = find.byKey(const ValueKey('transport-2'));
+      final previous = find.byKey(const ValueKey('transport-0'));
+      final width = tester.getSize(next).width;
+      await tester.tap(next);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(tester.getSize(next).width, greaterThan(width));
+      expect(tester.getSize(previous).width, lessThan(width));
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.tap(next);
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pumpAndSettle();
+      expect(player.currentQueueIndex, 3);
+      expect(
+        tester.widget<PageView>(carousel).controller!.page,
+        closeTo(3, .01),
+      );
+      expect(tester.getSize(next).width, closeTo(width, .2));
+      await tester.drag(carousel, const Offset(300, 0));
+      await tester.pumpAndSettle();
+      expect(player.currentQueueIndex, 2);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('queue sheet rows expose a labeled remove control', (
     tester,

@@ -1,24 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:muziczz/theme/app_colors_data.dart';
-import 'package:provider/provider.dart';
 import '../../models/song_item.dart';
-import '../../providers/music_provider.dart';
-import '../add_to_playlist_sheet.dart';
-import 'package:muziczz/core/app_strings.dart';
+import '../../core/app_strings.dart';
+import '../../theme/app_colors_data.dart';
 
 class SongInfo extends StatelessWidget {
-  const SongInfo({super.key, required this.song});
+  const SongInfo({super.key, required this.song, required this.onLyrics});
   final SongItem song;
-
+  final VoidCallback onLyrics;
   @override
   Widget build(BuildContext context) {
-    final music = context.watch<MusicProvider>();
-    final isFav = music.isFavorite(song.id);
     final c = context.appColors;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 28),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
         children: [
           Expanded(
@@ -28,73 +21,33 @@ class SongInfo extends StatelessWidget {
                 Text(
                   song.title,
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.outfit(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: c.playerForeground,
-                    letterSpacing: -0.3,
+                  overflow: TextOverflow.fade,
+                  softWrap: false,
+                  style: TextStyle(
+                    fontSize: 23,
+                    fontWeight: FontWeight.w500,
+                    color: c.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${song.artist} · ${song.album}',
+                  song.artist,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.outfit(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w300,
-                    color: c.playerSecondary,
-                  ),
+                  style: TextStyle(fontSize: 16, color: c.textSecondary),
                 ),
               ],
             ),
           ),
-          IconButton(
-            tooltip: AppStrings.addToPlaylist,
-            onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                backgroundColor: Colors.transparent,
-                isScrollControlled: true,
-                builder:
-                    (_) => ChangeNotifierProvider.value(
-                      value: context.read<MusicProvider>(),
-                      child: AddToPlaylistSheet(song: song),
-                    ),
-              );
-            },
-            icon: Icon(
-              Icons.playlist_add_rounded,
-              color: c.playerMuted,
-              size: 26,
+          const SizedBox(width: 10),
+          IconButton.filledTonal(
+            tooltip: AppStrings.lyrics,
+            style: IconButton.styleFrom(
+              backgroundColor: c.background,
+              minimumSize: const Size(48, 48),
             ),
-          ),
-          MergeSemantics(
-            child: Semantics(
-              toggled: isFav,
-              child: IconButton(
-                tooltip: isFav ? AppStrings.unfavorite : AppStrings.favorites,
-                onPressed: () {
-                  music.toggleFavorite(song.id);
-                  HapticFeedback.selectionClick();
-                },
-                icon: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  transitionBuilder:
-                      (child, anim) =>
-                          ScaleTransition(scale: anim, child: child),
-                  child: Icon(
-                    isFav
-                        ? Icons.favorite_rounded
-                        : Icons.favorite_border_rounded,
-                    key: ValueKey(isFav),
-                    color: isFav ? c.tertiary : c.playerMuted,
-                    size: 26,
-                  ),
-                ),
-              ),
-            ),
+            onPressed: onLyrics,
+            icon: const Icon(Icons.lyrics_outlined),
           ),
         ],
       ),
