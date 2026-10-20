@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter/services.dart';
 import 'lyrics_parser.dart';
 
 /// Reads bounded metadata, never decodes or uploads the audio stream.
@@ -8,6 +9,19 @@ class EmbeddedLyricsReader {
   static const limit = 2 * 1024 * 1024;
 
   Future<String?> read(String path) async {
+    // Prefer the same TagLib properties as PixelPlayer. Keep the bounded Dart
+    // reader for non-Android platforms and metadata unsupported by TagLib.
+    try {
+      final fields = await const MethodChannel(
+        'muzicz/lyrics',
+      ).invokeListMethod<String>('readEmbeddedLyrics', path);
+      final best = bestField(fields ?? []);
+      if (best != null) return best;
+    } on MissingPluginException {
+      // Desktop/tests use the portable parser.
+    } on PlatformException {
+      // Try the portable parser before giving up on embedded lyrics.
+    }
     final file = File(path);
     if (!await file.exists()) return null;
     final handle = await file.open();
@@ -23,6 +37,21 @@ class EmbeddedLyricsReader {
     } finally {
       await handle.close();
     }
+  }
+
+  static String? bestField(Iterable<String> fields) {
+    String? plain;
+    for (final raw in fields) {
+      try {
+        final lines = LyricsParser.parse(raw);
+        if (!lines.any((line) => line.text.trim().isNotEmpty)) continue;
+        if (lines.any((line) => line.time != null)) return raw;
+        plain ??= raw;
+      } on FormatException {
+        // One bad field must not hide a later valid field.
+      }
+    }
+    return plain;
   }
 
   static int _int(
@@ -172,6 +201,7 @@ class EmbeddedLyricsReader {
     var pos = 4 + _int(bytes, 0, 4, little: true);
     final count = _int(bytes, pos, 4, little: true);
     pos += 4;
+    final fields = <String>[];
     for (var i = 0; i < count && pos + 4 <= bytes.length; i++) {
       final length = _int(bytes, pos, 4, little: true);
       pos += 4;
@@ -187,11 +217,12 @@ class EmbeddedLyricsReader {
             'LYRICS',
             'UNSYNCEDLYRICS',
             'SYNCEDLYRICS',
+            'TTML',
           ].contains(value.substring(0, equal).toUpperCase())) {
-        return value.substring(equal + 1);
+        fields.add(value.substring(equal + 1));
       }
     }
-    return null;
+    return bestField(fields);
   }
 
   Future<String?> _mp4(

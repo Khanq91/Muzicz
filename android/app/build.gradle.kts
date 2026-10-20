@@ -20,12 +20,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
-    kotlinOptions {
-//        jvmTarget = JavaVersion.VERSION_17.toString()
-
-        jvmTarget = "11"
-    }
-
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.muziczz.muziczz"
@@ -54,4 +48,10 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Same TagLib property API as PixelPlayer, pinned to Muzicz's SDK 36.
+    // 1.0.6 requires compileSdk 37; 1.0.5 supports the audio formats used here.
+    implementation("io.github.kyant0:taglib:1.0.5")
 }

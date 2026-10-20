@@ -8,6 +8,10 @@ import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
+import android.os.ParcelFileDescriptor
+import android.net.Uri
+import java.io.File
+import com.kyant.taglib.TagLib
 import android.icu.text.Transliterator
 import android.view.WindowManager
 import java.util.concurrent.Executors
@@ -36,6 +40,27 @@ class MainActivity : AudioServiceFragmentActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "muzicz/lyrics")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
+                    "readEmbeddedLyrics" -> {
+                        val path = call.arguments as? String ?: ""
+                        lyricsExecutor.execute {
+                            try {
+                                val descriptor = if (path.startsWith("content://")) {
+                                    contentResolver.openFileDescriptor(Uri.parse(path), "r")
+                                } else {
+                                    ParcelFileDescriptor.open(File(path), ParcelFileDescriptor.MODE_READ_ONLY)
+                                }
+                                val fields = descriptor?.use { fd ->
+                                    val properties = TagLib.getMetadata(fd.detachFd())?.propertyMap
+                                    listOf("LYRICS", "SYNCEDLYRICS", "TTML", "UNSYNCEDLYRICS")
+                                        .flatMap { properties?.get(it)?.toList().orEmpty() }
+                                        .filter { it.isNotBlank() && it.length <= 1024 * 1024 }
+                                }.orEmpty()
+                                runOnUiThread { result.success(fields) }
+                            } catch (error: Exception) {
+                                runOnUiThread { result.error("embedded_lyrics", error.message, null) }
+                            }
+                        }
+                    }
                     "readAiConfig", "writeAiConfig" -> {
                         lyricsExecutor.execute {
                             try {

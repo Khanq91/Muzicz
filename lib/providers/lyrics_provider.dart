@@ -66,11 +66,11 @@ class LyricsProvider extends ChangeNotifier {
   LyricsSourcePreference sourcePreference =
       LyricsSourcePreference.embeddedFirst;
   double fontSize = 28;
-  bool center = false,
-      blur = true,
-      translation = true,
-      romanization = true,
-      immersive = false;
+  String alignment = 'left';
+  bool get center => alignment == 'center';
+  bool animated = false;
+  double blurStrength = 2.5;
+  bool blur = true, translation = true, romanization = true, immersive = false;
   SharedPreferences? _prefs;
   Future<void>? _initializing;
 
@@ -83,7 +83,14 @@ class LyricsProvider extends ChangeNotifier {
       orElse: () => LyricsSourcePreference.embeddedFirst,
     );
     fontSize = (prefs.getDouble('lyrics_font') ?? 28).clamp(18, 42);
-    center = prefs.getBool('lyrics_center') ?? false;
+    alignment =
+        prefs.getString('lyrics_alignment') ??
+        ((prefs.getBool('lyrics_center') ?? false) ? 'center' : 'left');
+    animated = prefs.getBool('lyrics_animated') ?? false;
+    blurStrength = (prefs.getDouble('lyrics_blur_strength') ?? 2.5).clamp(
+      0,
+      10,
+    );
     blur = prefs.getBool('lyrics_blur') ?? true;
     translation = prefs.getBool('lyrics_translation') ?? true;
     romanization = prefs.getBool('lyrics_romanization') ?? true;
@@ -239,6 +246,9 @@ class LyricsProvider extends ChangeNotifier {
     LyricsSourcePreference? source,
     double? size,
     bool? centered,
+    String? textAlignment,
+    bool? animatedLines,
+    double? blurAmount,
     bool? blurred,
     bool? translations,
     bool? romanized,
@@ -247,7 +257,15 @@ class LyricsProvider extends ChangeNotifier {
     await initialize();
     sourcePreference = source ?? sourcePreference;
     fontSize = (size ?? fontSize).clamp(18, 42);
-    center = centered ?? center;
+    alignment =
+        textAlignment ??
+        (centered == null
+            ? alignment
+            : centered
+            ? 'center'
+            : 'left');
+    animated = animatedLines ?? animated;
+    blurStrength = (blurAmount ?? blurStrength).clamp(0, 10);
     blur = blurred ?? blur;
     translation = translations ?? translation;
     romanization = romanized ?? romanization;
@@ -257,6 +275,9 @@ class LyricsProvider extends ChangeNotifier {
       _prefs!.setString('lyrics_source', sourcePreference.name),
       _prefs!.setDouble('lyrics_font', fontSize),
       _prefs!.setBool('lyrics_center', center),
+      _prefs!.setString('lyrics_alignment', alignment),
+      _prefs!.setBool('lyrics_animated', animated),
+      _prefs!.setDouble('lyrics_blur_strength', blurStrength),
       _prefs!.setBool('lyrics_blur', blur),
       _prefs!.setBool('lyrics_translation', translation),
       _prefs!.setBool('lyrics_romanization', romanization),

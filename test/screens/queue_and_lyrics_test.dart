@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:just_audio/just_audio.dart';
@@ -15,6 +19,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:muziczz/screens/lyrics_screen.dart';
 import 'package:muziczz/services/lyrics_service.dart';
+import 'package:muziczz/widgets/now_playing/pixel_lyric_line.dart';
 
 class _LyricsFixture extends LyricsService {
   @override
@@ -66,6 +71,25 @@ void main() {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = const Size(320, 844);
       addTearDown(tester.view.reset);
+      const fontPath = String.fromEnvironment('LYRICS_FONT_PATH');
+      if (fontPath.isNotEmpty) {
+        await tester.runAsync(() async {
+          final loader = FontLoader('Roboto');
+          loader.addFont(
+            File(
+              fontPath,
+            ).readAsBytes().then((data) => ByteData.sublistView(data)),
+          );
+          await loader.load();
+          final icons = FontLoader('MaterialIcons');
+          icons.addFont(
+            File(
+              '${File(fontPath).parent.path}/materialicons-regular.otf',
+            ).readAsBytes().then((data) => ByteData.sublistView(data)),
+          );
+          await icons.load();
+        });
+      }
       final player = PlayerProvider(_Gateway());
       final lyrics = LyricsProvider(service: _LyricsFixture());
       addTearDown(player.dispose);
@@ -89,7 +113,9 @@ void main() {
             ChangeNotifierProvider.value(value: lyrics),
           ],
           child: MaterialApp(
-            theme: AppTheme.buildTheme(AppColorPresets.dark),
+            theme: ThemeData.dark(
+              useMaterial3: true,
+            ).copyWith(extensions: [AppColorPresets.dark]),
             builder:
                 (_, child) => MediaQuery(
                   data: const MediaQueryData(
@@ -97,7 +123,10 @@ void main() {
                   ),
                   child: child!,
                 ),
-            home: const LyricsScreen(),
+            home: const RepaintBoundary(
+              key: ValueKey('lyrics-preview'),
+              child: LyricsScreen(),
+            ),
           ),
         ),
       );
@@ -107,8 +136,43 @@ void main() {
         findsOneWidget,
       );
       expect(tester.takeException(), isNull);
-      await tester.tap(find.byType(PopupMenuButton<String>));
+      await tester.tap(find.text('Văn bản'));
       await tester.pumpAndSettle();
+      expect(
+        tester.widget<PixelLyricLine>(find.byType(PixelLyricLine).first).plain,
+        isTrue,
+      );
+      await tester.tap(find.text('Đồng bộ'));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<PixelLyricLine>(find.byType(PixelLyricLine).first).plain,
+        isFalse,
+      );
+      await lyrics.preferences(animatedLines: true);
+      lyrics.updatePosition(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      if (const bool.fromEnvironment('LYRICS_SCREENSHOT')) {
+        final boundary = tester.renderObject<RenderRepaintBoundary>(
+          find.byKey(const ValueKey('lyrics-preview')),
+        );
+        await tester.runAsync(() async {
+          final image = await boundary.toImage();
+          final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+          await Directory('build/lyrics-review').create(recursive: true);
+          await File(
+            'build/lyrics-review/narrow-animated.png',
+          ).writeAsBytes(bytes!.buffer.asUint8List());
+          image.dispose();
+        });
+      }
+      await tester.tap(find.byTooltip('Tùy chọn lời bài hát'));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Cấu hình dịch AI'),
+        200,
+        scrollable: find.byType(Scrollable).last,
+      );
       expect(find.text('Cấu hình dịch AI'), findsOneWidget);
       expect(find.text('Dịch lời bằng AI'), findsOneWidget);
       expect(tester.takeException(), isNull);

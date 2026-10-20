@@ -153,6 +153,14 @@ class _LyricsSearchSheetState extends State<LyricsSearchSheet> {
   bool _loading = false, _saving = false;
   int _request = 0;
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _search();
+    });
+  }
+
+  @override
   void dispose() {
     _request++;
     _title.dispose();
@@ -442,11 +450,24 @@ class _LyricsPreferencesSheetState extends State<LyricsPreferencesSheet> {
             divisions: 24,
             onChanged: (v) => lp.preferences(size: v),
           ),
+          DropdownButtonFormField<String>(
+            initialValue: lp.alignment,
+            decoration: const InputDecoration(labelText: 'Căn lời'),
+            items: const [
+              DropdownMenuItem(value: 'left', child: Text('Trái')),
+              DropdownMenuItem(value: 'center', child: Text('Giữa')),
+              DropdownMenuItem(value: 'right', child: Text('Phải')),
+            ],
+            onChanged: (v) => lp.preferences(textAlignment: v),
+          ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Căn giữa'),
-            value: lp.center,
-            onChanged: (v) => lp.preferences(centered: v),
+            title: const Text('Lời chuyển động'),
+            subtitle: const Text(
+              'Phóng dòng đang hát, chuyển động lò xo như PixelPlayer',
+            ),
+            value: lp.animated,
+            onChanged: (v) => lp.preferences(animatedLines: v),
           ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
@@ -454,6 +475,16 @@ class _LyricsPreferencesSheetState extends State<LyricsPreferencesSheet> {
             value: lp.blur,
             onChanged: (v) => lp.preferences(blurred: v),
           ),
+          if (lp.animated && lp.blur) ...[
+            Text('Độ mờ: ${lp.blurStrength.toStringAsFixed(1)}'),
+            Slider(
+              value: lp.blurStrength,
+              min: 0,
+              max: 10,
+              divisions: 20,
+              onChanged: (v) => lp.preferences(blurAmount: v),
+            ),
+          ],
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('Hiện bản dịch có trong lời'),

@@ -1,9 +1,11 @@
 import 'dart:async';
-import 'dart:ui' show ImageFilter;
+import 'package:on_audio_query/on_audio_query.dart';
+import '../widgets/now_playing/pixel_lyric_line.dart';
+import '../widgets/now_playing/lyrics_seek_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../models/lyric_line.dart';
 import '../providers/lyrics_provider.dart';
 import '../providers/player_provider.dart';
 import '../services/audio_handler.dart';
@@ -18,7 +20,8 @@ class LyricsScreen extends StatefulWidget {
   State<LyricsScreen> createState() => _LyricsScreenState();
 }
 
-class _LyricsScreenState extends State<LyricsScreen> {
+class _LyricsScreenState extends State<LyricsScreen>
+    with SingleTickerProviderStateMixin {
   late final PlayerProvider _player;
   late final LyricsProvider _lyrics;
   StreamSubscription<PositionData>? _position;
@@ -29,6 +32,13 @@ class _LyricsScreenState extends State<LyricsScreen> {
   bool _following = true, _plain = false, _hidden = false, _keepAwake = false;
   Timer? _immersiveTimer;
   PositionData? _data;
+  double? _seekPreview;
+  bool _showSync = false;
+  double _swipeDistance = 0;
+  late final AnimationController _vinyl = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 8),
+  );
   @override
   void initState() {
     super.initState();
@@ -39,7 +49,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
     _position = _player.positionDataStream.listen((data) {
       if (!mounted) return;
       _data = data;
-      _lyrics.updatePosition(data.position);
+      if (_seekPreview == null) _lyrics.updatePosition(data.position);
       setState(() {});
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -62,7 +72,14 @@ class _LyricsScreenState extends State<LyricsScreen> {
       _lyrics.loadLyrics(song);
       if (_scroll.hasClients) _scroll.jumpTo(0);
     }
-    if (mounted) setState(() {});
+    if (mounted) {
+      if (_player.isPlaying && !MediaQuery.disableAnimationsOf(context)) {
+        if (!_vinyl.isAnimating) _vinyl.repeat();
+      } else {
+        _vinyl.stop();
+      }
+      setState(() {});
+    }
   }
 
   void _lyricsChanged() {
@@ -79,14 +96,33 @@ class _LyricsScreenState extends State<LyricsScreen> {
     if (!mounted || !_following || _plain) return;
     final anchor = _anchors[_lyrics.currentIndex]?.currentContext;
     if (anchor != null) {
-      Scrollable.ensureVisible(
-        anchor,
-        alignment: .42,
+      final object = anchor.findRenderObject();
+      if (object == null || !_scroll.hasClients) return;
+      final viewport = RenderAbstractViewport.of(object);
+      final target = (viewport.getOffsetToReveal(object, .5).offset + 32).clamp(
+        _scroll.position.minScrollExtent,
+        _scroll.position.maxScrollExtent,
+      );
+      final index = _lyrics.currentIndex;
+      final current = _lyrics.lines[index].time ?? Duration.zero;
+      final next =
+          index + 1 < _lyrics.lines.length
+              ? _lyrics.lines[index + 1].time ??
+                  current + const Duration(seconds: 1)
+              : current + const Duration(seconds: 1);
+      final milliseconds =
+          _seekPreview != null
+              ? 110
+              : _lyrics.animated
+              ? (next - current).inMilliseconds.clamp(250, 2000)
+              : 450;
+      _scroll.animateTo(
+        target,
         duration:
             MediaQuery.disableAnimationsOf(context)
-                ? Duration.zero
-                : const Duration(milliseconds: 380),
-        curve: Curves.easeOutCubic,
+                ? const Duration(microseconds: 1)
+                : Duration(milliseconds: milliseconds),
+        curve: Curves.fastOutSlowIn,
       );
     }
   }
@@ -125,12 +161,14 @@ class _LyricsScreenState extends State<LyricsScreen> {
     _position?.cancel();
     _immersiveTimer?.cancel();
     _scroll.dispose();
+    _vinyl.dispose();
     if (_keepAwake) _awake(false);
     super.dispose();
   }
 
   Future<void> _action(String action) async {
     _interact();
+    _immersiveTimer?.cancel();
     final song = _player.currentSong;
     if (song == null) return;
     switch (action) {
@@ -161,7 +199,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
           _lastLine = -1;
         });
       case 'offset':
-        await showLyricsOffset(context);
+        setState(() => _showSync = !_showSync);
       case 'preferences':
         await showLyricsPreferences(context);
       case 'awake':
@@ -200,154 +238,254 @@ class _LyricsScreenState extends State<LyricsScreen> {
     _interact();
   }
 
+  Duration get _motion =>
+      MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 300);
+
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
-    final song = _player.currentSong;
     return Scaffold(
-      backgroundColor: Color.lerp(
-        c.background,
-        c.primary,
-        c.isDark ? .12 : .06,
-      ),
+      backgroundColor: c.background,
       body: SafeArea(
-        child: Listener(
-          onPointerDown: (_) => _interact(),
-          child: Column(
-            children: [
-              AnimatedSize(
-                duration: const Duration(milliseconds: 220),
-                child:
-                    _hidden
-                        ? const SizedBox.shrink()
-                        : Row(
-                          children: [
-                            IconButton(
-                              tooltip: 'Đóng lời bài hát',
-                              onPressed: () => Navigator.pop(context),
-                              icon: const Icon(
-                                Icons.keyboard_arrow_down_rounded,
+        child: GestureDetector(
+          onHorizontalDragStart: (_) {
+            _swipeDistance = 0;
+            _interact();
+          },
+          onHorizontalDragUpdate:
+              (details) => _swipeDistance += details.delta.dx,
+          onHorizontalDragEnd: (_) {
+            if (_swipeDistance < -100) _player.skipToNext();
+            if (_swipeDistance > 100) _player.skipToPrevious();
+            _swipeDistance = 0;
+          },
+          child: Listener(
+            onPointerDown: (_) => _interact(),
+            child: Column(
+              children: [
+                Expanded(
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child:
+                            _lyrics.hasLyrics
+                                ? _list(context)
+                                : _empty(context),
+                      ),
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: 130,
+                        child: IgnorePointer(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  c.background,
+                                  c.background.withValues(alpha: 0),
+                                ],
                               ),
                             ),
-                            Expanded(
-                              child: ListTile(
-                                contentPadding: EdgeInsets.zero,
-                                title: Text(
-                                  song?.title ?? 'Lời bài hát',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  song?.artist ?? '',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ),
-                            PopupMenuButton<String>(
-                              tooltip: 'Tùy chọn lời bài hát',
-                              onSelected: _action,
-                              itemBuilder:
-                                  (_) => [
-                                    const PopupMenuItem(
-                                      value: 'search',
-                                      child: Text('Tìm / chọn lời khác'),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'import',
-                                      child: Text('Nhập file lời'),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'edit',
-                                      child: Text('Dán / chỉnh sửa lời'),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'refresh',
-                                      child: Text('Tìm lại theo nguồn ưu tiên'),
-                                    ),
-                                    if (_lyrics.hasLyrics) ...[
-                                      const PopupMenuItem(
-                                        value: 'export',
-                                        child: Text('Xuất LRC / lời đồng bộ'),
-                                      ),
-                                      const PopupMenuItem(
-                                        value: 'plainExport',
-                                        child: Text('Xuất văn bản TXT'),
-                                      ),
-                                      const PopupMenuItem(
-                                        value: 'original',
-                                        child: Text(
-                                          'Xuất bản gốc (giữ bản dịch)',
-                                        ),
-                                      ),
-                                      const PopupMenuItem(
-                                        value: 'copy',
-                                        child: Text('Sao chép lời'),
-                                      ),
-                                      if (_lyrics.isSynced)
-                                        PopupMenuItem(
-                                          value: 'plain',
-                                          child: Text(
-                                            _plain
-                                                ? 'Xem đồng bộ'
-                                                : 'Xem văn bản',
-                                          ),
-                                        ),
-                                      const PopupMenuItem(
-                                        value: 'reset',
-                                        child: Text('Xóa lời đã lưu'),
-                                      ),
-                                    ],
-                                    PopupMenuItem(
-                                      value: 'awake',
-                                      child: Text(
-                                        _keepAwake
-                                            ? 'Cho phép tắt màn hình'
-                                            : 'Giữ màn hình sáng',
-                                      ),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'aiSettings',
-                                      child: Text('Cấu hình dịch AI'),
-                                    ),
-                                    if (_lyrics.hasLyrics)
-                                      const PopupMenuItem(
-                                        value: 'translate',
-                                        child: Text('Dịch lời bằng AI'),
-                                      ),
-                                    const PopupMenuItem(
-                                      value: 'preferences',
-                                      child: Text('Giao diện và nguồn lời'),
-                                    ),
-                                  ],
-                            ),
-                          ],
+                          ),
                         ),
-              ),
-              Expanded(
-                child: _lyrics.hasLyrics ? _list(context) : _empty(context),
-              ),
-              if (!_following && _lyrics.isSynced && !_plain)
-                TextButton.icon(
-                  onPressed: () {
-                    setState(() => _following = true);
-                    _follow();
-                  },
-                  icon: const Icon(Icons.my_location),
-                  label: const Text('Theo dõi lời đang hát'),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: 80,
+                        child: IgnorePointer(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  c.background.withValues(alpha: 0),
+                                  c.background,
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 4,
+                        left: 18,
+                        right: 18,
+                        child: _header(context),
+                      ),
+                    ],
+                  ),
                 ),
-              AnimatedSize(
-                duration: const Duration(milliseconds: 220),
-                child: _hidden ? const SizedBox.shrink() : _controls(context),
+                if (!_following && _lyrics.isSynced && !_plain)
+                  TextButton.icon(
+                    onPressed: () {
+                      setState(() => _following = true);
+                      _follow();
+                    },
+                    icon: const Icon(Icons.my_location),
+                    label: const Text('Theo dõi lời đang hát'),
+                  ),
+                AnimatedSize(
+                  duration: _motion,
+                  curve: Curves.fastOutSlowIn,
+                  alignment: Alignment.topCenter,
+                  child: _hidden ? const SizedBox.shrink() : _controls(context),
+                ),
+                if (_hidden)
+                  TextButton.icon(
+                    onPressed: _interact,
+                    icon: const Icon(Icons.touch_app_outlined),
+                    label: const Text('Hiện điều khiển'),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _header(BuildContext context) {
+    final c = context.appColors, song = _player.currentSong;
+    return AnimatedSwitcher(
+      duration: _motion,
+      transitionBuilder:
+          (child, animation) => FadeTransition(
+            opacity: animation,
+            child: ScaleTransition(
+              scale: Tween(begin: .9, end: 1.0).animate(animation),
+              child: child,
+            ),
+          ),
+      child: Material(
+        key: ValueKey(song?.id),
+        color: c.surfaceElevated,
+        borderRadius: BorderRadius.circular(60),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(6, 6, 18, 6),
+          child: Row(
+            children: [
+              RotationTransition(
+                turns: _vinyl,
+                child: ClipOval(
+                  child: SizedBox(
+                    width: 54,
+                    height: 54,
+                    child:
+                        song == null
+                            ? const Icon(Icons.album)
+                            : QueryArtworkWidget(
+                              id: song.albumId,
+                              type: ArtworkType.ALBUM,
+                              artworkBorder: BorderRadius.zero,
+                              keepOldArtwork: true,
+                              nullArtworkWidget: Icon(
+                                Icons.album,
+                                size: 48,
+                                color: c.primary,
+                              ),
+                            ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      song?.title ?? 'Lời bài hát',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: c.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      song?.artist ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 14, color: c.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                _player.isPlaying ? Icons.graphic_eq : Icons.more_horiz,
+                size: 18,
+                color: c.primary,
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _more() async {
+    _interact();
+    _immersiveTimer?.cancel();
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: context.appColors.surface,
+      showDragHandle: true,
+      builder:
+          (context) => FractionallySizedBox(
+            heightFactor: .78,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+              children: [
+                Text(
+                  'Tùy chọn lời bài hát',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 16),
+                for (final item in <(String, IconData, String)>[
+                  ('search', Icons.search, 'Tìm / chọn lời khác'),
+                  ('import', Icons.file_open_outlined, 'Nhập file lời'),
+                  ('edit', Icons.edit_outlined, 'Dán / chỉnh sửa lời'),
+                  ('refresh', Icons.refresh, 'Tìm lại theo nguồn ưu tiên'),
+                  if (_lyrics.isSynced)
+                    ('offset', Icons.sync, 'Đồng bộ thời gian'),
+                  if (_lyrics.hasLyrics) ...[
+                    ('export', Icons.save_alt, 'Xuất LRC / lời đồng bộ'),
+                    ('plainExport', Icons.notes, 'Xuất văn bản TXT'),
+                    ('original', Icons.download, 'Xuất bản gốc (giữ bản dịch)'),
+                    ('copy', Icons.copy, 'Sao chép lời'),
+                    ('translate', Icons.translate, 'Dịch lời bằng AI'),
+                    ('reset', Icons.delete_outline, 'Xóa lời đã lưu'),
+                  ],
+                  (
+                    'awake',
+                    Icons.light_mode_outlined,
+                    _keepAwake ? 'Cho phép tắt màn hình' : 'Giữ màn hình sáng',
+                  ),
+                  ('preferences', Icons.tune, 'Giao diện và nguồn lời'),
+                  ('aiSettings', Icons.auto_awesome, 'Cấu hình dịch AI'),
+                ])
+                  ListTile(
+                    leading: Icon(item.$2),
+                    title: Text(item.$3),
+                    onTap: () => Navigator.pop(context, item.$1),
+                  ),
+              ],
+            ),
+          ),
+    );
+    if (mounted && action != null) await _action(action);
+    if (mounted) _interact();
   }
 
   Widget _empty(BuildContext context) {
@@ -403,207 +541,240 @@ class _LyricsScreenState extends State<LyricsScreen> {
 
   Widget _list(BuildContext context) {
     final c = context.appColors;
-    return LayoutBuilder(
-      builder:
-          (context, constraints) => NotificationListener<ScrollNotification>(
-            onNotification: (event) {
-              if (event is ScrollStartNotification &&
-                  event.dragDetails != null) {
-                setState(() => _following = false);
-              }
-              return false;
-            },
-            child: SingleChildScrollView(
-              controller: _scroll,
-              physics: const BouncingScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(
-                28,
-                constraints.maxHeight * .35,
-                28,
-                constraints.maxHeight * .4,
+    return NotificationListener<ScrollNotification>(
+      onNotification: (event) {
+        if (event is ScrollStartNotification && event.dragDetails != null) {
+          setState(() => _following = false);
+        }
+        return false;
+      },
+      child: SingleChildScrollView(
+        controller: _scroll,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(24, 130, 24, 100),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var i = 0; i < _lyrics.lines.length; i++)
+              PixelLyricLine(
+                key: _anchors.putIfAbsent(i, () => GlobalKey()),
+                line: _lyrics.lines[i],
+                index: i,
+                provider: _lyrics,
+                plain: _plain,
+                immersive: _hidden,
+                onTap:
+                    _lyrics.lines[i].time == null
+                        ? null
+                        : () {
+                          _player.seekTo(
+                            _lyrics.seekPosition(_lyrics.lines[i]),
+                          );
+                          _lyrics.updatePosition(
+                            _lyrics.seekPosition(_lyrics.lines[i]),
+                          );
+                          setState(() => _following = true);
+                          _follow();
+                        },
               ),
-              child: Column(
-                crossAxisAlignment:
-                    _lyrics.center
-                        ? CrossAxisAlignment.center
-                        : CrossAxisAlignment.stretch,
-                children: [
-                  for (var i = 0; i < _lyrics.lines.length; i++)
-                    _line(context, _lyrics.lines[i], i),
-                  const SizedBox(height: 30),
-                  Text(
-                    _lyrics.document?.source ?? '',
-                    style: TextStyle(color: c.textTertiary, fontSize: 12),
-                    textAlign: TextAlign.center,
-                  ),
-                  if (_lyrics.message != null)
-                    Text(_lyrics.message!, textAlign: TextAlign.center),
-                ],
-              ),
+            const SizedBox(height: 16),
+            Text(
+              _lyrics.document?.source ?? '',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: c.textTertiary, fontSize: 12),
             ),
-          ),
-    );
-  }
-
-  Widget _line(BuildContext context, LyricLine line, int index) {
-    final c = context.appColors;
-    final active = !_plain && _lyrics.isSynced && index == _lyrics.currentIndex;
-    final timed = !_plain && _lyrics.isSynced;
-    final color =
-        !timed || active ? c.textPrimary : c.textPrimary.withValues(alpha: .35);
-    final style = TextStyle(
-      fontSize: _lyrics.fontSize,
-      fontWeight: FontWeight.w700,
-      height: 1.4,
-      color: color,
-    );
-    final words = line.words;
-    final text =
-        words.isEmpty || !active
-            ? Text(
-              line.text.isEmpty ? '•••' : line.text,
-              textAlign: _lyrics.center ? TextAlign.center : TextAlign.left,
-              style: style,
-            )
-            : Text.rich(
-              TextSpan(
-                children: [
-                  for (var i = 0; i < words.length; i++)
-                    TextSpan(
-                      text: words[i].text,
-                      style: style.copyWith(
-                        color:
-                            i <= _lyrics.currentWord
-                                ? c.primary
-                                : c.textPrimary.withValues(alpha: .4),
-                      ),
-                    ),
-                ],
-              ),
-              textAlign: _lyrics.center ? TextAlign.center : TextAlign.left,
-            );
-    return Padding(
-      key: _anchors.putIfAbsent(index, () => GlobalKey()),
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap:
-            line.time == null
-                ? null
-                : () {
-                  _player.seekTo(_lyrics.seekPosition(line));
-                  setState(() => _following = true);
-                },
-        child: AnimatedScale(
-          scale: active ? 1.025 : 1,
-          alignment: _lyrics.center ? Alignment.center : Alignment.centerLeft,
-          duration:
-              MediaQuery.disableAnimationsOf(context)
-                  ? Duration.zero
-                  : const Duration(milliseconds: 240),
-          child: ImageFiltered(
-            enabled:
-                timed &&
-                _lyrics.blur &&
-                !active &&
-                (index - _lyrics.currentIndex).abs() <= 5,
-            imageFilter: ImageFilter.blur(sigmaX: 1.1, sigmaY: 1.1),
-            child: Column(
-              crossAxisAlignment:
-                  _lyrics.center
-                      ? CrossAxisAlignment.center
-                      : CrossAxisAlignment.start,
-              children: [
-                text,
-                if (_lyrics.romanization && line.romanization != null)
-                  Text(
-                    line.romanization!,
-                    style: style.copyWith(
-                      fontSize: _lyrics.fontSize * .7,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                if (_lyrics.translation && line.translation != null)
-                  Text(
-                    line.translation!,
-                    style: style.copyWith(
-                      fontSize: _lyrics.fontSize * .7,
-                      color: c.textSecondary,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-              ],
-            ),
-          ),
+            if (_lyrics.message != null)
+              Text(_lyrics.message!, textAlign: TextAlign.center),
+          ],
         ),
       ),
     );
   }
 
   Widget _controls(BuildContext context) {
+    final c = context.appColors;
     final duration =
         _data?.duration.inMilliseconds ?? _player.currentSong?.duration ?? 0;
-    final position = (_data?.position.inMilliseconds ?? 0).clamp(
-      0,
-      duration > 0 ? duration : 0,
-    );
-    String stamp(int ms) =>
-        '${ms ~/ 60000}:${(ms ~/ 1000 % 60).toString().padLeft(2, '0')}';
+    final position =
+        (_seekPreview ?? (_data?.position.inMilliseconds ?? 0).toDouble())
+            .clamp(0, duration > 0 ? duration : 0)
+            .toDouble();
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Slider(
-            value: position.toDouble(),
-            max: duration > 0 ? duration.toDouble() : 1,
-            onChanged:
-                duration <= 0
-                    ? null
-                    : (v) => _player.seekTo(Duration(milliseconds: v.round())),
-            semanticFormatterCallback: (v) => stamp(v.round()),
+          AnimatedSize(
+            duration: _motion,
+            child:
+                !_showSync || !_lyrics.isSynced
+                    ? const SizedBox.shrink()
+                    : Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 4,
+                        children: [
+                          for (final delta in [-500, -100])
+                            TextButton(
+                              onPressed:
+                                  () => _lyrics.setOffset(
+                                    _lyrics.offsetMs + delta,
+                                  ),
+                              child: Text('${delta / 1000}s'),
+                            ),
+                          TextButton(
+                            onPressed: () => _lyrics.setOffset(0),
+                            child: Text(
+                              '${(_lyrics.offsetMs / 1000).toStringAsFixed(1)}s',
+                            ),
+                          ),
+                          for (final delta in [100, 500])
+                            TextButton(
+                              onPressed:
+                                  () => _lyrics.setOffset(
+                                    _lyrics.offsetMs + delta,
+                                  ),
+                              child: Text('+${delta / 1000}s'),
+                            ),
+                        ],
+                      ),
+                    ),
           ),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [Text(stamp(position)), Text(stamp(duration))],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              IconButton(
-                tooltip: 'Đồng bộ thời gian',
-                onPressed:
-                    _lyrics.isSynced ? () => showLyricsOffset(context) : null,
-                icon: const Icon(Icons.sync),
-              ),
-              IconButton(
-                tooltip: 'Bài trước',
-                onPressed: _player.skipToPrevious,
-                icon: const Icon(Icons.skip_previous_rounded, size: 32),
-              ),
-              IconButton.filled(
-                tooltip: _player.isPlaying ? 'Tạm dừng' : 'Phát',
-                onPressed: _player.playPause,
-                icon: Icon(
-                  _player.isPlaying
-                      ? Icons.pause_rounded
-                      : Icons.play_arrow_rounded,
-                  size: 36,
+              Semantics(
+                button: true,
+                label: _player.isPlaying ? 'Tạm dừng' : 'Phát',
+                child: AnimatedContainer(
+                  duration: _motion,
+                  curve: Curves.easeOutBack,
+                  width: 78,
+                  height: 78,
+                  decoration: BoxDecoration(
+                    color: c.primary,
+                    borderRadius: BorderRadius.circular(
+                      _player.isPlaying ? 18 : 50,
+                    ),
+                  ),
+                  child: IconButton(
+                    onPressed: () {
+                      HapticFeedback.selectionClick();
+                      _player.playPause();
+                    },
+                    icon: AnimatedSwitcher(
+                      duration: _motion,
+                      child: Icon(
+                        _player.isPlaying
+                            ? Icons.pause_rounded
+                            : Icons.play_arrow_rounded,
+                        key: ValueKey(_player.isPlaying),
+                        size: 32,
+                        color: c.background,
+                      ),
+                    ),
+                  ),
                 ),
               ),
-              IconButton(
-                tooltip: 'Bài tiếp',
-                onPressed: _player.skipToNext,
-                icon: const Icon(Icons.skip_next_rounded, size: 32),
+              const SizedBox(width: 12),
+              Expanded(
+                child: LyricsSeekBar(
+                  value: position,
+                  duration: duration.toDouble(),
+                  playing: _player.isPlaying,
+                  onChanged:
+                      duration <= 0
+                          ? null
+                          : (value) {
+                            setState(() => _seekPreview = value);
+                            _lyrics.updatePosition(
+                              Duration(milliseconds: value.round()),
+                            );
+                          },
+                  onCommit: (value) {
+                    _player.seekTo(Duration(milliseconds: value.round()));
+                    setState(() => _seekPreview = null);
+                  },
+                ),
               ),
-              IconButton(
-                tooltip: 'Giao diện lời',
-                onPressed: () => showLyricsPreferences(context),
-                icon: const Icon(Icons.text_fields),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              IconButton.filledTonal(
+                tooltip: 'Đóng lời bài hát',
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.arrow_back_rounded),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _mode(
+                  'Đồng bộ',
+                  !_plain && _lyrics.isSynced,
+                  _lyrics.isSynced
+                      ? () {
+                        setState(() {
+                          _plain = false;
+                          _following = true;
+                        });
+                        WidgetsBinding.instance.addPostFrameCallback(
+                          (_) => _follow(),
+                        );
+                      }
+                      : null,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _mode(
+                  'Văn bản',
+                  _plain || !_lyrics.isSynced,
+                  () => setState(() => _plain = true),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton.filledTonal(
+                tooltip: 'Tùy chọn lời bài hát',
+                onPressed: _more,
+                icon: const Icon(Icons.more_vert),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _mode(String label, bool selected, VoidCallback? onTap) {
+    final c = context.appColors;
+    return AnimatedContainer(
+      duration: _motion,
+      height: (MediaQuery.textScalerOf(context).scale(14) * 2 + 16).clamp(
+        50,
+        120,
+      ),
+      decoration: BoxDecoration(
+        color: selected ? c.primary : c.surfaceElevated,
+        borderRadius: BorderRadius.circular(selected ? 50 : 16),
+      ),
+      child: TextButton(
+        onPressed: onTap,
+        child: Text(
+          label,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 14,
+            color:
+                onTap == null
+                    ? c.textDisabled
+                    : selected
+                    ? c.background
+                    : c.textPrimary,
+          ),
+        ),
       ),
     );
   }

@@ -94,9 +94,32 @@ class _NowPlayingScreenState extends State<NowPlayingScreen> {
         ),
   );
 
-  void _lyrics() => Navigator.of(
-    context,
-  ).push(MaterialPageRoute<void>(builder: (_) => const LyricsScreen()));
+  void _lyrics() => Navigator.of(context).push(
+    PageRouteBuilder<void>(
+      pageBuilder: (_, animation, secondaryAnimation) => const LyricsScreen(),
+      transitionDuration: const Duration(milliseconds: 220),
+      reverseTransitionDuration: const Duration(milliseconds: 180),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        if (MediaQuery.disableAnimationsOf(context)) return child;
+        final exiting = animation.status == AnimationStatus.reverse;
+        final slide = Tween<Offset>(
+          begin: Offset(0, exiting ? 1 / 6 : 1 / 5),
+          end: Offset.zero,
+        ).animate(
+          CurvedAnimation(parent: animation, curve: Curves.fastOutSlowIn),
+        );
+        final fade = CurvedAnimation(
+          parent: animation,
+          curve: const Interval(0, 160 / 220),
+          reverseCurve: const Interval(1 - 120 / 180, 1),
+        );
+        return FadeTransition(
+          opacity: fade,
+          child: SlideTransition(position: slide, child: child),
+        );
+      },
+    ),
+  );
 
   Future<void> _output() async {
     try {

@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.gradle.api.tasks.compile.JavaCompile
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
 allprojects {
@@ -29,8 +30,8 @@ subprojects {
         targetCompatibility = "11"
     }
     tasks.withType<KotlinCompile>().configureEach {
-        kotlinOptions {
-            jvmTarget = "11"
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_11)
         }
     }
 }

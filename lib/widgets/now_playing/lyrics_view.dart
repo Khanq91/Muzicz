@@ -98,6 +98,7 @@ class _LyricsViewState extends State<LyricsView> {
     // Not found / error
     if (lp.status == LyricsStatus.notFound ||
         lp.status == LyricsStatus.error ||
+        lp.status == LyricsStatus.instrumental ||
         lp.status == LyricsStatus.idle) {
       return Center(
         child: Column(
@@ -106,6 +107,8 @@ class _LyricsViewState extends State<LyricsView> {
             Icon(
               lp.status == LyricsStatus.error
                   ? Icons.wifi_off_rounded
+                  : lp.status == LyricsStatus.instrumental
+                  ? Icons.music_note_rounded
                   : Icons.lyrics_rounded,
               color: c.textTertiary,
               size: 32,
@@ -114,6 +117,8 @@ class _LyricsViewState extends State<LyricsView> {
             Text(
               lp.status == LyricsStatus.error
                   ? AppStrings.lyricsError
+                  : lp.status == LyricsStatus.instrumental
+                  ? 'Bản nhạc không lời'
                   : AppStrings.lyricsNone,
               textAlign: TextAlign.center,
               style: GoogleFonts.outfit(fontSize: 12, color: c.textTertiary),

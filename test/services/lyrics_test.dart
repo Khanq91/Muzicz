@@ -46,6 +46,123 @@ List<int> big(int n, int count) => [
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => SharedPreferences.setMockInitialValues({}));
+  test('PixelPlayer fallback finds the untagged Duzme remix filename', () async {
+    const title =
+        'Anh Đau Từ Lúc Em Đi - Trần Mạnh Cường (Duzme Remix) '
+        'Ngày Đó Anh Ngỡ Chỉ Là Lời Nói⧸Official Lyrics';
+    const target = SongItem(
+      id: 101,
+      title: title,
+      artist: '<unknown>',
+      album: '<unknown>',
+      albumId: 0,
+      artistId: 0,
+      data: '/music/$title.m4a',
+      duration: 323361,
+    );
+    final metadata =
+        jsonDecode(
+              await File(
+                'test/fixtures/lyrics_search_metadata.json',
+              ).readAsString(),
+            )
+            as List;
+    // Preserve observed search metadata, but use synthetic lyric text.
+    final records =
+        metadata
+            .map(
+              (entry) => <String, dynamic>{
+                ...entry as Map<String, dynamic>,
+                'syncedLyrics':
+                    entry['hasSynced'] == true
+                        ? '[00:06.02]Fixture line'
+                        : null,
+                'plainLyrics':
+                    entry['hasPlain'] == true ? 'Fixture line' : null,
+              },
+            )
+            .toList();
+    final dir = await Directory.systemTemp.createTemp('lyrics_remix_');
+    addTearDown(() => dir.delete(recursive: true));
+    final queries = <Uri>[];
+    final service = LyricsService(
+      directory: () async => dir,
+      embeddedReader: (_) async => null,
+      client: MockClient((request) async {
+        queries.add(request.url);
+        return http.Response(
+          jsonEncode(
+            request.url.queryParameters['track_name'] == 'Anh Đau Từ Lúc Em Đi'
+                ? records
+                : [],
+          ),
+          200,
+          headers: {'content-type': 'application/json; charset=utf-8'},
+        );
+      }),
+    );
+    addTearDown(service.dispose);
+    final result = await service.load(
+      target,
+      LyricsSourcePreference.embeddedFirst,
+    );
+    expect(
+      result.isSynced,
+      isTrue,
+      reason:
+          '${result.type}: ${result.message}; '
+          '${queries.map((q) => q.queryParameters)}; '
+          '${records.map((r) => "${r['id']}: ${LyricsService.score(target, LyricsCandidate.fromJson(r))}")}',
+    );
+    expect(result.source, 'LRCLIB');
+    expect(
+      queries.any(
+        (q) => q.queryParameters['track_name'] == 'Anh Đau Từ Lúc Em Đi',
+      ),
+      isTrue,
+    );
+    expect(
+      LyricsService.score(target, LyricsCandidate.fromJson(records.first)),
+      isNull,
+    );
+  });
+  test('filename artist words do not falsely mark a timing variant', () {
+    final target = song(1, path: '/music/Live Band - Đêm nay.mp3');
+    expect(
+      LyricsService.score(target, LyricsCandidate.fromJson(candidate())),
+      isNotNull,
+    );
+    expect(
+      LyricsService.score(
+        song(1, path: '/music/Đêm nay (Live).mp3'),
+        LyricsCandidate.fromJson(candidate()),
+      ),
+      isNull,
+    );
+    for (final version in ['cover', 'radio edit', 'mash up', 'TV size']) {
+      expect(
+        LyricsService.score(
+          song(1),
+          LyricsCandidate.fromJson(candidate(title: 'Đêm nay ($version)')),
+        ),
+        isNull,
+      );
+    }
+  });
+  test(
+    'embedded fields prefer synced TTML over plain and malformed fields',
+    () {
+      expect(
+        EmbeddedLyricsReader.bestField([
+          'Plain lyrics',
+          '<tt><broken>',
+          '<tt><body><div><p begin="1s">Timed</p></div></body></tt>',
+        ]),
+        contains('<p begin="1s">'),
+      );
+      expect(EmbeddedLyricsReader.bestField(['', '   ', 'Plain']), 'Plain');
+    },
+  );
   test(
     'LRC supports seconds, fractional precision, repeated tags, offset and words',
     () {
@@ -235,8 +352,9 @@ void main() {
         embeddedReader: (_) async => null,
         client: MockClient((request) async {
           requests.add(request.url);
-          if (request.url.path.endsWith('/get'))
+          if (request.url.path.endsWith('/get')) {
             return http.Response('{}', 404);
+          }
           return http.Response(
             utf8.decode(
               utf8.encode(

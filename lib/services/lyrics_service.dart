@@ -219,6 +219,8 @@ class LyricsService {
         if (result != null) return result;
       } on LyricsNetworkException {
         networkFailed = true;
+      } on PlatformException {
+        /* Unreadable native metadata must not block remaining sources. */
       } on FileSystemException {
         /* Try remaining sources. */
       } on FormatException {
@@ -283,43 +285,157 @@ class LyricsService {
     return LyricsResult.parse(raw, source: source);
   }
 
+  // Ported from PixelPlayer's remote matcher. Search cleanup and matching
+  // cleanup intentionally differ: meaningful qualifiers must survive matching.
+  static final _brackets = RegExp(
+    r'[\(\[\{（［｛【『「〔〈《]([^\)\]\}）］｝】』」〕〉》]*)[\)\]\}）］｝】』」〕〉》]',
+  );
+  static final _separator = RegExp(r'\s*[-–—:－·・]\s*');
+  static final _feature = RegExp(
+    r'\b(feat(?:uring)?|ft)\.?\b',
+    caseSensitive: false,
+  );
+  static const _timingWords = {
+    'remix',
+    'mix',
+    'mashup',
+    'bootleg',
+    'edit',
+    'extended',
+    'radio',
+    'club',
+    'vip',
+    'dub',
+    'live',
+    'acoustic',
+    'unplugged',
+    'sped',
+    'slowed',
+    'nightcore',
+    'instrumental',
+    'karaoke',
+    'cover',
+    'demo',
+    'version',
+    'rework',
+    'flip',
+    'refix',
+    'opening',
+    'ending',
+    'op',
+    'ed',
+    'theme',
+    'tv',
+    'size',
+    'ver',
+    'full',
+    'movie',
+    'ost',
+    'soundtrack',
+    'background',
+    'bgm',
+    'short',
+    'long',
+    'reprise',
+    'intro',
+    'outro',
+    'medley',
+    'bonus',
+  };
   static String clean(String value) =>
+      value.replaceAll(_brackets, ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+  static String _simplify(String value) =>
       value
-          .replaceAll(RegExp(r'^\s*\d{1,3}[._-]?\s+'), '')
-          .replaceAll(RegExp(r'\([^)]*\)|\[[^\]]*\]'), ' ')
-          .replaceAll(
-            RegExp(r'\b(feat\.?|ft\.?|featuring)\s+.*', caseSensitive: false),
-            '',
+          .split(
+            RegExp(r' feat\.| ft\.| featuring| & | , ', caseSensitive: false),
           )
-          .replaceAll(RegExp(r'\s+'), ' ')
+          .first
           .trim();
-  static String normalize(String s) =>
-      vnNormalize(
-        s,
-      ).replaceAll(RegExp(r'[^\p{L}\p{N}]+', unicode: true), ' ').trim();
-  static Set<String> _variants(String s) =>
-      RegExp(
-        r'\b(remix|live|acoustic|instrumental|karaoke|sped|slowed|nightcore|extended|edit)\b',
-        caseSensitive: false,
-      ).allMatches(s).map((m) => m[0]!.toLowerCase()).toSet();
-  static bool _unknown(String artist) => [
+  static String _smartTitle(String value) =>
+      value
+          .replaceFirst(RegExp(r'^[\d\s.\-－]+'), '')
+          .split(RegExp(r'[-(\[\{（［｛【『「〔〈《]'))
+          .first
+          .trim();
+  static String normalize(String value) => vnNormalize(value)
+      .replaceAll('&', ' and ')
+      .replaceAll(RegExp("[’'`]"), '')
+      .replaceAll(RegExp(r'[^\p{L}\p{N}]+', unicode: true), ' ')
+      .trim()
+      .replaceAll(RegExp(r'\s+'), ' ');
+  static Set<String> _tokens(String value) =>
+      value.split(' ').where((token) => token.isNotEmpty).toSet();
+  static Set<String> _variants(String value) {
+    final normalized = normalize(value);
+    final tokens = _tokens(normalized);
+    return {
+      ...tokens.intersection(_timingWords),
+      if (RegExp(r'\bmash\s+up\b').hasMatch(normalized) ||
+          tokens.contains('vs') ||
+          tokens.contains('versus'))
+        'mashup',
+    };
+  }
+
+  static bool _dropQualifier(String value) =>
+      normalize(value).isEmpty ||
+      _feature.hasMatch(value) ||
+      _variants(value).isNotEmpty ||
+      {
+        'explicit',
+        'clean',
+        'mono',
+        'stereo',
+        'official audio',
+        'official video',
+        'hi res',
+        'high res',
+        'mqa',
+      }.contains(normalize(value));
+  static String _baseTitle(String value) {
+    var base = value.replaceFirst(RegExp(r'^\s*\d{1,3}[._-]?\s+'), '');
+    base = base.replaceAllMapped(
+      _brackets,
+      (m) => _dropQualifier(m[1]!) ? ' ' : ' ${m[1]} ',
+    );
+    final parts = base.split(_separator);
+    while (parts.length > 1 && _dropQualifier(parts.last)) {
+      parts.removeLast();
+    }
+    return normalize(parts.join(' '));
+  }
+
+  static Set<String> _fileVariants(SongItem song) {
+    final filename = song.data
+        .split(RegExp(r'[/\\]'))
+        .last
+        .replaceFirst(RegExp(r'\.[^.]+$'), '');
+    final base = _baseTitle(song.title);
+    return {
+      for (final match in _brackets.allMatches(filename))
+        ..._variants(match[1]!),
+      if (base.isNotEmpty)
+        for (final part in filename.split(_separator))
+          if (normalize(part).startsWith('$base '))
+            ..._variants(normalize(part).substring(base.length).trim()),
+    };
+  }
+
+  static bool _unknown(String artist) => {
     '',
     'unknown',
     'unknown artist',
-    '<unknown>',
+    'various artists',
+    'various',
     'nghe si khong xac dinh',
-  ].contains(normalize(artist));
+  }.contains(normalize(artist));
+  static bool _phrase(String a, String b) =>
+      ' $a '.contains(' $b ') || ' $b '.contains(' $a ');
   static double? score(SongItem song, LyricsCandidate item) {
-    if (!item.instrumental &&
-        item.synced.trim().isEmpty &&
-        item.plain.trim().isEmpty) {
-      return null;
-    }
+    if (item.synced.trim().isEmpty && item.plain.trim().isEmpty) return null;
     if (song.duration <= 0 || item.duration <= 0) return null;
-    final variants = _variants(
-          '${song.title} ${song.data.split(RegExp(r'[/\\]')).last}',
-        ),
-        other = _variants(item.title);
+    final variants = {..._variants(song.title), ..._fileVariants(song)};
+    final other = _variants(item.title);
     if (variants.length != other.length || !variants.containsAll(other)) {
       return null;
     }
@@ -330,29 +446,57 @@ class LyricsService {
     );
     final difference = (item.duration - song.duration / 1000).abs();
     if (difference > tolerance) return null;
-    final a = normalize(clean(song.title)), b = normalize(clean(item.title));
+    final a = _baseTitle(song.title), b = _baseTitle(item.title);
     if (a.isEmpty || b.isEmpty) return null;
     var titleScore = 70.0;
     if (a != b) {
-      final aa = a.split(' ').toSet(), bb = b.split(' ').toSet();
-      final overlap = aa.intersection(bb).length;
-      if (overlap / aa.length < .85 || overlap / bb.length < .70) return null;
-      titleScore = 45;
+      final aa = _tokens(a), bb = _tokens(b);
+      if (aa.length == 1 || bb.length == 1) {
+        final compactA = a.replaceAll(' ', ''),
+            compactB = b.replaceAll(' ', '');
+        if (!compactA.contains(compactB) && !compactB.contains(compactA)) {
+          return null;
+        }
+        titleScore = 55;
+      } else if (_phrase(a, b)) {
+        titleScore = 58;
+      } else {
+        final overlap = aa.intersection(bb).length;
+        if (overlap / aa.length < .85 || overlap / bb.length < .70) return null;
+        titleScore = 45;
+      }
     }
     var artistScore = 0.0;
     if (!_unknown(song.artist)) {
-      final aa = normalize(song.artist).split(' ').toSet(),
-          bb = normalize(item.artist).split(' ').toSet();
-      final denominator = aa.length < bb.length ? aa.length : bb.length;
-      if (denominator == 0 || aa.intersection(bb).length / denominator < .5) {
-        return null;
+      final a = normalize(song.artist), b = normalize(item.artist);
+      if (a.isEmpty || b.isEmpty) return null;
+      if (a == b) {
+        artistScore = 30;
+      } else if (_phrase(a, b)) {
+        artistScore = 22;
+      } else {
+        const connectors = {
+          'feat',
+          'featuring',
+          'ft',
+          'and',
+          'with',
+          'x',
+          'vs',
+          'the',
+        };
+        final aa = _tokens(a).difference(connectors),
+            bb = _tokens(b).difference(connectors);
+        final denominator = aa.length < bb.length ? aa.length : bb.length;
+        if (denominator == 0 || aa.intersection(bb).length / denominator < .5) {
+          return null;
+        }
+        artistScore = 12;
       }
-      artistScore = normalize(song.artist) == normalize(item.artist) ? 30 : 12;
     }
     return titleScore +
         artistScore +
-        tolerance -
-        difference +
+        (tolerance - difference).floor() +
         (synced ? 10 : 0);
   }
 
@@ -374,7 +518,16 @@ class LyricsService {
         if (!_unknown(cleanArtist)) 'artist_name': cleanArtist,
       },
       {'q': '$cleanArtist $cleanTitle'.trim()},
+      {
+        'track_name': _simplify(cleanTitle),
+        if (!_unknown(cleanArtist)) 'artist_name': _simplify(cleanArtist),
+      },
+      if (_smartTitle(cleanTitle).isNotEmpty)
+        {'track_name': _smartTitle(cleanTitle)},
       {'track_name': cleanTitle},
+      {'q': cleanTitle},
+      if (cleanTitle.split(RegExp(r'[-,():－·・]')).first.trim().isNotEmpty)
+        {'track_name': cleanTitle.split(RegExp(r'[-,():－·・]')).first.trim()},
     ];
     SongItem? romanSong;
     try {
