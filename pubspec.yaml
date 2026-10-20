@@ -32,6 +32,8 @@ dependencies:
     sdk: flutter
 
   http: ^1.2.1
+  xml: ^6.5.0
+  crypto: ^3.0.6
 
   # Audio playback + background service
   just_audio: ^0.9.36

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/now_playing/lyrics_tools.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../features/music_visual/core/visual_feature_flag.dart';
@@ -246,6 +247,15 @@ class _SettingsSheetState extends State<_SettingsSheet> {
             ),
           ),
           const SizedBox(height: 20),
+
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.lyrics_outlined),
+            title: const Text('Lời bài hát'),
+            subtitle: const Text('Nguồn lời, giao diện và quét file lời'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => showLyricsPreferences(context),
+          ),
 
           // ── Giao diện ─────────────────────────────────────────────────
           Text(

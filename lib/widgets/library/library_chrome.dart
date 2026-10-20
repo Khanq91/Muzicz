@@ -508,24 +508,7 @@ class LibraryScrollbar extends StatelessWidget {
 }
 
 Route<T> libraryDetailRoute<T>(BuildContext context, Widget child) =>
-    PageRouteBuilder<T>(
-      transitionDuration: libraryMotion(context, 320),
-      reverseTransitionDuration: libraryMotion(context, 260),
-      pageBuilder: (_, _, _) => child,
-      transitionsBuilder:
-          (_, animation, _, child) => FadeTransition(
-            opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
-            child: SlideTransition(
-              position: Tween(
-                begin: const Offset(.08, 0),
-                end: Offset.zero,
-              ).animate(
-                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-              ),
-              child: child,
-            ),
-          ),
-    );
+    MaterialPageRoute<T>(builder: (_) => child);
 
 class LibraryDetailHeader extends StatelessWidget {
   const LibraryDetailHeader({

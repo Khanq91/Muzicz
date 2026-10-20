@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../widgets/depth_page_transition.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -134,11 +135,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     // First run: [Welcome, Onboarding] becomes [Home]; back must exit the
     // app rather than return to Welcome.
     navigator.pushAndRemoveUntil(
-      PageRouteBuilder(
-        pageBuilder: (_, anim, __) => const HomeScreen(),
-        transitionDuration: const Duration(milliseconds: 500),
-        transitionsBuilder:
-            (_, anim, __, child) => FadeTransition(opacity: anim, child: child),
+      DepthFadePageRoute(
+        builder: (_) => const HomeScreen(),
+        duration: const Duration(milliseconds: 500),
       ),
       (_) => false,
     );

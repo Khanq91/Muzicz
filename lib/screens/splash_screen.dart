@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/depth_page_transition.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:muziczz/theme/app_colors_data.dart';
 import 'package:provider/provider.dart';
@@ -86,15 +87,13 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     Navigator.of(context).pushReplacement(
-      PageRouteBuilder(
-        pageBuilder:
-            (_, anim, __) =>
+      DepthFadePageRoute(
+        builder:
+            (_) =>
                 destination == AppStartupDestination.welcome
                     ? const WelcomeScreen()
                     : const HomeScreen(),
-        transitionDuration: const Duration(milliseconds: 600),
-        transitionsBuilder:
-            (_, anim, __, child) => FadeTransition(opacity: anim, child: child),
+        duration: const Duration(milliseconds: 600),
       ),
     );
   }

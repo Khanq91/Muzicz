@@ -8,7 +8,7 @@ import '../providers/lyrics_provider.dart';
 import '../providers/player_provider.dart';
 import '../theme/app_colors_data.dart';
 import '../widgets/now_playing/controls.dart';
-import '../widgets/now_playing/lyrics_view.dart';
+import 'lyrics_screen.dart';
 import '../widgets/now_playing/song_info.dart';
 import '../widgets/now_playing/top_bar.dart';
 import '../widgets/now_playing/sheets/queue_sheet.dart';
@@ -23,7 +23,6 @@ class NowPlayingScreen extends StatefulWidget {
 }
 
 class _NowPlayingScreenState extends State<NowPlayingScreen> {
-  final _lyricsScroll = ScrollController();
   late final PlayerProvider _player;
   int? _lyricsSongId;
 
@@ -46,21 +45,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen> {
   @override
   void dispose() {
     _player.removeListener(_loadLyrics);
-    _lyricsScroll.dispose();
     super.dispose();
-  }
-
-  void _scrollToLine(int index) {
-    if (!_lyricsScroll.hasClients || index < 0) return;
-    final position = _lyricsScroll.position;
-    _lyricsScroll.animateTo(
-      (index * 52.0 - position.viewportDimension / 2 + 26).clamp(
-        0.0,
-        position.maxScrollExtent,
-      ),
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOutCubic,
-    );
   }
 
   void _sheet(Widget Function(BuildContext) builder, {double? height}) {
@@ -109,29 +94,9 @@ class _NowPlayingScreenState extends State<NowPlayingScreen> {
         ),
   );
 
-  void _lyrics() => _sheet(
-    (sheetContext) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              AppStrings.lyrics,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 16),
-            LyricsView(
-              player: _player,
-              scrollCtrl: _lyricsScroll,
-              onScrollToLine: _scrollToLine,
-              onTap: () => Navigator.pop(sheetContext),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
+  void _lyrics() => Navigator.of(
+    context,
+  ).push(MaterialPageRoute<void>(builder: (_) => const LyricsScreen()));
 
   Future<void> _output() async {
     try {

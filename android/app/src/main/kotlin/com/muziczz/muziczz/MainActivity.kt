@@ -8,12 +8,16 @@ import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
+import android.icu.text.Transliterator
+import android.view.WindowManager
+import java.util.concurrent.Executors
 import io.flutter.embedding.engine.FlutterEngine
 import com.muziczz.muziczz.musicvisual.poc.AndroidVisualizerPocPlugin
 import com.ryanheise.audioservice.AudioServiceFragmentActivity
 
 class MainActivity : AudioServiceFragmentActivity() {
     private var androidVisualizerPoc: AndroidVisualizerPocPlugin? = null
+    private val lyricsExecutor = Executors.newSingleThreadExecutor()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -23,11 +27,48 @@ class MainActivity : AudioServiceFragmentActivity() {
     override fun onDestroy() {
         androidVisualizerPoc?.dispose()
         androidVisualizerPoc = null
+        lyricsExecutor.shutdownNow()
         super.onDestroy()
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "muzicz/lyrics")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "readAiConfig", "writeAiConfig" -> {
+                        lyricsExecutor.execute {
+                            try {
+                                val vault = LyricsSettingsVault(this)
+                                val value = if (call.method == "readAiConfig") vault.read() else {
+                                    vault.write(call.arguments as? String)
+                                    null
+                                }
+                                runOnUiThread { result.success(value) }
+                            } catch (error: Exception) {
+                                runOnUiThread { result.error("lyrics_vault", "Unable to access encrypted AI settings", null) }
+                            }
+                        }
+                    }
+                    "romanize" -> {
+                        val text = call.arguments as? String ?: ""
+                        lyricsExecutor.execute {
+                            try {
+                                val roman = Transliterator.getInstance("Any-Latin; Latin-ASCII").transliterate(text.take(50000))
+                                runOnUiThread { result.success(roman) }
+                            } catch (error: Exception) {
+                                runOnUiThread { result.error("romanize", error.message, null) }
+                            }
+                        }
+                    }
+                    "keepScreenOn" -> {
+                        if (call.arguments == true) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                        else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                        result.success(null)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "muzicz/audio_output")
             .setMethodCallHandler { call, result ->
                 if (call.method != "showOutputSwitcher") {

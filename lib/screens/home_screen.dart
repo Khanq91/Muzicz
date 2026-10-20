@@ -7,7 +7,6 @@ import '../providers/player_provider.dart';
 import '../providers/theme_provider.dart';
 import '../theme/app_colors_data.dart';
 import '../widgets/app_bottom_navigation.dart';
-import '../widgets/main_tab_transition.dart';
 import '../widgets/mini_player.dart';
 import '../widgets/home_song_sections.dart';
 import '../widgets/library/library_empty_state.dart';
@@ -55,7 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Stack(
         children: [
           Positioned.fill(
-            child: MainTabTransition(
+            child: IndexedStack(
               index: _currentIndex,
               children: [
                 LibraryScreen(

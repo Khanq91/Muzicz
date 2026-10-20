@@ -1,299 +1,524 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/cupertino.dart';
+import 'package:crypto/crypto.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import '../models/lyric_line.dart';
+import '../models/song_item.dart';
+import '../utils/vietnamese_normalize.dart';
+import 'embedded_lyrics_reader.dart';
+import 'lyrics_parser.dart';
 
-// ════════════════════════════════════════════════════════════════════════════
-// LyricsResult — sealed-ish result type
-// ════════════════════════════════════════════════════════════════════════════
+enum LyricsResultType { synced, plain, instrumental, notFound, error }
 
-enum LyricsResultType { synced, plain, notFound, error }
+enum LyricsSourcePreference { embeddedFirst, apiFirst, localFirst }
 
 class LyricsResult {
-  const LyricsResult._({
+  const LyricsResult({
     required this.type,
     this.lines = const [],
+    this.raw = '',
+    this.source = '',
+    this.message,
   });
-
-  factory LyricsResult.synced(List<LyricLine> lines) =>
-      LyricsResult._(type: LyricsResultType.synced, lines: lines);
-
-  factory LyricsResult.plain(List<LyricLine> lines) =>
-      LyricsResult._(type: LyricsResultType.plain, lines: lines);
-
+  factory LyricsResult.synced(List<LyricLine> lines) => LyricsResult(
+    type: LyricsResultType.synced,
+    lines: lines,
+    raw: LyricsParser.export(lines),
+  );
+  factory LyricsResult.plain(List<LyricLine> lines) => LyricsResult(
+    type: LyricsResultType.plain,
+    lines: lines,
+    raw: LyricsParser.export(lines, synced: false),
+  );
   factory LyricsResult.notFound() =>
-      const LyricsResult._(type: LyricsResultType.notFound);
-
-  factory LyricsResult.error() =>
-      const LyricsResult._(type: LyricsResultType.error);
-
+      const LyricsResult(type: LyricsResultType.notFound);
+  factory LyricsResult.error([String? message]) =>
+      LyricsResult(type: LyricsResultType.error, message: message);
+  factory LyricsResult.parse(String raw, {required String source}) {
+    final lines = LyricsParser.parse(raw);
+    if (!lines.any((l) => l.text.isNotEmpty)) {
+      throw const FormatException('Không có nội dung lời');
+    }
+    return LyricsResult(
+      type:
+          lines.any((l) => l.time != null)
+              ? LyricsResultType.synced
+              : LyricsResultType.plain,
+      lines: lines,
+      raw: raw,
+      source: source,
+    );
+  }
   final LyricsResultType type;
   final List<LyricLine> lines;
-
+  final String raw, source;
+  final String? message;
   bool get isSynced => type == LyricsResultType.synced;
   bool get hasLyrics => lines.isNotEmpty;
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// LyricsService
-// ════════════════════════════════════════════════════════════════════════════
+class LyricsCandidate {
+  LyricsCandidate.fromJson(Map<String, dynamic> json)
+    : id = json['id'].toString(),
+      title = (json['trackName'] ?? json['name'] ?? '').toString(),
+      artist = (json['artistName'] ?? '').toString(),
+      album = (json['albumName'] ?? '').toString(),
+      duration = (json['duration'] as num?)?.toDouble() ?? 0,
+      synced = (json['syncedLyrics'] as String?) ?? '',
+      plain = (json['plainLyrics'] as String?) ?? '',
+      instrumental = json['instrumental'] == true;
+  final String id, title, artist, album, synced, plain;
+  final double duration;
+  final bool instrumental;
+  LyricsResult get result =>
+      instrumental && synced.trim().isEmpty && plain.trim().isEmpty
+          ? const LyricsResult(
+            type: LyricsResultType.instrumental,
+            source: 'LRCLIB',
+          )
+          : LyricsResult.parse(
+            synced.trim().isNotEmpty ? synced : plain,
+            source: 'LRCLIB',
+          );
+}
 
 class LyricsService {
-  static const _baseUrl = 'https://lrclib.net/api';
-  static const _timeout = Duration(seconds: 30);
+  LyricsService({
+    http.Client? client,
+    Future<Directory> Function()? directory,
+    Future<String?> Function(String)? embeddedReader,
+  }) : _client = client ?? http.Client(),
+       _directory = directory ?? getApplicationSupportDirectory,
+       _embeddedReader = embeddedReader ?? EmbeddedLyricsReader().read;
+  final http.Client _client;
+  final Future<Directory> Function() _directory;
+  final Future<String?> Function(String) _embeddedReader;
+  final Map<String, LyricsResult> _memory = {};
+  DateTime _lastRequest = DateTime.fromMillisecondsSinceEpoch(0);
+  Future<void> _networkTail = Future.value();
+  final Map<String, Future<void>> _writes = {};
+  static List<LyricLine> parseLrc(String raw) =>
+      LyricsParser.parse(raw).where((l) => l.time != null).toList();
+  static String key(SongItem song) =>
+      sha256
+          .convert(
+            utf8.encode(
+              '${song.data}\u0000${song.title}\u0000${song.artist}\u0000${song.duration}',
+            ),
+          )
+          .toString();
 
-  // ── Cache dir lazy init ────────────────────────────────────────────────────
-
-  Directory? _cacheDir;
-
-  Future<Directory> _getCacheDir() async {
-    if (_cacheDir != null) return _cacheDir!;
-    final appDir = await getApplicationCacheDirectory();
-    final dir = Directory('${appDir.path}/lyrics_cache');
-    if (!await dir.exists()) await dir.create(recursive: true);
-    _cacheDir = dir;
-    return dir;
+  Future<File> _file(SongItem song) async {
+    final root = await _directory();
+    final dir = await Directory('${root.path}/lyrics').create(recursive: true);
+    return File('${dir.path}/${key(song)}.json');
   }
 
-  /// Cache key dựa trên title + artist (lowercase, normalized).
-  String _cacheKey(String title, String artist) {
-    String clean(String s) => s.toLowerCase().replaceAll(RegExp(r'[^\w]'), '_');
-    return '${clean(artist)}__${clean(title)}';
-  }
-
-  Future<File> _cacheFile(String title, String artist) async {
-    final dir = await _getCacheDir();
-    return File('${dir.path}/${_cacheKey(title, artist)}.json');
-  }
-
-  // ── Public API ─────────────────────────────────────────────────────────────
-
-  /// Fetch lyrics cho [title] + [artist].
-  /// Thứ tự: file cache → LRCLIB API → notFound.
-  Future<LyricsResult> fetchLyrics({
-    required String title,
-    required String artist,
-    int? durationSeconds,
-  }) async {
-    debugPrint(
-      '🎵 [Lyrics] Fetching: "$title" - "$artist" (duration: ${durationSeconds}s)',
-    );
-
-    // 1. Check cache
+  Future<LyricsResult?> stored(SongItem song) async {
+    final id = key(song);
+    if (_memory.containsKey(id)) return _memory[id];
     try {
-      final file = await _cacheFile(title, artist);
-      if (await file.exists()) {
-        debugPrint('📦 [Lyrics] Cache hit: ${file.path}');
-        final cached = await _loadFromCache(file);
-        if (cached != null) {
-          debugPrint(
-            '✅ [Lyrics] Loaded from cache: ${cached.type} (${cached.lines.length} lines)',
-          );
-          return cached;
-        }
-      } else {
-        debugPrint('📭 [Lyrics] No cache for this song');
+      final file = await _file(song);
+      if (!await file.exists() || await file.length() > 2 * 1024 * 1024) {
+        return null;
       }
-    } catch (e) {
-      debugPrint('⚠️ [Lyrics] Cache read error: $e');
-    }
-
-    // 2. Fetch từ LRCLIB
-    try {
-      final result = await _fetchFromApi(
-        title: title,
-        artist: artist,
-        durationSeconds: durationSeconds,
-      );
-
-      debugPrint(
-        '🔍 [Lyrics] API result: ${result.type} (${result.lines.length} lines)',
-      );
-
-      if (result.hasLyrics) {
-        try {
-          await _writeCache(title, artist, result);
-          debugPrint('💾 [Lyrics] Cached successfully');
-        } catch (e) {
-          debugPrint('⚠️ [Lyrics] Cache write error: $e');
-        }
-      }
-
-      return result;
-    } catch (e, stack) {
-      debugPrint('❌ [Lyrics] Fetch error: $e\n$stack');
-      return LyricsResult.error();
-    }
-  }
-
-  // ── LRCLIB API ─────────────────────────────────────────────────────────────
-
-  Future<LyricsResult> _fetchFromApi({
-    required String title,
-    required String artist,
-    int? durationSeconds,
-  }) async {
-    final params = {
-      'track_name': title,
-      'artist_name': artist,
-      if (durationSeconds != null) 'duration': durationSeconds.toString(),
-    };
-
-    final uri = Uri.parse('$_baseUrl/get').replace(queryParameters: params);
-    debugPrint('🌐 [Lyrics] GET $uri');
-
-    final response = await http
-        .get(uri, headers: {'User-Agent': 'MuziczApp/1.0'})
-        .timeout(_timeout);
-
-    debugPrint('📡 [Lyrics] HTTP ${response.statusCode}');
-    debugPrint(
-      '📄 [Lyrics] Response body: ${response.body.length > 500 ? '${response.body.substring(0, 500)}...' : response.body}',
-    );
-
-    if (response.statusCode == 404) {
-      debugPrint('🔴 [Lyrics] 404 - Not found on LRCLIB');
-      return LyricsResult.notFound();
-    }
-
-    if (response.statusCode != 200) {
-      debugPrint('🔴 [Lyrics] Non-200 status: ${response.statusCode}');
-      return LyricsResult.error();
-    }
-
-    final json = jsonDecode(response.body) as Map<String, dynamic>;
-    debugPrint('🔑 [Lyrics] JSON keys: ${json.keys.toList()}');
-    debugPrint(
-      '   syncedLyrics: ${json['syncedLyrics'] != null ? "có (${(json['syncedLyrics'] as String).length} chars)" : "null"}',
-    );
-    debugPrint(
-      '   plainLyrics:  ${json['plainLyrics'] != null ? "có (${(json['plainLyrics'] as String).length} chars)" : "null"}',
-    );
-
-    return _parseApiResponse(json);
-  }
-
-  LyricsResult _parseApiResponse(Map<String, dynamic> json) {
-    final syncedRaw = json['syncedLyrics'] as String?;
-    final plainRaw = json['plainLyrics'] as String?;
-
-    if (syncedRaw != null && syncedRaw.trim().isNotEmpty) {
-      final lines = parseLrc(syncedRaw);
-      debugPrint('🎼 [Lyrics] Parsed synced: ${lines.length} lines');
-      if (lines.isNotEmpty) return LyricsResult.synced(lines);
-      debugPrint(
-        '⚠️ [Lyrics] parseLrc returned 0 lines — raw sample:\n${syncedRaw.substring(0, syncedRaw.length.clamp(0, 200))}',
-      );
-    }
-
-    if (plainRaw != null && plainRaw.trim().isNotEmpty) {
-      final lines = _parsePlain(plainRaw);
-      debugPrint('📝 [Lyrics] Parsed plain: ${lines.length} lines');
-      if (lines.isNotEmpty) return LyricsResult.plain(lines);
-    }
-
-    debugPrint('🔴 [Lyrics] Both synced and plain empty/null → notFound');
-    return LyricsResult.notFound();
-  }
-
-  // ── LRC parser ─────────────────────────────────────────────────────────────
-
-  /// Parse chuỗi LRC thành danh sách [LyricLine] có timestamp.
-  ///
-  /// Format LRC chuẩn: `[mm:ss.xx] text`
-  /// Bỏ qua metadata tags (ti:, ar:, al:, v.v.)
-  static List<LyricLine> parseLrc(String lrc) {
-    final lines = <LyricLine>[];
-    final lineRegex = RegExp(r'^\[(\d{1,3}):(\d{2})\.(\d{1,3})\](.*)$');
-
-    for (final rawLine in lrc.split('\n')) {
-      final trimmed = rawLine.trim();
-      if (trimmed.isEmpty) continue;
-
-      final match = lineRegex.firstMatch(trimmed);
-      if (match == null) continue;
-
-      final minutes = int.parse(match.group(1)!);
-      final seconds = int.parse(match.group(2)!);
-      // Centiseconds có thể 2 hoặc 3 chữ số
-      final csRaw = match.group(3)!;
-      final cs = csRaw.length == 3 ? int.parse(csRaw) : int.parse(csRaw) * 10;
-
-      final time = Duration(
-        minutes: minutes,
-        seconds: seconds,
-        milliseconds: cs * 10 ~/ 10, // normalize to ms
-      );
-
-      final text = match.group(4)!.trim();
-      // Bỏ dòng trắng (instrumental break) vẫn giữ để giữ nhịp scroll
-      lines.add(LyricLine(text: text, time: time));
-    }
-
-    lines.sort((a, b) => a.time!.compareTo(b.time!));
-    return lines;
-  }
-
-  // ── Plain lyrics parser ────────────────────────────────────────────────────
-
-  List<LyricLine> _parsePlain(String plain) {
-    return plain
-        .split('\n')
-        .map((l) => l.trim())
-        .where((l) => l.isNotEmpty)
-        .map((l) => LyricLine(text: l))
-        .toList();
-  }
-
-  // ── File cache ─────────────────────────────────────────────────────────────
-
-  Future<LyricsResult?> _loadFromCache(File file) async {
-    final content = await file.readAsString();
-    final json = jsonDecode(content) as Map<String, dynamic>;
-
-    final typeStr = json['type'] as String?;
-    final rawLines = json['lines'] as List<dynamic>? ?? [];
-
-    final lines =
-        rawLines.map((e) {
-          final map = e as Map<String, dynamic>;
-          final timeMs = map['timeMs'] as int?;
-          final text = map['text'] as String? ?? '';
-          return LyricLine(
-            text: text,
-            time: timeMs != null ? Duration(milliseconds: timeMs) : null,
-          );
-        }).toList();
-
-    if (lines.isEmpty) return LyricsResult.notFound();
-
-    return switch (typeStr) {
-      'synced' => LyricsResult.synced(lines),
-      'plain' => LyricsResult.plain(lines),
-      _ => null,
-    };
-  }
-
-  Future<void> _writeCache(
-    String title,
-    String artist,
-    LyricsResult result,
-  ) async {
-    final file = await _cacheFile(title, artist);
-    final json = {
-      'type': result.isSynced ? 'synced' : 'plain',
-      'lines':
-          result.lines
-              .map(
-                (l) => {
-                  'text': l.text,
-                  if (l.time != null) 'timeMs': l.time!.inMilliseconds,
-                },
+      final json =
+          jsonDecode(await file.readAsString()) as Map<String, dynamic>;
+      final result =
+          json['instrumental'] == true
+              ? LyricsResult(
+                type: LyricsResultType.instrumental,
+                source: json['source'] as String? ?? '',
               )
-              .toList(),
-    };
-    await file.writeAsString(jsonEncode(json));
+              : LyricsResult.parse(
+                json['raw'] as String,
+                source: json['source'] as String? ?? 'Đã lưu',
+              );
+      _remember(id, result);
+      return result;
+    } catch (_) {
+      return null;
+    }
   }
+
+  void _remember(String id, LyricsResult result) {
+    _memory.remove(id);
+    _memory[id] = result;
+    if (_memory.length > 150) _memory.remove(_memory.keys.first);
+  }
+
+  Future<void> save(SongItem song, LyricsResult result) {
+    final id = key(song);
+    final next = (_writes[id] ?? Future<void>.value()).catchError((_) {}).then((
+      _,
+    ) async {
+      final file = await _file(song);
+      final temp = File('${file.path}.tmp');
+      await temp.writeAsString(
+        jsonEncode({
+          'raw': result.raw,
+          'source': result.source,
+          'instrumental': result.type == LyricsResultType.instrumental,
+        }),
+        flush: true,
+      );
+      await temp.rename(file.path);
+      _remember(id, result);
+    });
+    _writes[id] = next;
+    return next;
+  }
+
+  Future<void> remove(SongItem song) async {
+    final id = key(song);
+    await (_writes[id] ?? Future<void>.value()).catchError((_) {});
+    final file = await _file(song);
+    if (await file.exists()) await file.delete();
+    _memory.remove(id);
+  }
+
+  Future<LyricsResult> load(
+    SongItem song,
+    LyricsSourcePreference preference, {
+    bool refresh = false,
+  }) async {
+    if (!refresh) {
+      final cached = await stored(song);
+      if (cached != null) return cached;
+    }
+    Future<LyricsResult?> embedded() async {
+      final raw = await _embeddedReader(song.data);
+      return raw == null || raw.trim().isEmpty
+          ? null
+          : LyricsResult.parse(raw, source: 'Nhúng trong file');
+    }
+
+    Future<LyricsResult?> local() => findSidecar(song);
+    Future<LyricsResult?> online() async {
+      final results = await search(
+        song.title,
+        song.artist,
+        song: song,
+        automatic: true,
+      );
+      return results.isEmpty ? null : results.first.result;
+    }
+
+    final sources = switch (preference) {
+      LyricsSourcePreference.embeddedFirst => [embedded, online, local],
+      LyricsSourcePreference.apiFirst => [online, embedded, local],
+      LyricsSourcePreference.localFirst => [local, embedded, online],
+    };
+    var networkFailed = false;
+    for (final source in sources) {
+      try {
+        final result = await source();
+        if (result != null) return result;
+      } on LyricsNetworkException {
+        networkFailed = true;
+      } on FileSystemException {
+        /* Try remaining sources. */
+      } on FormatException {
+        /* Invalid metadata must not block fallback. */
+      }
+    }
+    return networkFailed
+        ? LyricsResult.error(
+          'Không thể kết nối LRCLIB. Hãy thử lại hoặc nhập file lời.',
+        )
+        : LyricsResult.notFound();
+  }
+
+  Future<LyricsResult?> findSidecar(SongItem song) async {
+    final file = File(song.data);
+    final stem = file.uri.pathSegments.last.replaceFirst(
+      RegExp(r'\.[^.]+$'),
+      '',
+    );
+    final alternative = '${song.artist}_${song.title}'.replaceAll(
+      RegExp(r'[^a-zA-Z0-9]'),
+      '_',
+    );
+    for (final name in {stem, alternative}) {
+      for (final ext in ['lrc', 'ttml', 'txt']) {
+        final candidate = File('${file.parent.path}/$name.$ext');
+        try {
+          if (await candidate.exists() &&
+              await candidate.length() <= maxBytes(ext)) {
+            return importBytes(
+              await candidate.readAsBytes(),
+              '$name.$ext',
+              source: 'File đi kèm',
+            );
+          }
+        } on FormatException {
+          continue;
+        }
+      }
+    }
+    return null;
+  }
+
+  static int maxBytes(String ext) =>
+      ext.toLowerCase() == 'ttml' ? 1024 * 1024 : 256 * 1024;
+  static LyricsResult importBytes(
+    List<int> bytes,
+    String filename, {
+    String source = 'Đã nhập',
+  }) {
+    final ext = filename.split('.').last.toLowerCase();
+    if (!['lrc', 'ttml', 'txt'].contains(ext)) {
+      throw const FormatException('Chọn file .lrc, .ttml hoặc .txt');
+    }
+    if (bytes.length > maxBytes(ext)) {
+      throw const FormatException('File lời quá lớn');
+    }
+    final raw = LyricsParser.decode(bytes);
+    if (raw.contains('\u0000')) {
+      throw const FormatException('File không phải văn bản lyrics');
+    }
+    return LyricsResult.parse(raw, source: source);
+  }
+
+  static String clean(String value) =>
+      value
+          .replaceAll(RegExp(r'^\s*\d{1,3}[._-]?\s+'), '')
+          .replaceAll(RegExp(r'\([^)]*\)|\[[^\]]*\]'), ' ')
+          .replaceAll(
+            RegExp(r'\b(feat\.?|ft\.?|featuring)\s+.*', caseSensitive: false),
+            '',
+          )
+          .replaceAll(RegExp(r'\s+'), ' ')
+          .trim();
+  static String normalize(String s) =>
+      vnNormalize(
+        s,
+      ).replaceAll(RegExp(r'[^\p{L}\p{N}]+', unicode: true), ' ').trim();
+  static Set<String> _variants(String s) =>
+      RegExp(
+        r'\b(remix|live|acoustic|instrumental|karaoke|sped|slowed|nightcore|extended|edit)\b',
+        caseSensitive: false,
+      ).allMatches(s).map((m) => m[0]!.toLowerCase()).toSet();
+  static bool _unknown(String artist) => [
+    '',
+    'unknown',
+    'unknown artist',
+    '<unknown>',
+    'nghe si khong xac dinh',
+  ].contains(normalize(artist));
+  static double? score(SongItem song, LyricsCandidate item) {
+    if (!item.instrumental &&
+        item.synced.trim().isEmpty &&
+        item.plain.trim().isEmpty) {
+      return null;
+    }
+    if (song.duration <= 0 || item.duration <= 0) return null;
+    final variants = _variants(
+          '${song.title} ${song.data.split(RegExp(r'[/\\]')).last}',
+        ),
+        other = _variants(item.title);
+    if (variants.length != other.length || !variants.containsAll(other)) {
+      return null;
+    }
+    final synced = item.synced.trim().isNotEmpty;
+    final tolerance = (song.duration / 1000 * (synced ? .02 : .04)).clamp(
+      synced ? 5 : 8,
+      synced ? 8 : 15,
+    );
+    final difference = (item.duration - song.duration / 1000).abs();
+    if (difference > tolerance) return null;
+    final a = normalize(clean(song.title)), b = normalize(clean(item.title));
+    if (a.isEmpty || b.isEmpty) return null;
+    var titleScore = 70.0;
+    if (a != b) {
+      final aa = a.split(' ').toSet(), bb = b.split(' ').toSet();
+      final overlap = aa.intersection(bb).length;
+      if (overlap / aa.length < .85 || overlap / bb.length < .70) return null;
+      titleScore = 45;
+    }
+    var artistScore = 0.0;
+    if (!_unknown(song.artist)) {
+      final aa = normalize(song.artist).split(' ').toSet(),
+          bb = normalize(item.artist).split(' ').toSet();
+      final denominator = aa.length < bb.length ? aa.length : bb.length;
+      if (denominator == 0 || aa.intersection(bb).length / denominator < .5) {
+        return null;
+      }
+      artistScore = normalize(song.artist) == normalize(item.artist) ? 30 : 12;
+    }
+    return titleScore +
+        artistScore +
+        tolerance -
+        difference +
+        (synced ? 10 : 0);
+  }
+
+  Future<List<LyricsCandidate>> search(
+    String title,
+    String artist, {
+    SongItem? song,
+    bool automatic = false,
+  }) async {
+    if (title.trim().isEmpty) return [];
+    final cleanTitle = clean(title), cleanArtist = clean(artist);
+    final queries = <Map<String, String>>[
+      {
+        'track_name': title.trim(),
+        if (!_unknown(artist)) 'artist_name': artist.trim(),
+      },
+      {
+        'track_name': cleanTitle,
+        if (!_unknown(cleanArtist)) 'artist_name': cleanArtist,
+      },
+      {'q': '$cleanArtist $cleanTitle'.trim()},
+      {'track_name': cleanTitle},
+    ];
+    SongItem? romanSong;
+    try {
+      final roman = await const MethodChannel(
+        'muzicz/lyrics',
+      ).invokeMethod<String>('romanize', '$cleanTitle\n$cleanArtist');
+      if (roman != null && roman != '$cleanTitle\n$cleanArtist') {
+        final parts = roman.split('\n');
+        queries.add({'track_name': parts.first});
+        if (song != null) {
+          romanSong = SongItem(
+            id: song.id,
+            title: parts.first,
+            artist: parts.length > 1 ? parts[1] : song.artist,
+            album: song.album,
+            albumId: song.albumId,
+            artistId: song.artistId,
+            data: song.data,
+            duration: song.duration,
+          );
+        }
+      }
+    } on MissingPluginException {
+      /* Optional Android transliteration. */
+    } on PlatformException {
+      /* Try original metadata. */
+    }
+    double? match(LyricsCandidate item) =>
+        song == null
+            ? null
+            : score(song, item) ??
+                (romanSong == null ? null : score(romanSong, item));
+    if (automatic && song != null && song.duration > 0 && !_unknown(artist)) {
+      try {
+        final exact = await _request('get', {
+          'track_name': title,
+          'artist_name': artist,
+          'album_name': song.album,
+          'duration': (song.duration / 1000).round().toString(),
+        });
+        if (exact is Map<String, dynamic>) {
+          final candidate = LyricsCandidate.fromJson(exact);
+          if (match(candidate) != null) return [candidate];
+        }
+      } on LyricsNetworkException {
+        /* Search fallback remains available. */
+      }
+    }
+    final found = <String, LyricsCandidate>{}, tried = <String>{};
+    var failures = 0;
+    for (final query in queries) {
+      if (!tried.add(jsonEncode(query))) continue;
+      try {
+        final json = await _request('search', query);
+        if (json is List) {
+          for (final entry in json.take(200)) {
+            if (entry is! Map<String, dynamic>) continue;
+            final item = LyricsCandidate.fromJson(entry);
+            if (item.instrumental ||
+                item.synced.trim().isNotEmpty ||
+                item.plain.trim().isNotEmpty) {
+              found[item.id] = item;
+            }
+          }
+        }
+        if (automatic &&
+            song != null &&
+            found.values.any((c) => match(c) != null)) {
+          break;
+        }
+      } on LyricsNetworkException {
+        failures++;
+      }
+    }
+    if (found.isEmpty && failures == tried.length) {
+      throw const LyricsNetworkException();
+    }
+    final result =
+        found.values
+            .where((c) => !automatic || (song != null && match(c) != null))
+            .toList();
+    if (song != null) {
+      result.sort((a, b) => (match(b) ?? -1).compareTo(match(a) ?? -1));
+    }
+    return result;
+  }
+
+  Future<dynamic> _request(String endpoint, Map<String, String> query) {
+    final completer = Completer<dynamic>();
+    _networkTail = _networkTail.catchError((_) {}).then((_) async {
+      try {
+        for (var attempt = 0; attempt < 3; attempt++) {
+          final wait =
+              150 - DateTime.now().difference(_lastRequest).inMilliseconds;
+          if (wait > 0) {
+            await Future<void>.delayed(Duration(milliseconds: wait));
+          }
+          _lastRequest = DateTime.now();
+          http.Response response;
+          try {
+            response = await _client
+                .get(
+                  Uri.https('lrclib.net', '/api/$endpoint', query),
+                  headers: {
+                    'User-Agent': 'MuziczAudio/2.0 (Android music player)',
+                  },
+                )
+                .timeout(const Duration(seconds: 12));
+          } on Exception {
+            if (attempt == 2) rethrow;
+            await Future<void>.delayed(
+              Duration(milliseconds: 500 * (1 << attempt)),
+            );
+            continue;
+          }
+          if (response.statusCode == 404) {
+            completer.complete(<dynamic>[]);
+            return;
+          }
+          if (response.statusCode == 200) {
+            if (response.bodyBytes.length > 8 * 1024 * 1024) {
+              throw const LyricsNetworkException();
+            }
+            completer.complete(jsonDecode(utf8.decode(response.bodyBytes)));
+            return;
+          }
+          if (response.statusCode != 429 && response.statusCode < 500) break;
+          await Future<void>.delayed(
+            Duration(milliseconds: 500 * (1 << attempt)),
+          );
+        }
+        throw const LyricsNetworkException();
+      } catch (_) {
+        completer.completeError(const LyricsNetworkException());
+      }
+    });
+    return completer.future;
+  }
+
+  void dispose() => _client.close();
+}
+
+class LyricsNetworkException implements Exception {
+  const LyricsNetworkException();
+  @override
+  String toString() => 'Không thể kết nối máy chủ lyrics. Vui lòng thử lại.';
 }

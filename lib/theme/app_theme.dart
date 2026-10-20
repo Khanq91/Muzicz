@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app_colors_data.dart'; // dynamic theme extension
+import '../widgets/depth_page_transition.dart';
 
 // ════════════════════════════════════════════════════════════════════════════
 // AppTheme — factory tạo ThemeData từ bất kỳ AppColorsData nào
@@ -19,6 +20,12 @@ class AppTheme {
     final outfitText = GoogleFonts.outfitTextTheme(base.textTheme);
 
     return base.copyWith(
+      pageTransitionsTheme: PageTransitionsTheme(
+        builders: {
+          for (final platform in TargetPlatform.values)
+            platform: const DepthPageTransitionsBuilder(),
+        },
+      ),
       scaffoldBackgroundColor: c.background,
 
       colorScheme: ColorScheme(

@@ -12,6 +12,23 @@ import 'package:muziczz/theme/app_theme.dart';
 import 'package:muziczz/widgets/now_playing/lyrics_view.dart';
 import 'package:muziczz/widgets/now_playing/sheets/queue_sheet.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:muziczz/screens/lyrics_screen.dart';
+import 'package:muziczz/services/lyrics_service.dart';
+
+class _LyricsFixture extends LyricsService {
+  @override
+  Future<LyricsResult> load(
+    SongItem song,
+    LyricsSourcePreference preference, {
+    bool refresh = false,
+  }) async => LyricsResult.parse(
+    '[00:01]A long lyric line that wraps across the screen\n[00:04]Second line',
+    source: 'Test',
+  );
+  @override
+  Future<void> save(SongItem song, LyricsResult result) async {}
+}
 
 class _Gateway implements PlayerAudioGateway {
   @override
@@ -41,6 +58,64 @@ class _Gateway implements PlayerAudioGateway {
 }
 
 void main() {
+  testWidgets(
+    'fullscreen lyrics and AI menu fit a narrow screen with large text',
+    (tester) async {
+      GoogleFonts.config.allowRuntimeFetching = false;
+      SharedPreferences.setMockInitialValues({});
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(320, 844);
+      addTearDown(tester.view.reset);
+      final player = PlayerProvider(_Gateway());
+      final lyrics = LyricsProvider(service: _LyricsFixture());
+      addTearDown(player.dispose);
+      addTearDown(lyrics.dispose);
+      await player.playSongs([
+        SongItem(
+          id: 99,
+          title: 'A long song title',
+          artist: 'Artist',
+          album: 'Album',
+          albumId: 1,
+          artistId: 1,
+          data: '/99.mp3',
+          duration: 180000,
+        ),
+      ]);
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: player),
+            ChangeNotifierProvider.value(value: lyrics),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.buildTheme(AppColorPresets.dark),
+            builder:
+                (_, child) => MediaQuery(
+                  data: const MediaQueryData(
+                    textScaler: TextScaler.linear(1.5),
+                  ),
+                  child: child!,
+                ),
+            home: const LyricsScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text('A long lyric line that wraps across the screen'),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.byType(PopupMenuButton<String>));
+      await tester.pumpAndSettle();
+      expect(find.text('Cấu hình dịch AI'), findsOneWidget);
+      expect(find.text('Dịch lời bằng AI'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 6));
+    },
+  );
   setUp(() => GoogleFonts.config.allowRuntimeFetching = false);
   for (final width in [320.0, 390.0]) {
     testWidgets('queue interactions at width $width', (tester) async {
