@@ -53,7 +53,7 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 50));
     final restored = LibraryPreferences();
     await restored.load();
-    expect(restored.sections.last, LibrarySection.playlists);
+    expect(restored.sections.last, LibrarySection.songs);
     expect(restored.order(LibrarySection.songs), LibraryOrder.duration);
     expect(restored.descending(LibrarySection.songs), isTrue);
     expect(restored.order(LibrarySection.folders), LibraryOrder.count);

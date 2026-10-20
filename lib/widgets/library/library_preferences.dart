@@ -7,10 +7,17 @@ import '../../utils/vietnamese_normalize.dart';
 // Values are also the public showTab indices used by Home/Search.
 enum LibrarySection { playlists, songs, artists, folders }
 
+const defaultLibrarySections = [
+  LibrarySection.songs,
+  LibrarySection.playlists,
+  LibrarySection.artists,
+  LibrarySection.folders,
+];
+
 enum LibraryOrder { name, newest, duration, count }
 
 class LibraryPreferences extends ChangeNotifier {
-  List<LibrarySection> _sections = LibrarySection.values.toList();
+  List<LibrarySection> _sections = defaultLibrarySections.toList();
   final Map<LibrarySection, LibraryOrder> _orders = {};
   final Set<LibrarySection> _descending = {};
   SharedPreferences? _storage;
@@ -36,7 +43,7 @@ class LibraryPreferences extends ChangeNotifier {
         <LibrarySection>{
           for (final name in names)
             ...LibrarySection.values.where((s) => s.name == name),
-          ...LibrarySection.values,
+          ...defaultLibrarySections,
         }.toList();
     for (final section in LibrarySection.values) {
       final name = storage.getString('library_sort_${section.name}');
@@ -62,7 +69,7 @@ class LibraryPreferences extends ChangeNotifier {
   }
 
   void resetTabs() {
-    _sections = LibrarySection.values.toList();
+    _sections = defaultLibrarySections.toList();
     _changed();
   }
 

@@ -10,11 +10,11 @@ import '../widgets/library/library_preferences.dart';
 import '../widgets/library/library_search_bar.dart';
 import '../widgets/library/library_songs_page.dart';
 import 'onboarding_screen.dart';
-import 'profile_screen.dart';
 
 class LibraryScreen extends StatefulWidget {
-  const LibraryScreen({super.key, this.active = true});
+  const LibraryScreen({super.key, this.active = true, this.onSettings});
   final bool active;
+  final VoidCallback? onSettings;
   @override
   State<LibraryScreen> createState() => LibraryScreenState();
 }
@@ -23,8 +23,8 @@ class LibraryScreenState extends State<LibraryScreen> {
   final _pages = PageController();
   final _preferences = LibraryPreferences();
   final _searchCtrl = TextEditingController();
-  LibrarySection _selected = LibrarySection.playlists;
-  List<LibrarySection> _order = LibrarySection.values.toList();
+  LibrarySection _selected = LibrarySection.songs;
+  List<LibrarySection> _order = defaultLibrarySections.toList();
   bool _searchOpen = false;
   bool _sheetOpen = false;
   bool _restoringOrder = false;
@@ -173,10 +173,7 @@ class LibraryScreenState extends State<LibraryScreen> {
                   LibraryIconButton(
                     icon: Icons.settings_outlined,
                     tooltip: AppStrings.settings,
-                    onPressed:
-                        () => Navigator.of(context).push(
-                          libraryDetailRoute(context, const ProfileScreen()),
-                        ),
+                    onPressed: widget.onSettings ?? () {},
                   ),
                 ],
               ),

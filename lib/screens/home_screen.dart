@@ -7,6 +7,7 @@ import '../providers/player_provider.dart';
 import '../providers/theme_provider.dart';
 import '../theme/app_colors_data.dart';
 import '../widgets/app_bottom_navigation.dart';
+import '../widgets/main_tab_transition.dart';
 import '../widgets/mini_player.dart';
 import '../widgets/home_song_sections.dart';
 import '../widgets/library/library_empty_state.dart';
@@ -28,15 +29,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
   late final _tabs = [
     _HomeTabBody(
+      onSettings: () => _selectTab(2),
       onShowAllPlaylists: () => _showLibraryTab(0),
       onShowAllSongs: (query) => _showLibraryTab(1, searchQuery: query),
     ),
     const ProfileScreen(embeddedInHome: true),
   ];
 
+  void _selectTab(int index) {
+    if (_currentIndex != index) setState(() => _currentIndex = index);
+  }
+
   void _showLibraryTab(int tabIndex, {String searchQuery = ''}) {
     _libraryScreenKey.currentState?.showTab(tabIndex, searchQuery: searchQuery);
-    if (_currentIndex != 0) setState(() => _currentIndex = 0);
+    _selectTab(0);
   }
 
   @override
@@ -49,12 +55,13 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Stack(
         children: [
           Positioned.fill(
-            child: IndexedStack(
+            child: MainTabTransition(
               index: _currentIndex,
               children: [
                 LibraryScreen(
                   key: _libraryScreenKey,
                   active: _currentIndex == 0,
+                  onSettings: () => _selectTab(2),
                 ),
                 ..._tabs,
               ],
@@ -67,9 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
         builder:
             (_, hasSong, __) => AppBottomNavigation(
               currentIndex: _currentIndex,
-              onTap: (index) {
-                setState(() => _currentIndex = index);
-              },
+              onTap: _selectTab,
               style: bottomNavStyle,
               miniPlayer:
                   hasSong ? const MiniPlayer(embeddedInDock: true) : null,
@@ -83,9 +88,11 @@ class _HomeTabBody extends StatelessWidget {
   const _HomeTabBody({
     required this.onShowAllPlaylists,
     required this.onShowAllSongs,
+    required this.onSettings,
   });
   final VoidCallback onShowAllPlaylists;
   final ValueChanged<String> onShowAllSongs;
+  final VoidCallback onSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -152,13 +159,7 @@ class _HomeTabBody extends StatelessWidget {
                       style: IconButton.styleFrom(
                         backgroundColor: c.surfaceElevated,
                       ),
-                      onPressed:
-                          () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const ProfileScreen(),
-                            ),
-                          ),
+                      onPressed: onSettings,
                       icon: const Icon(Icons.settings_outlined),
                     ),
                     const SizedBox(width: 16),

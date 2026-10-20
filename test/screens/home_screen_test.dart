@@ -19,6 +19,8 @@ import 'package:muziczz/core/app_strings.dart';
 
 import 'package:muziczz/screens/home_screen.dart';
 import 'package:muziczz/widgets/home_song_sections.dart';
+import 'package:muziczz/widgets/app_bottom_navigation.dart';
+import 'package:muziczz/screens/profile_screen.dart';
 
 import 'package:muziczz/screens/playlist_screen.dart';
 
@@ -67,6 +69,38 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(AppStrings.appName), findsNWidgets(2));
     expect(find.text('Your Songs'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.settings_outlined).hitTestable());
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<AppBottomNavigation>(find.byType(AppBottomNavigation))
+          .currentIndex,
+      2,
+    );
+    expect(find.byType(ProfileScreen), findsOneWidget);
+    expect(
+      Navigator.of(tester.element(find.byType(ProfileScreen))).canPop(),
+      isFalse,
+    );
+    await tester.tap(find.byIcon(Icons.library_music_rounded).hitTestable());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.settings_outlined).hitTestable());
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<AppBottomNavigation>(find.byType(AppBottomNavigation))
+          .currentIndex,
+      2,
+    );
+    expect(
+      Navigator.of(tester.element(find.byType(ProfileScreen))).canPop(),
+      isFalse,
+    );
+    // Interrupt a transition and return Home without losing its scroll state.
+    await tester.tap(find.byIcon(Icons.library_music_rounded).hitTestable());
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tap(find.byIcon(Icons.home_rounded).hitTestable());
+    await tester.pumpAndSettle();
     final section = find.byType(HomeSongSection);
     expect(section.hitTestable(), findsNothing);
     expect(

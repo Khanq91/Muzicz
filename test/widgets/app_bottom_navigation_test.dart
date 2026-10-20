@@ -58,7 +58,23 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.getSize(find.byKey(playerKey)).height, 56);
       rebuild(() => showPlayer = false);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 320));
+      final bounce = tester.widget<Transform>(
+        find.byKey(const ValueKey('dock-collapse-bounce')),
+      );
+      expect(bounce.transform.entry(0, 0), lessThan(1));
+      expect(bounce.transform.entry(1, 1), lessThan(1));
       await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<Transform>(
+              find.byKey(const ValueKey('dock-collapse-bounce')),
+            )
+            .transform
+            .entry(0, 0),
+        1,
+      );
       expect(find.byKey(playerKey), findsNothing);
       expect(tester.takeException(), isNull);
     });

@@ -62,7 +62,7 @@ class _AppBottomNavigationState extends State<AppBottomNavigation>
   void initState() {
     super.initState();
     _miniPlayerDuringCollapse = widget.miniPlayer;
-    _expandController = AnimationController(
+    _expandController = AnimationController.unbounded(
       vsync: this,
       duration: const Duration(milliseconds: 320),
       value: widget.miniPlayer == null ? 0 : 1,
@@ -74,14 +74,25 @@ class _AppBottomNavigationState extends State<AppBottomNavigation>
     super.didUpdateWidget(oldWidget);
     if (widget.miniPlayer != null) {
       _miniPlayerDuringCollapse = widget.miniPlayer;
-      if (oldWidget.miniPlayer == null) _expandController.forward();
+      if (oldWidget.miniPlayer == null) _animateExpansion(1);
     } else if (oldWidget.miniPlayer != null) {
-      _expandController.reverse();
+      _animateExpansion(0);
     }
   }
 
+  void _animateExpansion(double target) {
+    _expandController.animateTo(
+      target,
+      duration:
+          MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : Duration(milliseconds: target == 0 ? 540 : 320),
+      curve: target == 0 ? Curves.easeOutBack : Curves.easeOutCubic,
+    );
+  }
+
   void _onExpansionStatusChanged(AnimationStatus status) {
-    if (status == AnimationStatus.dismissed && widget.miniPlayer == null) {
+    if (status == AnimationStatus.completed && widget.miniPlayer == null) {
       setState(() => _miniPlayerDuringCollapse = null);
     }
   }
@@ -99,7 +110,8 @@ class _AppBottomNavigationState extends State<AppBottomNavigation>
     return AnimatedBuilder(
       animation: _expandController,
       builder: (context, _) {
-        final progress = Curves.easeOutCubic.transform(_expandController.value);
+        final progress = _expandController.value.clamp(0.0, 1.0);
+        final compression = _expandController.value.clamp(-.2, 0.0);
         final expandedExtent =
             (AppBottomNavigation._miniPlayerHeight +
                 AppBottomNavigation._dividerHeight) *
@@ -196,12 +208,18 @@ class _AppBottomNavigationState extends State<AppBottomNavigation>
                   return SizedBox(
                     width: dockWidth,
                     height: dockHeight,
-                    child: DockMotion(
-                      expanded: widget.miniPlayer != null,
-                      child: _DockSurface(
-                        isFancy: isFancy,
-                        height: dockHeight,
-                        child: dock,
+                    child: Transform.scale(
+                      key: const ValueKey('dock-collapse-bounce'),
+                      scaleX: 1 + compression * .65,
+                      scaleY: 1 + compression * .9,
+                      alignment: Alignment.bottomCenter,
+                      child: DockMotion(
+                        expanded: widget.miniPlayer != null,
+                        child: _DockSurface(
+                          isFancy: isFancy,
+                          height: dockHeight,
+                          child: dock,
+                        ),
                       ),
                     ),
                   );

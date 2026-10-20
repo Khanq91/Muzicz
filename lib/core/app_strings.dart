@@ -331,7 +331,7 @@ abstract final class AppStrings {
   // Profile / Settings
   // ─────────────────────────────────────────────────────────────────────────
   static const listener = 'Thính giả';
-  static const profileTagline = 'Nocturne Audio';
+  static const profileTagline = 'Muzicz Audio';
   static const features = 'Chức năng';
   static const rescanMusicSubtitle = 'Cập nhật thư viện từ bộ nhớ máy';
   static const settingsSubtitle = 'Tùy chỉnh giao diện và ứng dụng';

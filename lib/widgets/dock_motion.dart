@@ -33,7 +33,7 @@ class _DockMotionState extends State<DockMotion>
   @override
   void didUpdateWidget(covariant DockMotion oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.expanded != widget.expanded && !_reduced) {
+    if (!oldWidget.expanded && widget.expanded && !_reduced) {
       _scale.value = 0.96;
       _settle();
     }

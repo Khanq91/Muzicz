@@ -194,6 +194,11 @@ void main() {
     tester,
   ) async {
     await mount(tester);
+    expect(
+      tester.widget<LibraryPill>(find.byType(LibraryPill)).section,
+      LibrarySection.songs,
+    );
+    expect(find.text('Track 00'), findsOneWidget);
     await tester.tap(find.byTooltip(AppStrings.libraryChooseSection));
     await tester.pumpAndSettle();
     expect(find.byType(GridView), findsOneWidget);
@@ -228,7 +233,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       tester.widget<LibraryPill>(find.byType(LibraryPill)).section,
-      LibrarySection.artists,
+      LibrarySection.playlists,
     );
     expect(tester.takeException(), isNull);
   });
@@ -344,7 +349,7 @@ void main() {
     final list = tester.widget<ReorderableListView>(
       find.byType(ReorderableListView),
     );
-    list.onReorderItem!(1, 3);
+    list.onReorderItem!(0, 3);
     await tester.pumpAndSettle();
     expect(
       tester.widget<LibraryPill>(find.byType(LibraryPill)).section,

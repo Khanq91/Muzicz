@@ -157,7 +157,7 @@ Pushed from the Home avatar. Scroll body + MiniPlayer pinned at the bottom.
 
 - **Header**: decorative 200 dp primary@12 % radial glow bleeding off the top-right;
   back arrow; identity row — 72 dp primaryGradient avatar circle (white person icon 36)
-  + "Thính giả" 22/w700 + "Nocturne Audio" 13/w300 (both hard-coded; no editable profile).
+  + "Thính giả" 22/w700 + "Muzicz Audio" 13/w300 (both hard-coded; no editable profile).
 - **Stats row**: three tinted stat cards (accent@10 % fill, accent@20 % border, r16):
   Bài hát (primary) / Nghệ sĩ (secondary) / Album (tertiary) — icon 22, value 22/w700,
   label 12/w300.
